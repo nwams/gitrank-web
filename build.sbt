@@ -9,17 +9,14 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.6"
 
 resolvers ++= Seq(
-  "anormcypher" at "http://repo.anormcypher.org/",
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
-libraryDependencies += "org.anormcypher" %% "anormcypher" % "0.6.0"
-
-libraryDependencies += "org.webjars" % "bootstrap" % "3.3.4"
-
-libraryDependencies += "org.webjars" % "angularjs" % "1.3.15"
-
 libraryDependencies ++= Seq(
+  "org.webjars" %% "webjars-play" % "2.4.0-1",
+  "org.webjars" % "angularjs" % "1.4.0",
+  "org.webjars" % "bootstrap" % "3.3.4",
+  javaWs,
   jdbc,
   anorm,
   cache,
