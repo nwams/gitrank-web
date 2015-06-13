@@ -17,8 +17,6 @@ class IntegrationSpec extends Specification {
     "work from within a browser" in new WithBrowser {
 
       browser.goTo("http://localhost:" + port)
-
-      browser.pageSource must contain("Your new application is ready.")
     }
   }
 }
