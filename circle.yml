@@ -9,7 +9,7 @@ dependencies:
 
 test:
   override:
-    - sbt test
+    - sbt clean coverage test
   post:
     - sbt coverageReport
     - sbt codacyCoverage
