@@ -1,0 +1,18 @@
+notify:
+  webhooks:
+    # A list of hook hashes, containing the url field
+    - url: https://webhooks.gitter.im/e/bb201391ca2a83b29080
+
+dependencies:
+  override:
+    - sbt update
+
+test:
+  override:
+    - sbt test
+  post:
+    - sbt coverageReport
+    - sbt codacyCoverage
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -type f -regex ".*/target/test-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+    - cp -a ./target $CIRCLE_ARTIFACTS
