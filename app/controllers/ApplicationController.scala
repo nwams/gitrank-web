@@ -2,10 +2,9 @@ package controllers
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{ Environment, LogoutEvent, Silhouette }
+import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import forms._
 import models.User
 import play.api.i18n.MessagesApi
 
@@ -29,7 +28,7 @@ class ApplicationController @Inject() (
    *
    * @return The result to display.
    */
-  def index = SecuredAction.async { implicit request =>
+  def index = UserAwareAction.async { implicit request =>
     Future.successful(Ok(views.html.home(request.identity)))
   }
 }

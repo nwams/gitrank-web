@@ -21,7 +21,8 @@ libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "bootstrap" % "3.3.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
-  cache
+  cache,
+  filters
 )
 
 scalacOptions ++= Seq(

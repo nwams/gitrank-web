@@ -22,5 +22,5 @@ case class User(
                  lastName: Option[String],
                  fullName: Option[String],
                  email: Option[String],
-                 karma: Option[Number],
+                 karma: Int,
                  avatarURL: Option[String]) extends Identity

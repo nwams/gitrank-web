@@ -1,5 +1,5 @@
-@(user: models.User)
+@(user: Option[models.User])
 
-@main("GitRank - Home", Some(user)) {
+@main("GitRank - Home", user) {
     <!-- HTML Here -->
 }
