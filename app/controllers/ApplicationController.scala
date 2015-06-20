@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{ Environment, Silhouette }
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import models.User
 import play.api.i18n.MessagesApi
 
@@ -20,7 +21,7 @@ import scala.concurrent.Future
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
                                         val env: Environment[User, SessionAuthenticator],
-                                        socialProviderRegistry: SocialProviderRegistry)
+                                        gitHubProvider: GitHubProvider)
   extends Silhouette[User, SessionAuthenticator] {
 
   /**
@@ -29,6 +30,6 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(socialProviderRegistry, request.identity)))
+    Future.successful(Ok(views.html.home(gitHubProvider, request.identity)))
   }
 }

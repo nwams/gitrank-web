@@ -1,6 +1,6 @@
-@(socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader)
+@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 
-@import com.mohiva.play.silhouette.impl.providers.oauth2.ClefProvider
+@(gitHubProvider: GitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
 
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -19,21 +19,18 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
             <ul class="nav navbar-nav navbar-right">
-                @if(socialProviders.providers.nonEmpty) {
-                    @if(socialProviders.providers.nonEmpty) {
-                        @for(p <- socialProviders.providers if p.id != "clef") {
-                            <li>
-                                <a href="@routes.SocialAuthController.authenticate(p.id)" class="button btn-default">
-                                    <span class="octicon octicon-mark-github"></span> Login
-                                </a>
-                            </li>
-                        }
-                        @defining(socialProviders.get[ClefProvider]) { clef =>
-                            @if(clef.isDefined) {
-                                <script type="text/javascript" src="https://clef.io/v3/clef.js" class="clef-button" data-app-id="@clef.get.settings.clientID" data-color="blue" data-style="flat" data-redirect-url="@clef.get.settings.redirectURL" data-type="login"></script>
-                            }
-                        }
-                    }
+                @user.map { u =>
+                    <li>
+                        <a href="@routes.ApplicationController.index">
+                            @u.fullName
+                        </a>
+                    </li>
+                }.getOrElse {
+                    <li>
+                        <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)">
+                            <span class="octicon octicon-mark-github"></span> Login
+                        </a>
+                    </li>
                 }
             </ul>
         </div><!-- /.navbar-collapse -->

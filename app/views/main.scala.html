@@ -1,4 +1,6 @@
-@(title: String, socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry, user: Option[models.User] = None)(content: Html)(implicit request: RequestHeader)
+@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
+
+@(title: String, gitHubProvider: GitHubProvider, user: Option[models.User] = None)(content: Html)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -11,7 +13,7 @@
     </head>
     <body>
 
-        @navbar(socialProviders)
+        @navbar(gitHubProvider, user)
 
         @content
 
