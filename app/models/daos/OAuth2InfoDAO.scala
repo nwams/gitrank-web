@@ -24,7 +24,7 @@ class OAuth2InfoDAO extends DelegableAuthInfoDAO[OAuth2Info] {
    * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
    */
   def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] = {
-    Future.successful()
+    Future.successful(data.get(loginInfo))
   }
 
   /**
@@ -35,6 +35,7 @@ class OAuth2InfoDAO extends DelegableAuthInfoDAO[OAuth2Info] {
    * @return The added auth info.
    */
   def add(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
+    data += (loginInfo -> authInfo)
     Future.successful(authInfo)
   }
 
@@ -46,6 +47,7 @@ class OAuth2InfoDAO extends DelegableAuthInfoDAO[OAuth2Info] {
    * @return The updated auth info.
    */
   def update(loginInfo: LoginInfo, authInfo: OAuth2Info): Future[OAuth2Info] = {
+    data += (loginInfo -> authInfo)
     Future.successful(authInfo)
   }
 
@@ -73,6 +75,18 @@ class OAuth2InfoDAO extends DelegableAuthInfoDAO[OAuth2Info] {
    * @return A future to wait for the process to be completed.
    */
   def remove(loginInfo: LoginInfo): Future[Unit] = {
+    data -= loginInfo
     Future.successful(())
   }
+}
+
+/**
+ * The companion object.
+ */
+object OAuth2InfoDAO {
+
+  /**
+   * The data store for the OAuth2 info.
+   */
+  var data: mutable.HashMap[LoginInfo, OAuth2Info] = mutable.HashMap()
 }

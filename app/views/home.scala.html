@@ -1,5 +1,5 @@
-@(user: Option[models.User])
+@(socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry, user: Option[models.User])(implicit request: RequestHeader)
 
-@main("GitRank - Home", user) {
+@main("GitRank - Home", socialProviders, user) {
     <!-- HTML Here -->
 }

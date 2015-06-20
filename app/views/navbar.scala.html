@@ -1,4 +1,7 @@
-@()
+@(socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader)
+
+@import com.mohiva.play.silhouette.impl.providers.oauth2.ClefProvider
+
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container">
             <!-- Brand and toggle get grouped for better mobile display -->
@@ -15,9 +18,24 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 
-            <form class="navbar-form navbar-right" role="button">
-                <button type="submit" class="btn btn-default"><span class="octicon octicon-mark-github"></span> Login</button>
-            </form>
+            <ul class="nav navbar-nav navbar-right">
+                @if(socialProviders.providers.nonEmpty) {
+                    @if(socialProviders.providers.nonEmpty) {
+                        @for(p <- socialProviders.providers if p.id != "clef") {
+                            <li>
+                                <a href="@routes.SocialAuthController.authenticate(p.id)" class="button btn-default">
+                                    <span class="octicon octicon-mark-github"></span> Login
+                                </a>
+                            </li>
+                        }
+                        @defining(socialProviders.get[ClefProvider]) { clef =>
+                            @if(clef.isDefined) {
+                                <script type="text/javascript" src="https://clef.io/v3/clef.js" class="clef-button" data-app-id="@clef.get.settings.clientID" data-color="blue" data-style="flat" data-redirect-url="@clef.get.settings.redirectURL" data-type="login"></script>
+                            }
+                        }
+                    }
+                }
+            </ul>
         </div><!-- /.navbar-collapse -->
     </div><!-- /.container-fluid -->
 </nav>

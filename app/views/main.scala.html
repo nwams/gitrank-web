@@ -1,4 +1,4 @@
-@(title: String, user: Option[models.User] = None)(content: Html)
+@(title: String, socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry, user: Option[models.User] = None)(content: Html)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -11,7 +11,7 @@
     </head>
     <body>
 
-        @navbar()
+        @navbar(socialProviders)
 
         @content
 
