@@ -11,7 +11,8 @@ scalaVersion := "2.11.6"
 resolvers ++= Seq(
   "anormcypher" at "http://repo.anormcypher.org/",
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+  "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
+  "Atlassian Releases" at "https://maven.atlassian.com/public/"
 )
 
 libraryDependencies ++= Seq(
