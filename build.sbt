@@ -10,6 +10,7 @@ scalaVersion := "2.11.6"
 
 resolvers ++= Seq(
   "anormcypher" at "http://repo.anormcypher.org/",
+  "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
@@ -21,9 +22,12 @@ libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "bootstrap" % "3.3.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
+  specs2 % Test,
   cache,
   filters
 )
+
+scalacOptions in Test ++= Seq("-Yrangepos")
 
 scalacOptions ++= Seq(
   "-deprecation", // Emit warning and location for usages of deprecated APIs.
