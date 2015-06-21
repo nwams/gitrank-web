@@ -9,14 +9,12 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 scalaVersion := "2.11.6"
 
 resolvers ++= Seq(
-  "anormcypher" at "http://repo.anormcypher.org/",
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/",
   "Atlassian Releases" at "https://maven.atlassian.com/public/"
 )
 
 libraryDependencies ++= Seq(
-  "org.anormcypher" %% "anormcypher" % "0.6.0",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "com.mohiva" %% "play-silhouette" % "3.0.0-RC1",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0-RC1" % "test",
@@ -25,7 +23,8 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "octicons" % "2.2.3",
   specs2 % Test,
   cache,
-  filters
+  filters,
+  ws
 )
 
 scalacOptions in Test ++= Seq("-Yrangepos")

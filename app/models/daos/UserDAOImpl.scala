@@ -1,31 +1,31 @@
 package models.daos
 
 import java.util.UUID
+import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
-import org.anormcypher._
 import play.api.Play.current
 import play.api.Play
-import play.api.libs.json.Json
+import play.api.libs.json.{JsUndefined, Json}
+import play.api.libs.ws._
 
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Give access to the user object.
  */
-class UserDAOImpl extends UserDAO {
+class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
 
-  /**
-   * The list of users.
-   */
-  implicit val connection = Neo4jREST(
-    Play.configuration.getString("neo4j.server").get,
-    Play.configuration.getInt("neo4j.port").get,
-    Play.configuration.getString("neo4j.endpoint").get,
-    Play.configuration.getString("neo4j.username").get,
-    Play.configuration.getString("neo4j.password").get
-  )
+
+  val NEO4J_ENPOINT =
+    Play.configuration.getString("neo4j.server").get + ":" +
+    Play.configuration.getInt("neo4j.port").get +
+    Play.configuration.getString("neo4j.endpoint").get
+
+  val NEO4J_USER = Play.configuration.getString("neo4j.username").get
+
+  val NEO4J_PASSWORD = Play.configuration.getString("neo4j.password").get
 
   /**
    * Finds a user by its login info.
@@ -34,16 +34,18 @@ class UserDAOImpl extends UserDAO {
    * @return The found user or None if no user for the given login info could be found.
    */
   def find(loginInfo: LoginInfo) = {
-    val userRow = Cypher(
-      """
-        MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN
-        n.userID, n.loginInfo, n.firstName, n.lastName, n.fullName, n.email, n.avatarUrl
-      """)
-      .on("loginInfo" -> Json.stringify(Json.toJson(loginInfo)))
-      .apply()
-      .head
+    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
 
-    Future.successful(parseUserCypherRow(userRow))
+    buildNeo4JRequest(request).post(Json.obj(
+      "statements" -> Json.arr(
+        Json.obj(
+          "statement" -> """MATCH (n:User) WHERE n.LoginInfo = {LoginInfo} RETURN n""",
+          "parameters" -> Json.obj(
+            "LoginInfo" -> Json.stringify(Json.toJson(loginInfo))
+          )
+        )
+      )
+    )).map(res => parseNeoUser(res))
   }
 
   /**
@@ -53,16 +55,18 @@ class UserDAOImpl extends UserDAO {
    * @return The found user or None if no user for the given ID could be found.
    */
   def find(userID: UUID) = {
-    val userRow = Cypher(
-      """
-        MATCH (n:User) WHERE n.userID = {userID} RETURN
-        n.userID, n.loginInfo, n.firstName, n.lastName, n.fullName, n.email, n.avatarUrl
-      """)
-      .on("userID" -> userID.toString)
-      .apply()
-      .head
+    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
 
-    Future.successful(parseUserCypherRow(userRow))
+    buildNeo4JRequest(request).post(Json.obj(
+      "statements" -> Json.arr(
+        Json.obj(
+          "statement" -> """MATCH (n:User) WHERE n.userID = {userID} RETURN n""",
+          "parameters" -> Json.obj(
+            "userID" -> userID.toString
+          )
+        )
+      )
+    )).map(res => parseNeoUser(res))
   }
 
   /**
@@ -72,47 +76,48 @@ class UserDAOImpl extends UserDAO {
    * @return The saved user.
    */
   def save(user: User) = {
-    Cypher(
-      """
-        CREATE (n:User {params
 
-        userID: {userID},
-        loginInfo: {loginInfo},
-        firstName: {firstName},
-        lastName: {lastName},
-        fullName: {fullName},
-        email: {email},
-        avatarUrl: {avatarUrl}
+    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
 
+    buildNeo4JRequest(request).post(Json.obj(
+      "statements" -> Json.arr(
+        Json.obj(
+          "statement" -> """CREATE (n:User {props}) RETURN n""",
+          "parameters" -> Json.obj(
+            "props" ->Json.obj(
+              "userID" -> user.userID.toString,
+              "loginInfo" -> Json.stringify(Json.toJson(user.loginInfo)),
+              "fullName" -> user.fullName,
+              "email" -> user.email,
+              "avatarUrl" -> user.avatarURL
+            )
+          )
         )
-      """)
-      .on(
-        "userID" -> user.userID.toString,
-        "loginInfo" -> Json.stringify(Json.toJson(user.loginInfo)),
-        "firstName" -> user.firstName,
-        "lastName" -> user.lastName,
-        "fullName" -> user.fullName,
-        "email" -> user.email,
-        "avatarUrl" -> user.avatarURL
-      ).execute()
-    Future.successful(user)
+      )
+    )).map(response => {
+      response.status match {
+        case 200 => user
+        case _ => throw new Exception("A user could not be saved - " + response.toString)
+      }
+    })
   }
 
-  /**
-   * Parses a User row result from the neo4j database into a User object
-   *
-   * @param userRow row result returned by the Cypher query
-   * @return The parsed user
-   */
-  def parseUserCypherRow(userRow: CypherResultRow) = {
-    Some(User(
-      UUID.fromString(userRow[String]("userID")),
-      Json.fromJson[LoginInfo](Json.parse(userRow[String]("loginInfo"))).get,
-      Some(userRow[String]("firstName")),
-      Some(userRow[String]("lastName")),
-      Some(userRow[String]("fullName")),
-      Some(userRow[String]("email")),
-      Some(userRow[String]("avatarUrl"))
-    ))
+  def parseNeoUser(response: WSResponse) = {
+    val neoResp = Json.parse(response.body)
+    (((neoResp \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _ : JsUndefined => None
+      case user => Some(User(
+        UUID.fromString((user \ "userID").as[String]),
+        LoginInfo((user \ "loginInfo" \ "providerID").as[String], (user \ "loginInfo" \ "providerKey").as[String]),
+        (user \ "fullName").asOpt[String],
+        (user \ "email").asOpt[String],
+        (user \ "avatarUrl").asOpt[String]
+      ))
+    }
   }
+
+  def buildNeo4JRequest(req: WSRequest) = req
+      .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
+      .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
+      .withRequestTimeout(10000)
 }
