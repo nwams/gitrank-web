@@ -1,4 +1,8 @@
 machine:
+  pre:
+    - sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.6.2-circleci'; sudo chmod 0755 /usr/bin/docker; true
+  services:
+    - docker
   java:
     version: oraclejdk8
 
@@ -19,3 +23,12 @@ test:
     - sbt codacyCoverage
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/target/test-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+deployment:
+  hub:
+    branch: master
+    commands:
+      - docker version
+      - docker login -e $DOCKERHUB_MAIL -p $DOCKERHUB_PASSWORD -u $DOCKERHUB_LOGIN
+      - docker info
+      - sbt docker:publish
