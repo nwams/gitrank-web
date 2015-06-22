@@ -3,6 +3,8 @@ package models
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /**
  * The user object.
@@ -19,3 +21,13 @@ case class User(
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String]) extends Identity
+
+object User {
+  implicit val userWrites: Writes[User] = (
+    (JsPath \ "userID").write[UUID] and
+    (JsPath \ "loginInfo").write[LoginInfo] and
+    (JsPath \ "fullName").writeNullable[String] and
+    (JsPath \ "email").writeNullable[String] and
+    (JsPath \ "avatarURL").writeNullable[String]
+    )(unlift(User.unapply))
+}

@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
 import play.api.Play.current
 import play.api.Play
-import play.api.libs.json.{JsUndefined, Json}
+import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,9 +39,9 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
     buildNeo4JRequest(request).post(Json.obj(
       "statements" -> Json.arr(
         Json.obj(
-          "statement" -> """MATCH (n:User) WHERE n.LoginInfo = {LoginInfo} RETURN n""",
+          "statement" -> """MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n""",
           "parameters" -> Json.obj(
-            "LoginInfo" -> Json.stringify(Json.toJson(loginInfo))
+            "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
           )
         )
       )
@@ -79,43 +79,60 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
 
     val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
 
+    val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
+    val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
+
     buildNeo4JRequest(request).post(Json.obj(
       "statements" -> Json.arr(
         Json.obj(
           "statement" -> """CREATE (n:User {props}) RETURN n""",
           "parameters" -> Json.obj(
-            "props" ->Json.obj(
-              "userID" -> user.userID.toString,
-              "loginInfo" -> Json.stringify(Json.toJson(user.loginInfo)),
-              "fullName" -> user.fullName,
-              "email" -> user.email,
-              "avatarUrl" -> user.avatarURL
-            )
+            "props" -> jsonToSend
           )
         )
       )
     )).map(response => {
       response.status match {
-        case 200 => user
+        case 200 => {
+          val json = Json.parse(response.body)
+          if ((json \\ "errors").toList.isEmpty){
+            throw new Exception(response.body)
+          }
+          user
+        }
         case _ => throw new Exception("A user could not be saved - " + response.toString)
       }
     })
   }
 
+  /**
+   * Parses a WsResponse to get a unique user out of it.
+   *
+   * @param response response object
+   * @return The parsed user.
+   */
   def parseNeoUser(response: WSResponse) = {
     val neoResp = Json.parse(response.body)
     (((neoResp \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _ : JsUndefined => None
-      case user => Some(User(
-        UUID.fromString((user \ "userID").as[String]),
-        LoginInfo((user \ "loginInfo" \ "providerID").as[String], (user \ "loginInfo" \ "providerKey").as[String]),
-        (user \ "fullName").asOpt[String],
-        (user \ "email").asOpt[String],
-        (user \ "avatarUrl").asOpt[String]
-      ))
+      case user => {
+        val loginInfo = (user \ "loginInfo").as[String]
+        Some(User(
+          UUID.fromString((user \ "userID").as[String]),
+          LoginInfo(loginInfo.substring(0, loginInfo.indexOf(":")), loginInfo.substring(loginInfo.indexOf(":")+1, loginInfo.length - 1)),
+          (user \ "fullName").asOpt[String],
+          (user \ "email").asOpt[String],
+          (user \ "avatarUrl").asOpt[String]
+        ))
+      }
     }
   }
 
+  /**
+   * Builds a request to be sent to the neo4J database
+   * @param req request to be modified
+   * @return modified request
+   */
   def buildNeo4JRequest(req: WSRequest) = req
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
