@@ -1,6 +1,8 @@
 machine:
   java:
     version: oraclejdk8
+  services:
+    - neo4j
 
 notify:
   webhooks:
