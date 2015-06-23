@@ -9,6 +9,11 @@ import play.api.libs.ws.{WSAuthScheme, WSRequest, WSClient}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+/**
+ * Class to generate requests to the neo4j database and get the results.
+ *
+ * @param ws injected WS play service
+ */
 class neo4j @Inject() (ws: WSClient){
 
   val NEO4J_ENPOINT =

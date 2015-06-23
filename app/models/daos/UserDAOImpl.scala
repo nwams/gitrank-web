@@ -24,7 +24,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
   def find(loginInfo: LoginInfo) = {
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
-    )).map(res => parseNeoUser(res))
+    )).map(parseNeoUser)
   }
 
   /**
@@ -36,7 +36,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
   def find(userID: UUID) = {
     neo.cypher("MATCH (n:User) WHERE n.userID = {userID} RETURN n", Json.obj(
       "userID" -> userID.toString
-    )).map(res => parseNeoUser(res))
+    )).map(parseNeoUser)
   }
 
   /**
@@ -62,8 +62,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
    * @return The parsed user.
    */
   def parseNeoUser(response: WSResponse) = {
-    val neoResp = Json.parse(response.body)
-    (((neoResp \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _ : JsUndefined => None
       case user => {
         val loginInfo = (user \ "loginInfo").as[String]
