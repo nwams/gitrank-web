@@ -5,8 +5,6 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
-import play.api.Play.current
-import play.api.Play
 import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
@@ -15,17 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Give access to the user object.
  */
-class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
-
-
-  val NEO4J_ENPOINT =
-    Play.configuration.getString("neo4j.server").get + ":" +
-    Play.configuration.getInt("neo4j.port").get +
-    Play.configuration.getString("neo4j.endpoint").get
-
-  val NEO4J_USER = Play.configuration.getString("neo4j.username").get
-
-  val NEO4J_PASSWORD = Play.configuration.getString("neo4j.password").get
+class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
 
   /**
    * Finds a user by its login info.
@@ -34,17 +22,8 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
    * @return The found user or None if no user for the given login info could be found.
    */
   def find(loginInfo: LoginInfo) = {
-    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
-
-    buildNeo4JRequest(request).post(Json.obj(
-      "statements" -> Json.arr(
-        Json.obj(
-          "statement" -> """MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n""",
-          "parameters" -> Json.obj(
-            "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
-          )
-        )
-      )
+    neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
+      "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
     )).map(res => parseNeoUser(res))
   }
 
@@ -55,17 +34,8 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
    * @return The found user or None if no user for the given ID could be found.
    */
   def find(userID: UUID) = {
-    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
-
-    buildNeo4JRequest(request).post(Json.obj(
-      "statements" -> Json.arr(
-        Json.obj(
-          "statement" -> """MATCH (n:User) WHERE n.userID = {userID} RETURN n""",
-          "parameters" -> Json.obj(
-            "userID" -> userID.toString
-          )
-        )
-      )
+    neo.cypher("MATCH (n:User) WHERE n.userID = {userID} RETURN n", Json.obj(
+      "userID" -> userID.toString
     )).map(res => parseNeoUser(res))
   }
 
@@ -77,32 +47,12 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
    */
   def save(user: User) = {
 
-    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
-
     val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
     val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
 
-    buildNeo4JRequest(request).post(Json.obj(
-      "statements" -> Json.arr(
-        Json.obj(
-          "statement" -> """CREATE (n:User {props}) RETURN n""",
-          "parameters" -> Json.obj(
-            "props" -> jsonToSend
-          )
-        )
-      )
-    )).map(response => {
-      response.status match {
-        case 200 => {
-          val json = Json.parse(response.body)
-          if ((json \\ "errors").toList.isEmpty){
-            throw new Exception(response.body)
-          }
-          user
-        }
-        case _ => throw new Exception("A user could not be saved - " + response.toString)
-      }
-    })
+    neo.cypher("CREATE (n:User {props}) RETURN n", Json.obj(
+      "props" -> jsonToSend
+    )).map(response => user)
   }
 
   /**
@@ -127,14 +77,4 @@ class UserDAOImpl @Inject() (ws: WSClient) extends UserDAO {
       }
     }
   }
-
-  /**
-   * Builds a request to be sent to the neo4J database
-   * @param req request to be modified
-   * @return modified request
-   */
-  def buildNeo4JRequest(req: WSRequest) = req
-      .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
-      .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
-      .withRequestTimeout(10000)
 }
