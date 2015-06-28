@@ -4,6 +4,8 @@ organization := "gitlinks"
 
 version := "1.0-SNAPSHOT"
 
+maintainer := "Nicolas Joseph <nicolas@nicolasjoseph.com>"
+
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.6"
@@ -41,3 +43,11 @@ scalacOptions ++= Seq(
   "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
   "-Ywarn-numeric-widen" // Warn when numerics are widened.
 )
+
+enablePlugins(JavaServerAppPackaging)
+
+dockerBaseImage := "colisweb/debian-oracle-java8"
+
+dockerRepository := Some("gitlinks")
+
+dockerUpdateLatest := true
