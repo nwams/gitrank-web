@@ -9,6 +9,7 @@ import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Give access to the user object.
@@ -21,7 +22,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
    * @param loginInfo The login info of the user to find.
    * @return The found user or None if no user for the given login info could be found.
    */
-  def find(loginInfo: LoginInfo) = {
+  def find(loginInfo: LoginInfo): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
     )).map(parseNeoUser)
@@ -33,7 +34,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
    * @param userID The ID of the user to find.
    * @return The found user or None if no user for the given ID could be found.
    */
-  def find(userID: UUID) = {
+  def find(userID: UUID): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE n.userID = {userID} RETURN n", Json.obj(
       "userID" -> userID.toString
     )).map(parseNeoUser)
@@ -45,7 +46,7 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User) = {
+  def save(user: User): Future[User] = {
 
     val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
     val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
@@ -61,14 +62,15 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
    * @param response response object
    * @return The parsed user.
    */
-  def parseNeoUser(response: WSResponse) = {
+  def parseNeoUser(response: WSResponse): Option[User] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _ : JsUndefined => None
+      case _: JsUndefined => None
       case user => {
         val loginInfo = (user \ "loginInfo").as[String]
+        val logInfo = loginInfo.split(":")
         Some(User(
           UUID.fromString((user \ "userID").as[String]),
-          LoginInfo(loginInfo.substring(0, loginInfo.indexOf(":")), loginInfo.substring(loginInfo.indexOf(":")+1, loginInfo.length - 1)),
+          LoginInfo(logInfo(0), logInfo(1)),
           (user \ "fullName").asOpt[String],
           (user \ "email").asOpt[String],
           (user \ "avatarUrl").asOpt[String]

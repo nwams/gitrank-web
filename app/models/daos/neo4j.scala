@@ -4,10 +4,11 @@ import javax.inject.Inject
 
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{Json, JsObject}
-import play.api.libs.ws.{WSAuthScheme, WSRequest, WSClient}
+import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Class to generate requests to the neo4j database and get the results.
@@ -16,13 +17,29 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 class neo4j @Inject() (ws: WSClient){
 
-  val NEO4J_ENPOINT =
+  val NEO4J_ENDPOINT =
     Play.configuration.getString("neo4j.server").getOrElse("http://localhost") + ":" +
       Play.configuration.getInt("neo4j.port").getOrElse("7474") +
       Play.configuration.getString("neo4j.endpoint").getOrElse("/db/data/")
 
   val NEO4J_USER = Play.configuration.getString("neo4j.username").getOrElse("neo4j")
   val NEO4J_PASSWORD = Play.configuration.getString("neo4j.password").getOrElse("neo4j")
+
+  ws.url(NEO4J_ENDPOINT)
+    .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
+    .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
+    .withRequestTimeout(10000)
+    .get()
+    .map(res => {
+    res.status match {
+      case 200 =>
+        val json = Json.parse(res.body)
+        if ((json \ "errors").as[Seq[JsObject]].nonEmpty) {
+          throw new Exception(res.body)
+        }
+      case _ => throw new Exception("Could not Connect to the Neo4j Database")
+    }
+  })
 
   /**
    * Sends a Cypher query to the neo4j server
@@ -31,8 +48,8 @@ class neo4j @Inject() (ws: WSClient){
    * @param parameters parameter object to be used by the query. (See Cypher reference for more details)
    * @return
    */
-  def cypher(query: String, parameters: JsObject) = {
-    val request: WSRequest = ws.url(NEO4J_ENPOINT + "transaction/commit")
+  def cypher(query: String, parameters: JsObject): Future[WSResponse] = {
+    val request: WSRequest = ws.url(NEO4J_ENDPOINT + "transaction/commit")
 
     buildNeo4JRequest(request).post(Json.obj(
       "statements" -> Json.arr(
@@ -43,13 +60,12 @@ class neo4j @Inject() (ws: WSClient){
       )
     )).map(response => {
       response.status match {
-        case 200 => {
+        case 200 =>
           val json = Json.parse(response.body)
-          if ((json \\ "errors").toList.isEmpty) {
+          if ((json \ "errors").as[Seq[JsObject]].nonEmpty) {
             throw new Exception(response.body)
           }
           response
-        }
         case _ => throw new Exception(response.body)
       }
     })
@@ -60,7 +76,7 @@ class neo4j @Inject() (ws: WSClient){
    * @param req request to be modified
    * @return modified request
    */
-  def buildNeo4JRequest(req: WSRequest) = req
+  def buildNeo4JRequest(req: WSRequest): WSRequest = req
       .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withRequestTimeout(10000)
