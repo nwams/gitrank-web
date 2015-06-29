@@ -3,14 +3,14 @@ package models
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
 
 /**
  * The user object.
  *
  * @param userID The unique ID of the user.
  * @param loginInfo The linked login info.
- * @param firstName Maybe the first name of the authenticated user.
- * @param lastName Maybe the last name of the authenticated user.
  * @param fullName Maybe the full name of the authenticated user.
  * @param email Maybe the email of the authenticated provider.
  * @param avatarURL Maybe the avatar URL of the authenticated provider.
@@ -18,9 +18,16 @@ import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
 case class User(
                  userID: UUID,
                  loginInfo: LoginInfo,
-                 firstName: Option[String],
-                 lastName: Option[String],
                  fullName: Option[String],
                  email: Option[String],
-                 karma: Int,
                  avatarURL: Option[String]) extends Identity
+
+object User {
+  implicit val userWrites: Writes[User] = (
+    (JsPath \ "userID").write[UUID] and
+    (JsPath \ "loginInfo").write[LoginInfo] and
+    (JsPath \ "fullName").writeNullable[String] and
+    (JsPath \ "email").writeNullable[String] and
+    (JsPath \ "avatarURL").writeNullable[String]
+    )(unlift(User.unapply))
+}
