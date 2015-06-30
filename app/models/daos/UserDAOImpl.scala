@@ -73,7 +73,8 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
           LoginInfo(logInfo(0), logInfo(1)),
           (user \ "fullName").asOpt[String],
           (user \ "email").asOpt[String],
-          (user \ "avatarUrl").asOpt[String]
+          (user \ "avatarUrl").asOpt[String],
+          (user \ "karma").as[Int]
         ))
       }
     }
