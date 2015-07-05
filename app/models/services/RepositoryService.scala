@@ -18,7 +18,7 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
    * @param addedLines number of added lines to the repo
    * @param removedLines number of deleted lines from the repo
    * @param score score of the repo
-   * @return the saved user
+   * @return the saved Repository
    */
   def save(name: String, addedLines: Option[Int], removedLines: Option[Int], score: Option[Int]): Future[Repository] = {
     repoDAO.find(name).flatMap({
@@ -34,7 +34,7 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
           addedLines = addedLines.getOrElse(0),
           removedLines = removedLines.getOrElse(0),
           name = name,
-          score = 0
+          score = score.getOrElse(0)
         ))
     })
   }
