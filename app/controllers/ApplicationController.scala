@@ -16,7 +16,7 @@ import scala.concurrent.Future
  *
  * @param messagesApi The Play messages API.
  * @param env The Silhouette environment.
- * @param socialProviderRegistry The social provider registry.
+ * @param gitHubProvider The social provider registry.
  */
 class ApplicationController @Inject() (
                                         val messagesApi: MessagesApi,
