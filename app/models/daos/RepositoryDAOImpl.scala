@@ -64,6 +64,7 @@ class RepositoryDAOImpl @Inject() (neo: neo4j) extends RepositoryDAO{
           UUID.fromString((repo \ "repoID").as[String]),
           (repo \ "addedLines").as[Int],
           (repo \ "removedLines").as[Int],
+          (repo \ "karmaWeight").as[Int],
           (repo \ "name").as[String],
           (repo \ "score").as[Int]
         ))
