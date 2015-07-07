@@ -54,6 +54,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO, contributionDAO: Contribution
         userDAO.save(User(
           userID = UUID.randomUUID(),
           loginInfo = profile.loginInfo,
+          username = Some(""),
           fullName = profile.fullName,
           email = profile.email,
           avatarURL = profile.avatarURL,
