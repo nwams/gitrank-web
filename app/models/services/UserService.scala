@@ -2,7 +2,7 @@ package models.services
 
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import models.User
+import models.{Contribution, User}
 
 import scala.concurrent.Future
 
@@ -28,4 +28,15 @@ trait UserService extends IdentityService[User] {
    * @return The user for whom the profile was saved.
    */
   def save(profile: CommonSocialProfile): Future[User]
+
+  /**
+   * Adds a contribution for a user to a repository. If the user has already contributed to the repository, it adds
+   * the new added lines and removed lines to the existing contribution and updates the timestamp.
+   *
+   * @param username name of the contributing user
+   * @param repoName name of the repository he contributes to.
+   * @param contribution contribution to be saved.
+   * @return
+   */
+  def addContribution(username: String, repoName: String, contribution: Contribution): Future[Contribution]
 }

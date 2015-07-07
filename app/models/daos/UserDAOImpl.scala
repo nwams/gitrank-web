@@ -4,7 +4,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
+import models.daos.drivers.neo4j
+import models.{Contribution, User}
 import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
