@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class RepositoryDAO @Inject() (neo: neo4j) extends RepositoryDAO{
+class RepositoryDAO @Inject() (neo: neo4j) {
 
   /**
    * Finds a Repository by its name.

@@ -58,7 +58,7 @@ class ContributionDAO @Inject() (neo: neo4j){
   }
 
   /**
-   * Overides an existing contribution relationship with the one provided. If the username or the repository doesn't exist. This doesn't do
+   * Overrides an existing contribution relationship with the one provided. If the username or the repository doesn't exist. This doesn't do
    * anything and returns None.
    *
    * @param username name of the user who made the contribution

@@ -5,8 +5,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import models.{Contribution, User}
-import models.daos.{ContributionDAO, UserDAO}
+import models.{Score, Contribution, User}
+import models.daos.{ScoreDAO, ContributionDAO, UserDAO}
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
@@ -16,7 +16,9 @@ import scala.concurrent.Future
  *
  * @param userDAO The user DAO implementation.
  */
-class UserServiceImpl @Inject() (userDAO: UserDAO, contributionDAO: ContributionDAO) extends UserService {
+class UserServiceImpl @Inject() (userDAO: UserDAO,
+                                 contributionDAO: ContributionDAO,
+                                 scoreDAO: ScoreDAO) extends UserService {
 
   /**
    * Retrieves a user that matches the specified login info.
@@ -83,4 +85,14 @@ class UserServiceImpl @Inject() (userDAO: UserDAO, contributionDAO: Contribution
       case None => contributionDAO.add(username, repoName, contribution)
     }
   }
+
+  /**
+   * Adds a score to the repository from the given user
+   *
+   * @param username username of the user that scored the repository
+   * @param repoName name of the repository that was scored
+   * @param score score to be saved.
+   * @return saved score.
+   */
+  def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] = scoreDAO.save(username, repoName, score)
 }
