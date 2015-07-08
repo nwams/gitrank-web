@@ -38,5 +38,5 @@ trait UserService extends IdentityService[User] {
    * @param contribution contribution to be saved.
    * @return
    */
-  def addContribution(username: String, repoName: String, contribution: Contribution): Future[Contribution]
+  def addContribution(username: String, repoName: String, contribution: Contribution):  Future[Option[Contribution]]
 }

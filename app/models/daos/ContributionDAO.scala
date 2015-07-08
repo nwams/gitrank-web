@@ -8,6 +8,7 @@ import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ContributionDAO @Inject() (neo: neo4j){
 
