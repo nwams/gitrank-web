@@ -20,7 +20,7 @@ import play.api.libs.functional.syntax._
 case class User(
                  userID: UUID,
                  loginInfo: LoginInfo,
-                 username: Option[String],
+                 username: String,
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String],
@@ -30,7 +30,7 @@ object User {
   implicit val userWrites: Writes[User] = (
     (JsPath \ "userID").write[UUID] and
     (JsPath \ "loginInfo").write[LoginInfo] and
-    (JsPath \ "username").writeNullable[String] and
+    (JsPath \ "username").write[String] and
     (JsPath \ "fullName").writeNullable[String] and
     (JsPath \ "email").writeNullable[String] and
     (JsPath \ "avatarURL").writeNullable[String] and
