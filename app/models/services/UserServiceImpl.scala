@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import models.{Score, Contribution, User}
 import models.daos.{ScoreDAO, ContributionDAO, UserDAO}
+import modules.CustomSocialProfile
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
@@ -44,7 +45,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO,
    * @param profile The social profile to save.
    * @return The user for whom the profile was saved.
    */
-  def save(profile: CommonSocialProfile) = {
+  def save(profile: CustomSocialProfile) = {
     userDAO.find(profile.loginInfo).flatMap {
       case Some(user) => // Update user with profile
         userDAO.save(user.copy(
@@ -54,9 +55,8 @@ class UserServiceImpl @Inject() (userDAO: UserDAO,
         ))
       case None => // Insert a new user
         userDAO.save(User(
-          userID = UUID.randomUUID(),
           loginInfo = profile.loginInfo,
-          username = profile.loginInfo.providerKey,
+          username = profile.username,
           fullName = profile.fullName,
           email = profile.email,
           avatarURL = profile.avatarURL,

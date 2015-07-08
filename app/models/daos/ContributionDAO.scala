@@ -3,14 +3,14 @@ package models.daos
 import javax.inject.Inject
 
 import models.Contribution
-import models.daos.drivers.neo4j
+import models.daos.drivers.Neo4J
 import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ContributionDAO @Inject() (neo: neo4j){
+class ContributionDAO @Inject() (neo: Neo4J){
 
   /**
    * Finds a contribution in the data store.

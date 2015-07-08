@@ -15,7 +15,7 @@ import scala.concurrent.Future
  *
  * @param ws injected WS play service
  */
-class neo4j @Inject() (ws: WSClient){
+class Neo4J @Inject() (ws: WSClient){
 
   val NEO4J_ENDPOINT =
     Play.configuration.getString("neo4j.server").getOrElse("http://localhost") + ":" +

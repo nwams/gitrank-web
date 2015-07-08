@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.api.{ Environment, EventBus }
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{ CookieStateProvider, CookieStateSettings }
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
@@ -61,17 +60,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
       Seq(),
       eventBus
     )
-  }
-
-  /**
-   * Provides the social provider registry.
-   *
-   * @param gitHubProvider The Github provider implementation.
-   * @return The Silhouette environment.
-   */
-  @Provides
-  def provideSocialProviderRegistry(gitHubProvider: GitHubProvider): SocialProviderRegistry = {
-    SocialProviderRegistry(Seq(gitHubProvider))
   }
 
   /**
@@ -137,8 +125,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Facebook provider.
    */
   @Provides
-  def provideGithubProvider(httpLayer: HTTPLayer, stateProvider: OAuth2StateProvider): GitHubProvider = {
-    new GitHubProvider(httpLayer, stateProvider, OAuth2Settings(
+  def provideGitHubProvider(httpLayer: HTTPLayer, stateProvider: OAuth2StateProvider): CustomGitHubProvider = {
+    new CustomGitHubProvider(httpLayer, stateProvider, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
       accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").get,
       redirectURL = Play.configuration.getString("silhouette.github.redirectURL").get,

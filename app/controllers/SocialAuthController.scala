@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import models.User
 import models.services.UserService
+import modules.{CustomGitHubProvider, CustomSocialProfile}
 import play.api.i18n.{ MessagesApi, Messages }
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
@@ -22,14 +23,14 @@ import scala.concurrent.Future
  * @param env The Silhouette environment.
  * @param userService The user service implementation.
  * @param authInfoRepository The auth info service implementation.
- * @param socialProviderRegistry The social provider registry.
+ * @param gitHubProvider GitHub Provider
  */
 class SocialAuthController @Inject() (
                                        val messagesApi: MessagesApi,
                                        val env: Environment[User, SessionAuthenticator],
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
-                                       socialProviderRegistry: SocialProviderRegistry)
+                                       gitHubProvider: CustomGitHubProvider)
   extends Silhouette[User, SessionAuthenticator] with Logger {
 
   /**
@@ -39,27 +40,19 @@ class SocialAuthController @Inject() (
    * @return The result to display.
    */
   def authenticate(provider: String) = Action.async { implicit request =>
-    (socialProviderRegistry.get(provider) match {
-      case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
-        p.authenticate().flatMap {
-          case Left(result) => Future.successful(result)
-          case Right(authInfo) => for {
-            profile <- p.retrieveProfile(authInfo)
-            user <- userService.save(profile)
-            authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
-            authenticator <- env.authenticatorService.create(profile.loginInfo)
-            value <- env.authenticatorService.init(authenticator)
-            result <- env.authenticatorService.embed(value, Redirect(routes.ApplicationController.index()))
-          } yield {
-              env.eventBus.publish(LoginEvent(user, request, request2Messages))
-              result
-            }
+    gitHubProvider.authenticate().flatMap {
+      case Left(result) => Future.successful(result)
+      case Right(authInfo) => for {
+        profile <- gitHubProvider.retrieveProfile(authInfo)
+        user <- userService.save(profile)
+        authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
+        authenticator <- env.authenticatorService.create(profile.loginInfo)
+        value <- env.authenticatorService.init(authenticator)
+        result <- env.authenticatorService.embed(value, Redirect(routes.ApplicationController.index()))
+      } yield {
+          env.eventBus.publish(LoginEvent(user, request, request2Messages))
+          result
         }
-      case _ => Future.failed(new ProviderException(s"Cannot authenticate with unexpected social provider $provider"))
-    }).recover {
-      case e: ProviderException =>
-        logger.error("Unexpected provider error", e)
-        Redirect(routes.ApplicationController.index()).flashing("error" -> Messages("could.not.authenticate"))
     }
   }
 }

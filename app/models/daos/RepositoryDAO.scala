@@ -3,7 +3,7 @@ package models.daos
 import java.util.UUID
 import javax.inject.Inject
 
-import models.daos.drivers.neo4j
+import models.daos.drivers.Neo4J
 import play.api.libs.json.{JsUndefined, Json}
 
 import models.Repository
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class RepositoryDAO @Inject() (neo: neo4j) {
+class RepositoryDAO @Inject() (neo: Neo4J) {
 
   /**
    * Finds a Repository by its name.

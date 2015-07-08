@@ -1,6 +1,6 @@
-@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
+@import modules.CustomGitHubProvider
 
-@(gitHubProvider: GitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
 
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container">

@@ -3,7 +3,7 @@ package models.daos
 import javax.inject.Inject
 
 import models.Score
-import models.daos.drivers.neo4j
+import models.daos.drivers.Neo4J
 import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class ScoreDAO @Inject() (neo: neo4j){
+class ScoreDAO @Inject() (neo: Neo4J){
 
   /**
    * Saves a score into the data store.
