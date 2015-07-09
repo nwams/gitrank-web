@@ -9,6 +9,7 @@ import models.{Score, Contribution, User}
 import models.daos.{ScoreDAO, ContributionDAO, UserDAO}
 import modules.CustomSocialProfile
 import play.api.libs.concurrent.Execution.Implicits._
+import thirdPartyAPIs.GitHubAPI
 
 import scala.concurrent.Future
 
@@ -17,7 +18,8 @@ import scala.concurrent.Future
  *
  * @param userDAO The user DAO implementation.
  */
-class UserServiceImpl @Inject() (userDAO: UserDAO,
+class UserServiceImpl @Inject() (gitHubAPi: GitHubAPI,
+                                 userDAO: UserDAO,
                                  contributionDAO: ContributionDAO,
                                  scoreDAO: ScoreDAO) extends UserService {
 
@@ -53,7 +55,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO,
           email = profile.email,
           avatarURL = profile.avatarURL
         ))
-      case None => // Insert a new user
+      case None => // Insert a new use
         userDAO.save(User(
           loginInfo = profile.loginInfo,
           username = profile.username,

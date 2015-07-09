@@ -73,6 +73,7 @@ class Neo4J @Inject() (ws: WSClient){
 
   /**
    * Builds a request to be sent to the neo4J database
+   *
    * @param req request to be modified
    * @return modified request
    */

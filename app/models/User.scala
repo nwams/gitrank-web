@@ -6,6 +6,10 @@ import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
+trait Identifiable {
+  def loginInfo: LoginInfo
+}
+
 /**
  * The user object.
  *
@@ -22,7 +26,7 @@ case class User(
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String],
-                 karma: Int) extends Identity
+                 karma: Int) extends Identity with Identifiable
 
 object User {
   implicit val userWrites: Writes[User] = (
@@ -34,3 +38,7 @@ object User {
     (JsPath \ "karma").write[Int]
     )(unlift(User.unapply))
 }
+
+case class Contributor(
+                        user: User,
+                        contributions: Seq[Contribution])
