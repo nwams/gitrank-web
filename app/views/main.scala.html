@@ -1,6 +1,6 @@
-@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
+@import modules.CustomGitHubProvider
 
-@(title: String, gitHubProvider: GitHubProvider, user: Option[models.User] = None)(content: Html)(implicit request: RequestHeader)
+@(title: String, gitHubProvider: CustomGitHubProvider, user: Option[models.User] = None)(content: Html)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 

@@ -1,5 +1,5 @@
-@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
-@(gitHubProvider: GitHubProvider, user: Option[models.User])(implicit request: RequestHeader)
+@import modules.CustomGitHubProvider
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(implicit request: RequestHeader)
 
 @main("GitRank - Home", gitHubProvider, user) {
     <!-- HTML Here -->

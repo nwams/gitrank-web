@@ -1,10 +1,10 @@
-package models.daos
+package models.daos.drivers
 
 import javax.inject.Inject
 
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,7 +15,7 @@ import scala.concurrent.Future
  *
  * @param ws injected WS play service
  */
-class neo4j @Inject() (ws: WSClient){
+class Neo4J @Inject() (ws: WSClient){
 
   val NEO4J_ENDPOINT =
     Play.configuration.getString("neo4j.server").getOrElse("http://localhost") + ":" +
@@ -73,6 +73,7 @@ class neo4j @Inject() (ws: WSClient){
 
   /**
    * Builds a request to be sent to the neo4J database
+   *
    * @param req request to be modified
    * @return modified request
    */

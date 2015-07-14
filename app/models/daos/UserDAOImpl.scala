@@ -4,7 +4,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
+import models.daos.drivers.Neo4J
+import models.{Contribution, User}
 import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
@@ -14,7 +15,7 @@ import scala.concurrent.Future
 /**
  * Give access to the user object.
  */
-class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
+class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
 
   /**
    * Finds a user by its login info.
@@ -69,8 +70,8 @@ class UserDAOImpl @Inject() (neo: neo4j) extends UserDAO {
         val loginInfo = (user \ "loginInfo").as[String]
         val logInfo = loginInfo.split(":")
         Some(User(
-          UUID.fromString((user \ "userID").as[String]),
           LoginInfo(logInfo(0), logInfo(1)),
+          (user \ "username").asOpt[String],
           (user \ "fullName").asOpt[String],
           (user \ "email").asOpt[String],
           (user \ "avatarUrl").asOpt[String],
