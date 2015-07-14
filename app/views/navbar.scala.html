@@ -1,6 +1,6 @@
-@import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
+@import modules.CustomGitHubProvider
 
-@(gitHubProvider: GitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
 
 <nav class="navbar navbar-default navbar-fixed-top">
     <div class="container">
@@ -12,7 +12,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="#">GitRank</a>
+            <a class="navbar-brand" href="#"><b>Git</b>Rank</a>
         </div>
 
             <!-- Collect the nav links, forms, and other content for toggling -->

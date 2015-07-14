@@ -3,7 +3,7 @@ package models.daos
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
+import models.{Contribution, User}
 
 import scala.concurrent.Future
 
