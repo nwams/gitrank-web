@@ -3,7 +3,7 @@ package models.services
 import java.util.UUID
 import javax.inject.Inject
 
-import models.Repository
+import models.{Contributor, Repository}
 import models.daos.RepositoryDAO
 
 import scala.concurrent.Future
@@ -50,10 +50,18 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
   def retrieve(name: String): Future[Option[Repository]] = repoDAO.find(name)
 
   /**
-   * Retrives a repository according to its UUID
+   * Retrieves a repository according to its UUID
    *
    * @param repoId UUID of the repository to be retrieved.
    * @return
    */
   def retrieve(repoId: UUID): Future[Option[Repository]] = repoDAO.find(repoId)
+
+  /**
+   * Gets all the contributors for a given repository with all their contributions
+   *
+   * @param repoName name of the repository to look for
+   * @return A Sequence of contributors
+   */
+  def findContributors(repoName: String): Future[Option[Seq[Contributor]]] = repoDAO.findContributors(repoName)
 }

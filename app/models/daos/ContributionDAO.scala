@@ -4,8 +4,7 @@ import javax.inject.Inject
 
 import models.Contribution
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsUndefined, Json}
-import play.api.libs.ws.WSResponse
+import play.api.libs.json.Json
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,7 +29,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "username" -> username,
         "repoName" -> repoName
       )
-    ).map(parseNeoContribution)
+    ).map(neo.parseNeoContribution)
   }
 
   /**
@@ -55,7 +54,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName,
         "props" -> Json.toJson(contribution)
       )
-    ).map(parseNeoContribution)
+    ).map(neo.parseNeoContribution)
   }
 
   /**
@@ -80,19 +79,8 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName,
         "props" -> Json.toJson(contribution)
       )
-    ).map(parseNeoContribution)
+    ).map(neo.parseNeoContribution)
   }
 
-  /**
-   * Parses a neo4j response to get a Contribution out of it.
-   *
-   * @param response neo4j response
-   * @return parsed contribution or None
-   */
-  def parseNeoContribution(response: WSResponse): Option[Contribution] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case repo => repo.asOpt[Contribution]
-    }
-  }
+
 }
