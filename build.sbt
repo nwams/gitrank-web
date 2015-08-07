@@ -1,3 +1,5 @@
+import java.nio.file.{Paths, Files, StandardOpenOption}
+
 name := """gitrank-web"""
 
 organization := "gitlinks"
@@ -46,6 +48,24 @@ scalacOptions ++= Seq(
 )
 
 enablePlugins(JavaServerAppPackaging)
+
+lazy val addBuildNumber = TaskKey[Unit]("addBuildNumber", "Adds build number parameter to the conf file")
+
+addBuildNumber := {
+
+  val log = streams.value.log
+
+  log.info("Getting Build Number ...")
+
+  if (sys.env.contains("CIRCLE_BUILD_NUM")){
+    Files.write(Paths.get("conf/build.conf"), ("buildNumber=" + sys.env("CIRCLE_BUILD_NUM")).getBytes())
+    log.info("Running build #" + sys.env("CIRCLE_BUILD_NUM"))
+  } else {
+    log.info("No build number found, local version running ...")
+  }
+}
+
+compile in Compile <<= (compile in Compile).dependsOn(addBuildNumber)
 
 dockerBaseImage := "colisweb/debian-oracle-java8"
 
