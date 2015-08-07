@@ -55,7 +55,7 @@ addBuildNumber := {
 
   val log = streams.value.log
 
-  log.info("Getting Build Number ...")
+  log.info("Getting build number ...")
 
   if (sys.env.contains("CIRCLE_BUILD_NUM")){
     Files.write(Paths.get("conf/build.conf"), ("buildNumber=" + sys.env("CIRCLE_BUILD_NUM")).getBytes())
@@ -65,7 +65,7 @@ addBuildNumber := {
   }
 }
 
-compile in Compile <<= (compile in Compile).dependsOn(addBuildNumber)
+(test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 
 dockerBaseImage := "colisweb/debian-oracle-java8"
 
