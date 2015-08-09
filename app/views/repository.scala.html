@@ -1,0 +1,77 @@
+@import modules.CustomGitHubProvider
+
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository:String)(implicit request: RequestHeader)
+
+@main("GitRank - "+owner+"/"+repository, gitHubProvider, user) {
+
+    <div class="page-head">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-6">
+                    <span class="mega-octicon octicon-repo "></span>
+                    <a href="https://github.com/@owner">@owner</a>/<b><a href="https://github.com/@owner/@repository">@repository</a></b>
+                </div>
+                <div class="col-sm-6">
+                    <div class="pull-right">
+                        <div class="btn-group" role="group" aria-label="...">
+                            <button type="button" class="btn btn-primary">Score</button>
+                            <button type="button" class="btn btn-default disabled">4/5</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-10 col-sm-offset-1">
+                <div class="parcoords" id="scoreChart"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-10 col-sm-offset-1 ">
+                <div class="media">
+                    <div class="media-left media-top">
+                        <a href="#">
+                            <img src="http://api.adorable.io/avatars/56/thomas@@adorable.svg" class="img-circle media-object">
+                        </a>
+                    </div>
+                    <div class="media-body">
+                        <h5 class="media-heading">Thomas </h5>
+                        This is a feedback written for this repository. This project has a very good api. It is mature
+                        and doesn't feel laggy. Very efficient and powerful tool ! Keep it up !
+                    </div>
+                </div>
+                <div class="media">
+                    <div class="media-left media-top">
+                        <a href="#">
+                            <img src="http://api.adorable.io/avatars/56/jacob@@adorable.svg" class="img-circle media-object">
+                        </a>
+                    </div>
+                    <div class="media-body">
+                        <h5 class="media-heading">Jacob </h5>
+                        This is crap I think those guys coded with their feets when they started this thing. I don't know
+                        but I know I don't like it.
+                    </div>
+                </div>
+                <div class="media">
+                    <div class="media-left media-top">
+                        <a href="#">
+                            <img src="http://api.adorable.io/avatars/56/nicolas@@adorable.svg" class="img-circle media-object">
+                        </a>
+                    </div>
+                    <div class="media-body">
+                        <h5 class="media-heading">Nicolas </h5>
+                        It is alright
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="@routes.Assets.at("lib/d3/d3.min.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/d3.parcoords.js")" type="text/javascript"></script>
+    <script src="@routes.Assets.at("javascripts/repository.js")" type="text/javascript"></script>
+}

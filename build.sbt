@@ -26,6 +26,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.3.4",
   "org.webjars" % "bootswatch-paper" % "3.3.1+2",
   "org.webjars.bower" % "octicons" % "2.2.3",
+  "org.webjars" % "d3js" % "3.5.5-1",
   specs2 % Test,
   cache,
   filters,
