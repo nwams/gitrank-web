@@ -4,13 +4,13 @@
 
 $(document)
     .ready(function() {
-        var data = [
-            {Documentation: 4, Maturity: 4, Design: 2, Support: 0},
-            {Documentation: 2, Maturity: 4, Design: 1, Support: 0},
-            {Documentation: 1, Maturity: 4, Design: 3, Support: 1},
-            {Documentation: 4, Maturity: 4, Design: 3, Support: 2},
-            {Documentation: 3, Maturity: 4, Design: 4, Support: 0}
-        ];
+
+
+        var data = [];
+
+        for (var i = 0; i < 100 ; i++){
+            data.push({Documentation: Math.random() * 5, Maturity: Math.random() * 5, Design: Math.random() * 5, Support: Math.random() * 5})
+        }
 
         d3.parcoords()("#scoreChart")
             .data(data)
