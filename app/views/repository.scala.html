@@ -4,70 +4,125 @@
 
 @main("GitRank - "+owner+"/"+repository, gitHubProvider, user) {
 
-    <div class="page-head">
-        <div class="container">
+    <div class="ui container">
+
+        <div class="ui middle aligned grid">
             <div class="row">
-                <div class="col-sm-6">
-                    <span class="mega-octicon octicon-repo "></span>
-                    <a href="https://github.com/@owner">@owner</a>/<b><a href="https://github.com/@owner/@repository">@repository</a></b>
+                <div class="thirteen wide column">
+                    <h2 class="ui header">
+                        <i class="mega-octicon octicon-repo"></i>
+                        <div class="content">
+                            <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
+                        </div>
+                    </h2>
                 </div>
-                <div class="col-sm-6">
-                    <div class="pull-right">
-                        <div class="btn-group" role="group" aria-label="...">
-                            <button type="button" class="btn btn-primary">Score</button>
-                            <button type="button" class="btn btn-default disabled">4/5</button>
+                <div class="three wide column">
+                    <div class="ui statistic">
+                        <div class="value">
+                            4/5
+                        </div>
+                        <div class="label">
+                            Score
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div class="container">
-        <div class="row">
-            <div class="col-sm-10 col-sm-offset-1">
-                <div class="parcoords" id="scoreChart"></div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-sm-10 col-sm-offset-1 ">
-                <div class="media">
-                    <div class="media-left media-top">
-                        <a href="#">
-                            <img src="http://api.adorable.io/avatars/56/thomas@@adorable.svg" class="img-circle media-object">
+            <div class="row">
+                <div class="thirteen wide column">
+                    <div class="parcoords" id="scoreChart"></div>
+                </div>
+                <div class="three wide column">
+                    <div class="ui compact vertical labeled icon menu">
+                        <span class="item header">Feedback</span>
+                        <a class="item">
+                            <i class="plus icon"></i>
+                            Add
+                        </a>
+                        <span class="item header">Share</span>
+                        <a class="item">
+                            <i class="twitter icon"></i>
+                            Twitter
+                        </a>
+                        <a class="item">
+                            <i class="linkedin icon"></i>
+                            Linked In
                         </a>
                     </div>
-                    <div class="media-body">
-                        <h5 class="media-heading">Thomas </h5>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="ui comments feedback">
+            <h3 class="ui dividing header">Feedback</h3>
+            <div class="comment">
+                <a class="avatar">
+                    <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
+                </a>
+                <div class="content">
+                    <a class="author">Thomas</a>
+                    <div class="metadata">
+                        <span data-content="Karma" class="popup">345 <i class="fire icon"></i></span>
+                        <span class="date">Today at 5:42PM </span>
+                    </div>
+                    <div class="text">
                         This is a feedback written for this repository. This project has a very good api. It is mature
                         and doesn't feel laggy. Very efficient and powerful tool ! Keep it up !
                     </div>
-                </div>
-                <div class="media">
-                    <div class="media-left media-top">
-                        <a href="#">
-                            <img src="http://api.adorable.io/avatars/56/jacob@@adorable.svg" class="img-circle media-object">
-                        </a>
+                    <div class="actions">
+                        <span data-content="Documentation" class="popup">4 <i class="icon book"></i></span>
+                        <span data-content="Maturity" class="popup">3 <i class="icon leaf"></i></span>
+                        <span data-content="Design" class="popup">3 <i class="icon university"></i></span>
+                        <span data-content="Support" class="popup">5 <i  class="icon life ring"></i></span>
                     </div>
-                    <div class="media-body">
-                        <h5 class="media-heading">Jacob </h5>
+                </div>
+            </div>
+            <div class="comment">
+                <a class="avatar">
+                    <img src="http://api.adorable.io/avatars/285/jacob@@adorable.svg">
+                </a>
+                <div class="content">
+                    <a class="author">Jacob</a>
+                    <div class="metadata">
+                        <span data-content="Karma" class="popup">410 <i class="fire icon"></i></span>
+                        <span class="date">Today at 4:42PM</span>
+                    </div>
+                    <div class="text">
                         This is crap I think those guys coded with their feets when they started this thing. I don't know
                         but I know I don't like it.
                     </div>
-                </div>
-                <div class="media">
-                    <div class="media-left media-top">
-                        <a href="#">
-                            <img src="http://api.adorable.io/avatars/56/nicolas@@adorable.svg" class="img-circle media-object">
-                        </a>
-                    </div>
-                    <div class="media-body">
-                        <h5 class="media-heading">Nicolas </h5>
-                        It is alright
+                    <div class="actions">
+                        <span data-content="Documentation" class="popup">2 <i class="icon book"></i></span>
+                        <span data-content="Maturity" class="popup">1 <i class="icon leaf"></i></span>
+                        <span data-content="Design" class="popup">1 <i class="icon university"></i></span>
+                        <span data-content="Support" class="popup">3 <i  class="icon life ring"></i></span>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div class="align-center">
+                <div class="ui pagination menu">
+                    <a class="active item">
+                        1
+                    </a>
+                    <a class="item">
+                        2
+                    </a>
+                    <div class="disabled item">
+                        ...
+                    </div>
+                    <a class="item">
+                        11
+                    </a>
+                    <a class="item">
+                        12
+                    </a>
+                </div>
+
+        </div>
+
     </div>
 
 

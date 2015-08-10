@@ -23,8 +23,7 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % "3.0.0-RC1",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0-RC1" % "test",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
-  "org.webjars" % "bootstrap" % "3.3.4",
-  "org.webjars" % "bootswatch-paper" % "3.3.1+2",
+  "org.webjars" % "Semantic-UI" % "2.0.7",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
   specs2 % Test,
@@ -65,6 +64,7 @@ addBuildNumber := {
     log.info("No build number found, local version running ...")
   }
 }
+
 
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 

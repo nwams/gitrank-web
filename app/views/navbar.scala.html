@@ -2,38 +2,25 @@
 
 @(gitHubProvider: CustomGitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
 
-<nav class="navbar navbar-default">
-    <div class="container">
-            <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#"><b>Git</b>Rank</a>
+<nav class="ui large borderless top menu">
+    <div class="ui container">
+        <div class="link item">
+            <a href="#"><b>Git</b>Rank</a>
         </div>
 
-            <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-
-            <ul class="nav navbar-nav navbar-right">
+        <div class="right menu">
+            <div class="link item">
                 @user.map { u =>
-                    <li>
-                        <a href="https://github.com/@u.username">
-                            <img src="@u.avatarURL">
-                            @u.fullName
-                        </a>
-                    </li>
+                    <a href="https://github.com/@u.username">
+                        <img class="ui avatar image" src="@u.avatarURL">
+                        @u.fullName
+                    </a>
                 }.getOrElse {
-                    <li>
-                        <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)">
-                            <span class="octicon octicon-mark-github"></span> Login
-                        </a>
-                    </li>
+                    <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
+                        <span class="octicon octicon-mark-github"></span> Log in
+                    </a>
                 }
-            </ul>
-        </div><!-- /.navbar-collapse -->
-    </div><!-- /.container-fluid -->
+            </div>
+        </div>
+    </div>
 </nav>

@@ -3,15 +3,11 @@
 
 @()
 <footer>
-    <div class="container">
-    <div class="row">
-        <div class="col-sm-12">
+    <div>
         @if(Play.configuration.getString("buildNumber").isEmpty) {
-            <p class="text-muted center-block text-center">Dev build</p>
+            <p>Dev build</p>
         } else {
-            <p class="text-muted center-block text-center">Build #@Play.configuration.getString("buildNumber")</p>
+            <p>Build #@Play.configuration.getString("buildNumber")</p>
         }
-        </div>
     </div>
-</div>
 </footer>
