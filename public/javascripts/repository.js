@@ -19,7 +19,13 @@ $(document)
             .createAxes();
 
         $('.popup')
-            .popup()
-        ;
+            .popup();
+
+        $('.ui.rating')
+            .rating();
+
+        $('.feedbackLink').click(function(){
+            $('#feedbackModal').modal('show');
+        });
 
     });

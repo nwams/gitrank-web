@@ -18,7 +18,7 @@
                 </div>
                 <div class="eight wide right aligned column">
                     <div class="ui compact labeled icon menu">
-                        <a class="item">
+                        <a class="item feedbackLink">
                             <i class="announcement icon"></i>
                             Give Feedback
                         </a>
@@ -93,26 +93,70 @@
         </div>
 
         <div class="align-center">
-                <div class="ui pagination menu">
-                    <a class="active item">
-                        1
-                    </a>
-                    <a class="item">
-                        2
-                    </a>
-                    <div class="disabled item">
-                        ...
+            <div class="ui pagination menu">
+                <a class="active item">
+                    1
+                </a>
+                <a class="item">
+                    2
+                </a>
+                <div class="disabled item">
+                    ...
+                </div>
+                <a class="item">
+                    11
+                </a>
+                <a class="item">
+                    12
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="ui modal">
+        <i class="close icon"></i>
+        <div class="header">
+            <i class="announcement icons"></i>
+            Feedback for @owner/@repository
+        </div>
+        <div class="content">
+            <form class="ui form">
+                <h4 class="ui dividing header">Scores</h4>
+                <div class="three fields">
+                    <div class="field">
+                        <label><i class="book icon"></i> Documentation</label>
+                        <div class="ui rating" data-max-rating="5"></div>
                     </div>
-                    <a class="item">
-                        11
-                    </a>
-                    <a class="item">
-                        12
-                    </a>
+                    <div class="field">
+                        <label><i class="icon leaf"></i>Maturity</label>
+                        <div class="ui rating" data-max-rating="5"></div>
+                    </div>
+                    <div class="field">
+                        <label><i class="icon university"></i>Design</label>
+                        <div class="ui rating" data-max-rating="5"></div>
+                    </div>
+                    <div class="field">
+                        <label><i class="icon life ring"></i>Support</label>
+                        <div class="ui rating" data-max-rating="5"></div>
+                    </div>
                 </div>
 
+                <div class="field">
+                    <label>Comment</label>
+                    <textarea></textarea>
+                </div>
+            </form>
         </div>
-
+        <div class="actions">
+            <div class="ui black deny button">
+                Nope
+            </div>
+            <div class="ui positive right labeled icon button">
+                <i class="plus icon"></i>
+                Add Feedback
+            </div>
+        </div>
     </div>
 
 
