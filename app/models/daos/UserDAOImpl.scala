@@ -5,9 +5,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.daos.drivers.Neo4J
-import models.{Contribution, User}
-import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
-import play.api.libs.ws._
+import models.User
+import play.api.libs.json.{JsString, JsObject, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +25,7 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
   def find(loginInfo: LoginInfo): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
-    )).map(parseNeoUser)
+    )).map(neo.parseNeoUser)
   }
 
   /**
@@ -38,7 +37,7 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
   def find(userID: UUID): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE n.userID = {userID} RETURN n", Json.obj(
       "userID" -> userID.toString
-    )).map(parseNeoUser)
+    )).map(neo.parseNeoUser)
   }
 
   /**
@@ -55,29 +54,5 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
     neo.cypher("CREATE (n:User {props}) RETURN n", Json.obj(
       "props" -> jsonToSend
     )).map(response => user)
-  }
-
-  /**
-   * Parses a WsResponse to get a unique user out of it.
-   *
-   * @param response response object
-   * @return The parsed user.
-   */
-  def parseNeoUser(response: WSResponse): Option[User] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case user => {
-        val loginInfo = (user \ "loginInfo").as[String]
-        val logInfo = loginInfo.split(":")
-        Some(User(
-          LoginInfo(logInfo(0), logInfo(1)),
-          (user \ "username").asOpt[String],
-          (user \ "fullName").asOpt[String],
-          (user \ "email").asOpt[String],
-          (user \ "avatarUrl").asOpt[String],
-          (user \ "karma").as[Int]
-        ))
-      }
-    }
   }
 }

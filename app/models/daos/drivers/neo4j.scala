@@ -1,10 +1,13 @@
 package models.daos.drivers
 
+import java.util.UUID
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.LoginInfo
+import models.{Contribution, Score, User, Repository}
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsUndefined, JsObject, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -81,4 +84,76 @@ class Neo4J @Inject() (ws: WSClient){
       .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withRequestTimeout(10000)
+
+  /**
+   * Parse a Repository from a neo4j row result
+   *
+   * @param response response object
+   * @return The parsed Repository.
+   */
+  def parseNeoRepo(response: WSResponse): Option[Repository] = {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _: JsUndefined => None
+      case repo => {
+        Some(Repository(
+          UUID.fromString((repo \ "repoID").as[String]),
+          (repo \ "addedLines").as[Int],
+          (repo \ "removedLines").as[Int],
+          (repo \ "karmaWeight").as[Int],
+          (repo \ "name").as[String],
+          (repo \ "score").as[Int]
+        ))
+      }
+    }
+  }
+
+  /**
+   * Parses a WsResponse to get a unique user out of it.
+   *
+   * @param response response object
+   * @return The parsed user.
+   */
+  def parseNeoUser(response: WSResponse): Option[User] = {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _: JsUndefined => None
+      case user => {
+        val loginInfo = (user \ "loginInfo").as[String]
+        val logInfo = loginInfo.split(":")
+        Some(User(
+          LoginInfo(logInfo(0), logInfo(1)),
+          (user \ "username").asOpt[String],
+          (user \ "fullName").asOpt[String],
+          (user \ "email").asOpt[String],
+          (user \ "avatarUrl").asOpt[String],
+          (user \ "karma").as[Int]
+        ))
+      }
+    }
+  }
+
+  /**
+   * Parses a neo Score into a model
+   *
+   * @param response response from neo
+   * @return
+   */
+  def parseNeoScore(response: WSResponse): Option[Score] = {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _: JsUndefined => None
+      case score => score.asOpt[Score]
+    }
+  }
+
+  /**
+   * Parses a neo4j response to get a Contribution out of it.
+   *
+   * @param response neo4j response
+   * @return parsed contribution or None
+   */
+  def parseNeoContribution(response: WSResponse): Option[Contribution] = {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _: JsUndefined => None
+      case repo => repo.asOpt[Contribution]
+    }
+  }
 }
