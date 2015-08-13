@@ -61,7 +61,9 @@ class ErrorHandler @Inject() (
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = statusCode match {
     case BAD_REQUEST => onBadRequest(request, message)
     case FORBIDDEN => onForbidden(request, message)
-    case NOT_FOUND => Future.successful(NotFound(views.html.errors.notFound("The requested page doesn't seem to exist")))
+    case NOT_FOUND => Future.successful(NotFound(views.html.error(
+      "notFound", statusCode, "Not Found", "The requested page doesn't seem to exist"
+    )))
     case clientError if statusCode >= 400 && statusCode < 500 =>
       Future.successful(Results.Status(clientError)(views.html.defaultpages.badRequest(request.method, request.uri, message)))
     case nonClientError =>
