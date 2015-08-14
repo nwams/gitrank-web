@@ -11,10 +11,18 @@
         <div class="right menu">
             <div class="link item">
                 @user.map { u =>
-                    <a href="https://github.com/@u.username">
+                <a href="https://github.com/@u.username">
+                    @if(u.avatarURL.isEmpty) {
+                        <img class="ui avatar image" src="https://github.com/identicons/@{u.username}.png">
+                    } else {
                         <img class="ui avatar image" src="@u.avatarURL">
-                        @u.fullName
-                    </a>
+                    }
+                    @u.fullName
+                    <span data-content="Karma" class="popup">
+                         - @u.karma
+                        <i class="fire icon"></i>
+                    </span>
+                </a>
                 }.getOrElse {
                     <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
                         <span class="octicon octicon-mark-github"></span> Log in

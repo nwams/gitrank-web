@@ -29,9 +29,6 @@ $(document)
             .domain(_.pluck(data, 'Timestamp'))
             .range([0.125, 0.250, 0.375, 0.5 , 0.625, 0.750, 0.875, 1]);
 
-        $('.popup')
-            .popup();
-
         $('.ui.rating')
             .rating();
 
