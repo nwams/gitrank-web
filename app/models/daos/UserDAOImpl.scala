@@ -1,12 +1,11 @@
 package models.daos
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import models.User
 import models.daos.drivers.Neo4J
-import models.{Contribution, User}
-import play.api.libs.json.{JsString, JsObject, JsUndefined, Json}
+import play.api.libs.json.{JsObject, JsString, JsUndefined, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -24,6 +23,7 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
    * @return The found user or None if no user for the given login info could be found.
    */
   def find(loginInfo: LoginInfo): Future[Option[User]] = {
+    println(loginInfo)
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
     )).map(parseNeoUser)
@@ -35,9 +35,9 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
    * @param userID The ID of the user to find.
    * @return The found user or None if no user for the given ID could be found.
    */
-  def find(userID: UUID): Future[Option[User]] = {
-    neo.cypher("MATCH (n:User) WHERE n.userID = {userID} RETURN n", Json.obj(
-      "userID" -> userID.toString
+  def find(userID: Int): Future[Option[User]] = {
+    neo.cypher("MATCH (n:User) WHERE ID(n) = {userID} RETURN n", Json.obj(
+      "userID" -> userID
     )).map(parseNeoUser)
   }
 
@@ -74,7 +74,7 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
           (user \ "username").asOpt[String],
           (user \ "fullName").asOpt[String],
           (user \ "email").asOpt[String],
-          (user \ "avatarUrl").asOpt[String],
+          (user \ "avatarURL").asOpt[String],
           (user \ "karma").as[Int]
         ))
       }

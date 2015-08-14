@@ -1,15 +1,12 @@
 package modules
 
-import javax.inject.Inject
-
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
-import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.exceptions._
 import com.mohiva.play.silhouette.impl.providers._
-import models.{Identifiable, User}
+import com.mohiva.play.silhouette.impl.providers.oauth2._
+import models.Identifiable
 import play.api.libs.json.{JsArray, JsValue}
-import thirdPartyAPIs.GitHubAPI
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -38,11 +35,13 @@ class CustomGitHubProfileParser extends SocialProfileParser[JsValue, CustomSocia
   def parse(json: JsValue) = commonParser.parse(json).map { commonProfile =>
 
     val username = (json \ "login").as[String]
+    val avatarUrl = (json \ "avatar_url").as[String]
+
     CustomSocialProfile(
       loginInfo = commonProfile.loginInfo,
       username = Some(username),
       fullName = commonProfile.fullName,
-      avatarURL = commonProfile.avatarURL,
+      avatarURL = Some(avatarUrl),
       email = commonProfile.email)
   }
 }
