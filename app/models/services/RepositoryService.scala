@@ -23,14 +23,14 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
   def save(name: String, addedLines: Option[Int], removedLines: Option[Int], karmaWeight: Option[Int], score: Option[Int]): Future[Repository] = {
     repoDAO.find(name).flatMap({
       case Some(existingRepo) =>
-        repoDAO.save(existingRepo.copy(
+        repoDAO.update(existingRepo.copy(
           addedLines = addedLines.getOrElse(existingRepo.addedLines),
           removedLines = removedLines.getOrElse(existingRepo.removedLines),
           karmaWeight = karmaWeight.getOrElse(existingRepo.karmaWeight),
           score = score.getOrElse(existingRepo.score)
         ))
       case None =>
-        repoDAO.save(Repository(
+        repoDAO.create(Repository(
           repoID = UUID.randomUUID(),
           addedLines = addedLines.getOrElse(0),
           removedLines = removedLines.getOrElse(0),

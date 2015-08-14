@@ -1,12 +1,10 @@
 package models.services
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import models.{Score, Contribution, User}
-import models.daos.{ScoreDAO, ContributionDAO, UserDAO}
+import models.daos.{ContributionDAO, ScoreDAO, UserDAO}
+import models.{Contribution, Score, User}
 import modules.CustomSocialProfile
 import play.api.libs.concurrent.Execution.Implicits._
 import thirdPartyAPIs.GitHubAPI
@@ -37,7 +35,7 @@ class UserServiceImpl @Inject() (gitHubAPi: GitHubAPI,
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User) = userDAO.save(user)
+  def save(user: User) = userDAO.update(user)
 
   /**
    * Saves the social profile for a user.
@@ -50,13 +48,13 @@ class UserServiceImpl @Inject() (gitHubAPi: GitHubAPI,
   def save(profile: CustomSocialProfile) = {
     userDAO.find(profile.loginInfo).flatMap {
       case Some(user) => // Update user with profile
-        userDAO.save(user.copy(
+        userDAO.update(user.copy(
           fullName = profile.fullName,
           email = profile.email,
           avatarURL = profile.avatarURL
         ))
       case None => // Insert a new use
-        userDAO.save(User(
+        userDAO.create(User(
           loginInfo = profile.loginInfo,
           username = profile.username,
           fullName = profile.fullName,

@@ -28,18 +28,6 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
   }
 
   /**
-   * Saves a repository.
-   *
-   * @param repository The repository to save.
-   * @return The saved repository.
-   */
-  def save(repository: Repository): Future[Repository] = {
-    neo.cypher("CREATE (n:Repository {props}) RETURN n", Json.obj(
-      "props" -> Json.toJson(repository)
-    )).map(response => repository)
-  }
-
-  /**
    * Finds a Repository by its id.
    *
    * @param repoID The ID of the repository to find.
@@ -49,6 +37,31 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
     neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} RETURN n", Json.obj(
       "uuid" -> repoID.toString
     )).map(parseNeoRepo)
+  }
+
+  /**
+   * Saves a repository.
+   *
+   * @param repository The repository to save.
+   * @return The saved repository.
+   */
+  def create(repository: Repository): Future[Repository] = {
+    neo.cypher("CREATE (n:Repository {props}) RETURN n", Json.obj(
+      "props" -> Json.toJson(repository)
+    )).map(response => repository)
+  }
+
+  /**
+   * Updates an existing repository with the new repository values
+   *
+   * @param repository The updated repository
+   * @return The saved repository
+   */
+  def update(repository: Repository): Future[Repository] = {
+    neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} SET n={props} RETURN n", Json.obj(
+      "uuid" -> repository.repoID.toString,
+      "props" -> Json.toJson(repository)
+    )).map(response => repository)
   }
 
   /**

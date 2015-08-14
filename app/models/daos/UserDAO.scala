@@ -14,7 +14,7 @@ import scala.concurrent.Future
 /**
  * Give access to the user object.
  */
-class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
+class UserDAO @Inject() (neo: Neo4J) {
 
   /**
    * Finds a user by its login info.
@@ -23,7 +23,6 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
    * @return The found user or None if no user for the given login info could be found.
    */
   def find(loginInfo: LoginInfo): Future[Option[User]] = {
-    println(loginInfo)
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
     )).map(parseNeoUser)
@@ -47,12 +46,33 @@ class UserDAOImpl @Inject() (neo: Neo4J) extends UserDAO {
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User): Future[User] = {
+  def create(user: User): Future[User] = {
 
     val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
     val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
 
     neo.cypher("CREATE (n:User {props}) RETURN n", Json.obj(
+      "props" -> jsonToSend
+    )).map(response => user)
+  }
+
+  /**
+   * Updates an existing user
+   *
+   * @param user The new state of the user
+   * @return The saved user
+   */
+  def update(user: User): Future[User] = {
+    val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
+    val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
+
+    neo.cypher(
+      """
+        MATCH (n:User) WHERE n.loginInfo={loginInfo}
+        SET n={props}
+        RETURN n
+      """, Json.obj(
+      "loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey),
       "props" -> jsonToSend
     )).map(response => user)
   }
