@@ -14,7 +14,7 @@ import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import models.User
 import models.daos._
-import models.services.{ UserService, UserServiceImpl }
+import models.services.UserService
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Play
 import play.api.Play.current
@@ -29,7 +29,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
-    bind[UserService].to[UserServiceImpl]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
     bind[CacheLayer].to[PlayCacheLayer]
     bind[HTTPLayer].toInstance(new PlayHTTPLayer)

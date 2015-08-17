@@ -123,18 +123,22 @@ class OAuth2InfoDAO @Inject() (neo: Neo4J) extends DelegableAuthInfoDAO[OAuth2In
   def parseNeoOAuth2Info(response: WSResponse) = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
-      case repo => {
-        Some(OAuth2Info(
-          (repo \ "accessToken").as[String],
-          (repo \ "tokenType").asOpt[String],
-          (repo \ "expiresIn").asOpt[Int],
-          (repo \ "refreshToken").asOpt[String],
-          (repo \ "params").asOpt[Map[String, String]]
-        ))
-      }
+      case repo => Some(OAuth2Info(
+        (repo \ "accessToken").as[String],
+        (repo \ "tokenType").asOpt[String],
+        (repo \ "expiresIn").asOpt[Int],
+        (repo \ "refreshToken").asOpt[String],
+        (repo \ "params").asOpt[Map[String, String]]
+      ))
     }
   }
 
+  /**
+   * Writer to get the Oauth Info to Json
+   *
+   * @param authInfo token information
+   * @return Json to write to the Database
+   */
   def writeNeoOAuth2Info(authInfo: OAuth2Info) = {
     val jsonAuth = Json.toJson(authInfo)
     val params = (jsonAuth \ "params").asOpt[JsValue]

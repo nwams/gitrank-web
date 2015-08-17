@@ -1,10 +1,8 @@
 package models
 
-import java.util.UUID
-
-import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
-import play.api.libs.json._
+import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 trait Identifiable {
   def loginInfo: LoginInfo
@@ -26,7 +24,8 @@ case class User(
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String],
-                 karma: Int) extends Identity with Identifiable
+                 karma: Int,
+                 publicEventsETag: Option[String]) extends Identity with Identifiable
 
 object User {
   implicit val userWrites: Writes[User] = (
@@ -35,7 +34,8 @@ object User {
     (JsPath \ "fullName").writeNullable[String] and
     (JsPath \ "email").writeNullable[String] and
     (JsPath \ "avatarURL").writeNullable[String] and
-    (JsPath \ "karma").write[Int]
+    (JsPath \ "karma").write[Int] and
+    (JsPath \ "publicEventsETag").writeNullable[String]
     )(unlift(User.unapply))
 }
 
