@@ -8,6 +8,8 @@ import models.User
 import models.daos.drivers.GitHubAPI
 import models.services.UserService
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 object GitHubActor {
   def props = Props[GitHubActor]
 
@@ -22,7 +24,10 @@ class GitHubActor @Inject() (userService: UserService, gitHubAPI: GitHubAPI) ext
 
       println("-> Actor GitHub updating contributions")
       println("1. Getting the user contributed repositories")
-      gitHubAPI.getContributedRepositories(user, oAuth2Info)
+      gitHubAPI.getContributedGitHubRepositories(user, oAuth2Info).map({
+        case None => println("No repo found")
+        case Some(repos) => println("found "+ repos.toString())
+      })
     }
   }
 }

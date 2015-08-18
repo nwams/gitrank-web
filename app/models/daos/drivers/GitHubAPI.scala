@@ -3,8 +3,9 @@ package models.daos.drivers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import models.User
 import models.daos.OAuth2InfoDAO
-import models.{Repository, User}
+import play.api.libs.json.JsArray
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,18 +28,61 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       "Authorization" -> ("token "+ oauthInfo.accessToken))
     .withRequestTimeout(10000)
 
-  def getContributedRepositories(user: User, oauthInfo: OAuth2Info): Future[Seq[Repository]] = {
-    val url = GITHUB_API_URL + "/users/" + user.username.get +"/events/public"
-    val request: WSRequest = ws.url(url)
-    println(url)
+  /**
+   * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
+   * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
+   * with a 90 days limit to the api. This is the best we can do using the direct API.
+   *
+   * @param user user you want to get the contributions from
+   * @param oAuth2Info Authentication information of the user
+   * @return
+   */
+  def getContributedGitHubRepositories(user: User, oAuth2Info: OAuth2Info): Future[Option[Set[String]]] =
+    doContributionRequest(GITHUB_API_URL + "/users/" + user.username.get +"/events/public", user, oAuth2Info)
 
-    buildGitHubReq(request, oauthInfo)
+  /**
+   * Actual implementation of the request and of the recursion.
+   *
+   * @param url url of the public user event timeline
+   * @param user user you want to get the contributions from
+   * @param oAuth2Info Authentication information of the user
+   * @return Set of repository names
+   */
+  private def doContributionRequest(url: String, user: User, oAuth2Info: OAuth2Info): Future[Option[Set[String]]] = {
+    val request: WSRequest = ws.url(url)
+    buildGitHubReq(request, oAuth2Info)
       .withHeaders("If-None-Match" -> user.publicEventsETag.getOrElse(""))
       .get()
-      .map(response => {
-        println("2. Response from the public timeline")
-        println(response.json)
-        Seq()
+      .flatMap(response => {
+      response.status match {
+        case 304 => Future(None)
+        case 200 => {
+          val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
+          if (linkHeader.isDefinedAt("next")) {
+            doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map({
+              case Some(repoList) => Some(repoList ++ response.json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]))
+              case None => Some(response.json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]).toSet)
+            })
+          } else {
+            Future(Some(response.json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]).toSet))
+          }
+        }
+      }
     })
+  }
+
+  /**
+   * Parses a link String from GitHub to get the purposes and the links out of it
+   *
+   * @param linkHeader String with the links inside
+   * @return Map of the keys with their links.
+   */
+  private def parseGitHubLink(linkHeader: String): Map[String, String] = {
+    (linkHeader.split(',') map { part: String =>
+      val section = part.split(';')
+      val url = section(0).replace("<", "").replace(">", "")
+      val name = section(1).replace(" rel=\"", "").replace("\"", "")
+      (name, url)
+    }).toMap
   }
 }

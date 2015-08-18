@@ -1,16 +1,14 @@
 package models.daos
 
-import java.util.UUID
 import javax.inject.Inject
 
+import models.Repository
 import models.daos.drivers.Neo4J
 import play.api.libs.json.{JsUndefined, Json}
-
-import models.Repository
 import play.api.libs.ws.WSResponse
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 class RepositoryDAO @Inject() (neo: Neo4J) {
@@ -33,9 +31,9 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
    * @param repoID The ID of the repository to find.
    * @return The found repository or None if no repository for the given ID could be found.
    */
-  def find(repoID: UUID): Future[Option[Repository]] = {
-    neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} RETURN n", Json.obj(
-      "uuid" -> repoID.toString
+  def find(repoID: Int): Future[Option[Repository]] = {
+    neo.cypher("MATCH (n:Repository) WHERE n.repoID = {id} RETURN n", Json.obj(
+      "id" -> repoID
     )).map(parseNeoRepo)
   }
 
@@ -75,7 +73,7 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
       case _: JsUndefined => None
       case repo => {
         Some(Repository(
-          UUID.fromString((repo \ "repoID").as[String]),
+          (repo \ "repoID").as[Int],
           (repo \ "addedLines").as[Int],
           (repo \ "removedLines").as[Int],
           (repo \ "karmaWeight").as[Int],

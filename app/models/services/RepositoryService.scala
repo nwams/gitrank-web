@@ -1,13 +1,12 @@
 package models.services
 
-import java.util.UUID
 import javax.inject.Inject
 
 import models.Repository
 import models.daos.RepositoryDAO
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
 
@@ -20,8 +19,8 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
    * @param score score of the repo
    * @return the saved Repository
    */
-  def save(name: String, addedLines: Option[Int], removedLines: Option[Int], karmaWeight: Option[Int], score: Option[Int]): Future[Repository] = {
-    repoDAO.find(name).flatMap({
+  def save(id: Int, name: String, addedLines: Option[Int], removedLines: Option[Int], karmaWeight: Option[Int], score: Option[Int]): Future[Repository] = {
+    repoDAO.find(id).flatMap({
       case Some(existingRepo) =>
         repoDAO.update(existingRepo.copy(
           addedLines = addedLines.getOrElse(existingRepo.addedLines),
@@ -31,7 +30,7 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
         ))
       case None =>
         repoDAO.create(Repository(
-          repoID = UUID.randomUUID(),
+          repoID = id,
           addedLines = addedLines.getOrElse(0),
           removedLines = removedLines.getOrElse(0),
           karmaWeight = karmaWeight.getOrElse(0),
@@ -55,5 +54,5 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
    * @param repoId UUID of the repository to be retrieved.
    * @return
    */
-  def retrieve(repoId: UUID): Future[Option[Repository]] = repoDAO.find(repoId)
+  def retrieve(repoId: Int): Future[Option[Repository]] = repoDAO.find(repoId)
 }
