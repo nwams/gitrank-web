@@ -25,7 +25,9 @@ case class User(
                  email: Option[String],
                  avatarURL: Option[String],
                  karma: Int,
-                 publicEventsETag: Option[String]) extends Identity with Identifiable
+                 publicEventsETag: Option[String], // An ETag is used to know if the data has been modified since the last poll
+                 lastPublicEventPull: Option[Long] // Used to filter the already retrieved events
+               ) extends Identity with Identifiable
 
 object User {
   implicit val userWrites: Writes[User] = (
@@ -35,7 +37,8 @@ object User {
     (JsPath \ "email").writeNullable[String] and
     (JsPath \ "avatarURL").writeNullable[String] and
     (JsPath \ "karma").write[Int] and
-    (JsPath \ "publicEventsETag").writeNullable[String]
+    (JsPath \ "publicEventsETag").writeNullable[String] and
+    (JsPath \ "lastPublicEventPull").writeNullable[Long]
     )(unlift(User.unapply))
 }
 

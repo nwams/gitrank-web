@@ -69,6 +69,7 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
           email = profile.email,
           avatarURL = profile.avatarURL,
           karma = 0,
+          None,
           None
         )).map(user => {
           // We load the user contributions and update his karma in the background.

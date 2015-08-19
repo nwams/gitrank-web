@@ -21,12 +21,16 @@ class GitHubActor @Inject() (userService: UserService, gitHubAPI: GitHubAPI) ext
 
   def receive = {
     case UpdateContributions(user: User, oAuth2Info: OAuth2Info) => {
-
-      println("-> Actor GitHub updating contributions")
-      println("1. Getting the user contributed repositories")
       gitHubAPI.getContributedGitHubRepositories(user, oAuth2Info).map({
-        case None => println("No repo found")
-        case Some(repos) => println("found "+ repos.toString())
+        case Some(repositories) => {
+          for (repositoryName <- repositories){
+            gitHubAPI.getUserContribution(repositoryName, user, oAuth2Info).map({
+              case Some(contrib) => println(contrib.toString)
+              case None => println("no contribution found")
+            })
+          }
+        }
+        case None => None
       })
     }
   }

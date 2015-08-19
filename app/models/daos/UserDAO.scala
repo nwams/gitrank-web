@@ -96,7 +96,8 @@ class UserDAO @Inject() (neo: Neo4J) {
           (user \ "email").asOpt[String],
           (user \ "avatarURL").asOpt[String],
           (user \ "karma").as[Int],
-          (user \ "publicEventsETag").asOpt[String]
+          (user \ "publicEventsETag").asOpt[String],
+          (user \ "lastPublicEventPull").asOpt[Long]
         ))
       }
     }
