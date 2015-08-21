@@ -20,7 +20,7 @@ trait Identifiable {
  */
 case class User(
                  loginInfo: LoginInfo,
-                 username: Option[String],
+                 username: String,
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String],
@@ -32,7 +32,7 @@ case class User(
 object User {
   implicit val userWrites: Writes[User] = (
     (JsPath \ "loginInfo").write[LoginInfo] and
-    (JsPath \ "username").writeNullable[String] and
+    (JsPath \ "username").write[String] and
     (JsPath \ "fullName").writeNullable[String] and
     (JsPath \ "email").writeNullable[String] and
     (JsPath \ "avatarURL").writeNullable[String] and

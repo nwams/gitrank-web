@@ -91,7 +91,7 @@ class UserDAO @Inject() (neo: Neo4J) {
         val logInfo = loginInfo.split(":")
         Some(User(
           LoginInfo(logInfo(0), logInfo(1)),
-          (user \ "username").asOpt[String],
+          (user \ "username").as[String],
           (user \ "fullName").asOpt[String],
           (user \ "email").asOpt[String],
           (user \ "avatarURL").asOpt[String],

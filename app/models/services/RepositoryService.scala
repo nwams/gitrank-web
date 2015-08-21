@@ -2,13 +2,13 @@ package models.services
 
 import javax.inject.Inject
 
-import models.Repository
-import models.daos.RepositoryDAO
+import models.{Contribution, Repository}
+import models.daos.{ContributionDAO, RepositoryDAO}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
+class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: ContributionDAO) {
 
   /**
    * Saves or create a repository to the database according to the current needs
@@ -23,6 +23,7 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
     repoDAO.find(id).flatMap({
       case Some(existingRepo) =>
         repoDAO.update(existingRepo.copy(
+          name = name,
           addedLines = addedLines.getOrElse(existingRepo.addedLines),
           removedLines = removedLines.getOrElse(existingRepo.removedLines),
           karmaWeight = karmaWeight.getOrElse(existingRepo.karmaWeight),
@@ -39,6 +40,16 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO) {
         ))
     })
   }
+
+  /**
+   * Adds a contribution to the given repository
+   *
+   * @param userName name of the user who has contributed to the repository
+   * @param repoName name of the repository he has contributed to
+   * @param contribution Contribution itself.
+   * @return
+   */
+  def addContribution(userName: String, repoName: String, contribution: Contribution) = contributionDAO.add(userName,repoName, contribution)
 
   /**
    * Retrieves a repository according to its name.
