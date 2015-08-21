@@ -9,11 +9,11 @@ import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.drivers.GitHubAPI
 import models.daos.{ContributionDAO, OAuth2InfoDAO, ScoreDAO, UserDAO}
-import models.{Contribution, Score, User}
+import models.{Score, User}
 import modules.CustomSocialProfile
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Handles actions to users.
@@ -87,27 +87,6 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    * @return OAuth2Info
    */
   def getOAuthInfo(user: User): Future[Option[OAuth2Info]] = oAuth2InfoDAO.find(user.loginInfo)
-
-  /**
-   * Adds a contribution for a user to a repository. If the user has already contributed to the repository, it adds
-   * the new added lines and removed lines to the existing contribution and updates the timestamp.
-   *
-   * @param username name of the contributing user
-   * @param repoName name of the repository he contributes to.
-   * @param contribution contribution to be saved.
-   * @return contribution to be saved or none
-   */
-   def addContribution(username: String, repoName: String, contribution: Contribution): Future[Option[Contribution]] = {
-    contributionDAO.find(username, repoName).flatMap {
-      case Some(oldContribution) =>
-        contributionDAO.save(username, repoName, contribution.copy(
-          timestamp = contribution.timestamp,
-          addedLines = contribution.addedLines + oldContribution.addedLines,
-          removedLines = contribution.removedLines + oldContribution.removedLines
-        ))
-      case None => contributionDAO.add(username, repoName, contribution)
-    }
-  }
 
   /**
    * Adds a score to the repository from the given user

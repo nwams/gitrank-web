@@ -40,7 +40,7 @@ class GitHubActor @Inject()(
                     Some(repository.removedLines),
                     None,
                     None
-                  ).map(repo => repoService.addContribution(user.username, repositoryName, contribution))
+                  ).map(repo => repoService.saveContribution(user.username, repositoryName, contribution))
                 )
               }
             })

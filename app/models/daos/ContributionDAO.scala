@@ -67,7 +67,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
    * @param contribution contribution to be saved
    * @return saved contribution
    */
-  def save(username: String, repoName: String, contribution: Contribution): Future[Option[Contribution]] = {
+  def update(username: String, repoName: String, contribution: Contribution): Future[Option[Contribution]] = {
     neo.cypher(
       """
         MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)

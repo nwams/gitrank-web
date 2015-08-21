@@ -49,7 +49,19 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: Cont
    * @param contribution Contribution itself.
    * @return
    */
-  def addContribution(userName: String, repoName: String, contribution: Contribution) = contributionDAO.add(userName,repoName, contribution)
+  def saveContribution(userName: String, repoName: String, contribution: Contribution) = {
+    contributionDAO.find(userName, repoName).flatMap({
+      case Some(existingContribution) => {
+        contributionDAO.update(userName , repoName, existingContribution.copy(
+          timestamp = contribution.timestamp,
+          addedLines = existingContribution.addedLines + contribution.addedLines - parseWeekAddedLines(existingContribution.currentWeekBuffer),
+          removedLines = existingContribution.removedLines + contribution.removedLines - parseWeekDeletedLines(existingContribution.currentWeekBuffer),
+          currentWeekBuffer = contribution.currentWeekBuffer
+        ))
+      }
+      case None => contributionDAO.add(userName,repoName, contribution)
+    })
+  }
 
   /**
    * Retrieves a repository according to its name.
@@ -66,4 +78,26 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: Cont
    * @return
    */
   def retrieve(repoId: Int): Future[Option[Repository]] = repoDAO.find(repoId)
+
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the added lines
+   *
+   * @param currentWeekBuffer String containing the added lines this week already counted for needed to be extracted.
+   * @return count of the added lines already accounted for extracted as an Int
+   */
+  private def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(0, str.indexOf("d")).toInt
+  }
+
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the deleted lines
+   *
+   * @param currentWeekBuffer String containing the deleted lines this week already counted for needed to be extracted.
+   * @return count of the deleted lines already accounted for extracted as an Int
+   */
+  private def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(str.indexOf("d"), str.length).toInt
+  }
 }
