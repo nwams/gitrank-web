@@ -28,6 +28,17 @@ class UserDAO @Inject() (neo: Neo4J) {
     )).map(parseNeoUser)
   }
 
+
+  /**
+   * Parses a WsResponse to get a unique user out of it.
+   *
+   * @return The seq of all users in Neo4j
+   */
+  def findAll: Future[Seq[User]] = {
+    ???
+  }
+
+
   /**
    * Finds a user by its user ID.
    *
