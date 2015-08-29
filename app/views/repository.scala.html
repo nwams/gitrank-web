@@ -108,6 +108,20 @@
         </div>
     </div>
 
+    <div class="ui page dimmer">
+        <div class="content">
+            <div class="center">
+                <h2 class="ui inverted header">
+                    No registered feedback for this repository, yet
+                </h2>
+                <a href="@routes.ApplicationController.giveFeedbackPage(owner,repository)" class="ui primary labeled icon button">
+                    <i class="plus icon"></i>
+                    Add First feedback
+                </a>
+            </div>
+        </div>
+    </div>
+
 
     <script src="@routes.Assets.at("lib/d3js/d3.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/d3.parcoords.js")" type="text/javascript"></script>

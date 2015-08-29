@@ -8,6 +8,7 @@ $(document)
 
         var data = [];
 
+
         for (var i = 0; i < 100 ; i++){
             data.push({
                 Timestamp: i*10 + 100000,
@@ -61,9 +62,11 @@ $(document)
             .append('rect')
             .attr("x", width / 2 - 60)
             .attr("y", height - 50)
+            .attr("rx", 2)
+            .attr("ry", 2)
             .attr("width", 15)
             .attr("height", 15)
-            .attr("stroke", "black")
+            .attr("stroke", "#1B1C1D")
             .attr("stroke-width", 1)
             .attr("fill", "#DB2828");
 
@@ -78,9 +81,11 @@ $(document)
             .append('rect')
             .attr("x", width / 2)
             .attr("y", height - 50)
+            .attr("rx", 2)
+            .attr("ry", 2)
             .attr("width", 15)
             .attr("height", 15)
-            .attr("stroke", "black")
+            .attr("stroke", "#1B1C1D")
             .attr("stroke-width", 1)
             .attr("fill", "#2185D0");
 
@@ -88,7 +93,7 @@ $(document)
             .append('text')
             .attr("x", width / 2 + 20)
             .attr("y", height - 36)
-            .text("User values");
+            .text("Last feedback scores");
 
 
         /**
