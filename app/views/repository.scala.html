@@ -6,29 +6,16 @@
 
     <div class="ui container">
 
-        <div class="ui middle aligned grid">
-            <div class="row">
-                <div class="eight wide column">
-                    <h2 class="ui header">
-                        <i class="mega-octicon octicon-repo"></i>
-                        <div class="content">
-                            <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
-                        </div>
-                    </h2>
-                </div>
-                <div class="eight wide right aligned column">
-                    <div class="ui compact labeled icon menu">
-                        <a class="item feedbackLink">
-                            <i class="announcement icon"></i>
-                            Give Feedback
-                        </a>
-                    </div>
-                </div>
+        <h2 class="ui repository header">
+            <i class="mega-octicon octicon-repo"></i>
+            <div class="content">
+                <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
             </div>
+        </h2>
 
+        <div class="ui middle aligned grid">
             <div class="divided row">
                 <div class="thirteen wide column">
-                    <h3 class="ui dividing header ">Last 100 feedback scores</h3>
                     <div class="parcoords" id="scoreChart"></div>
                 </div>
                 <div class="three wide center aligned column">
@@ -46,7 +33,14 @@
 
 
         <div class="ui comments feedback">
-            <h3 class="ui dividing header">Feedback</h3>
+            <h3 class="ui dividing header">
+                <i class="bullhorn icon"></i>
+                <div class="content">
+                    Feedback
+                </div>
+                <a href="@routes.ApplicationController.giveFeedbackPage(owner,repository)" class="ui primary button"><i class="plus icon"></i> Add</a>
+            </h3>
+
             <div class="comment">
                 <a class="avatar">
                     <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
@@ -110,52 +104,6 @@
                 <a class="item">
                     12
                 </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="ui modal">
-        <i class="close icon"></i>
-        <div class="header">
-            <i class="announcement icons"></i>
-            Give Feedback on @owner/@repository
-        </div>
-        <div class="content">
-            <form class="ui form">
-                <h4 class="ui dividing header">Scores</h4>
-                <div class="three fields">
-                    <div class="field">
-                        <label><i class="book icon"></i> Documentation</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                    <div class="field">
-                        <label><i class="icon leaf"></i>Maturity</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                    <div class="field">
-                        <label><i class="icon university"></i>Design</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                    <div class="field">
-                        <label><i class="icon life ring"></i>Support</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label>Comment</label>
-                    <textarea></textarea>
-                </div>
-            </form>
-        </div>
-        <div class="actions">
-            <div class="ui black deny button">
-                Nope
-            </div>
-            <div class="ui positive right labeled icon button">
-                <i class="plus icon"></i>
-                Add Feedback
             </div>
         </div>
     </div>

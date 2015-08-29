@@ -5,5 +5,8 @@ $(document)
     $('.popup')
       .popup();
 
+    $('.ui.rating')
+        .rating();
+
   });
 

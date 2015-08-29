@@ -135,12 +135,4 @@ $(document)
             }
             return "#2185D0"
         }
-
-        $('.ui.rating')
-            .rating();
-
-        $('.feedbackLink').click(function(){
-            $('#feedbackModal').modal('show');
-        });
-
     });

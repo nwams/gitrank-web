@@ -1,0 +1,48 @@
+@import modules.CustomGitHubProvider
+
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository:String)(implicit request: RequestHeader)
+
+@main("GitRank - "+owner+"/"+repository+ " Feedback form !", gitHubProvider, user) {
+    <div class="ui container">
+
+
+        <h2 class="ui repository header">
+            <i class="mega-octicon octicon-repo"></i>
+            <div class="content">
+                <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
+            </div>
+        </h2>
+
+        <h3 class="ui dividing header ">Feedback</h3>
+
+        <form class="ui form">
+            <div class="three fields">
+                <div class="field">
+                    <label><i class="book icon"></i> Documentation</label>
+                    <div class="ui rating" data-max-rating="5"></div>
+                </div>
+                <div class="field">
+                    <label><i class="icon leaf"></i>Maturity</label>
+                    <div class="ui rating" data-max-rating="5"></div>
+                </div>
+                <div class="field">
+                    <label><i class="icon university"></i>Design</label>
+                    <div class="ui rating" data-max-rating="5"></div>
+                </div>
+                <div class="field">
+                    <label><i class="icon life ring"></i>Support</label>
+                    <div class="ui rating" data-max-rating="5"></div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Feedback</label>
+                <textarea></textarea>
+            </div>
+
+            <div class="fluid ui primary submit labeled icon button">
+                <i class="icon edit"></i> Give Feedback
+            </div>
+        </form>
+    </div>
+}
