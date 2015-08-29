@@ -18,6 +18,14 @@
                 <div class="link item">
                     <a href="@routes.ApplicationController.index()"><b>Git</b>Rank</a>
                 </div>
+                <div class="right menu">
+                    <div class="item">
+                        <div class="ui action input">
+                            <input type="text" placeholder="Enter owner/repository">
+                            <div class="ui primary button">Go</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </nav>
 
@@ -31,9 +39,13 @@
                         </div>
                         <div class="column">
                             <div class="ui segment">
-                                <h1>Ooooops !</h1>
-                                <p>@message</p>
-                                @goToRepoForm()
+                                <h2 class="ui center aligned icon header">
+                                    <i class="bug icon"></i>
+                                    <div class="content">
+                                        Ooooops !
+                                        <div class="sub header">@message</div>
+                                    </div>
+                                </h2>
                             </div>
                         </div>
                     </div>
