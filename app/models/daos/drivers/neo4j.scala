@@ -89,47 +89,28 @@ class Neo4J @Inject() (ws: WSClient){
 
   def stream() : InputStream= ???
 
-  /**
-   * Parse a stream  with a list of  objects
-   * @param jsonParser json parser responsible for parsing the stream
-   * @param callback callback function for each object
-   *
-   */
-  def parseJson( jsonParser: JsonParser, callback: (String)=> Future[Unit]): Future[Unit] ={
-    jsonParser.nextToken() match {
-      case JsonToken.START_OBJECT =>
-        callback(jsonParser.getValueAsString())
-        parseJson( jsonParser, callback)
-      case null => callback(jsonParser.getValueAsString())
-      case _ => parseJson(jsonParser,callback)
-    }
-  }
+
 
   /**
-   * Parse a stream  with a list of  objects
+   * Execute a query with a stream result
    * @param query query for using on the neo4j database
-   * @param parameters request parameters
-   * @param callback callback function for parsing the results
    *
    */
-  def cypherStream(query: String, parameters: JsObject, callback: (String)=>Future[Unit]): Future[Unit] = {
-
+  def cypherStream(query: String): Future[JsonParser] = {
+    val outputStream = new ByteArrayOutputStream()
     buildNeo4JRequest(ws.url(NEO4J_ENDPOINT + "transaction/commit"))
       .withHeaders("X-Stream" -> "true")
       .withMethod("POST")
       .withBody(Json.obj(
       "statements" -> Json.arr(
         Json.obj(
-          "statement" -> query,
-          "parameters" -> parameters
+          "statement" -> query
         )
       )
     ))
       .stream().map{
       case (response,body) =>
         if(response.status == 200){
-          val outputStream = new ByteArrayOutputStream()
-
           val iteratee = Iteratee.foreach[Array[Byte]] { bytes =>
             outputStream.write(bytes)
           }
@@ -138,9 +119,8 @@ class Neo4J @Inject() (ws: WSClient){
               outputStream.close()
               result.get
           }
-          //This will work but it will not achieve what we were hoping for.
-          parseJson(new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray)),callback);
         }
+        new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray));
 
     }
   }

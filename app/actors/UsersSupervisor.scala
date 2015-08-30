@@ -14,6 +14,7 @@ import models.daos.{OAuth2InfoDAO, ContributionDAO, UserDAO}
 import models.services.UserService
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 
@@ -33,9 +34,7 @@ class UsersSupervisor @Inject()(userDAO: UserDAO, oAuth2InfoDAO: OAuth2InfoDAO, 
    * When starting the supervisor, we fetch all users in database and scheduleUpdates
    */
   override def preStart(): Unit = {
-    for {
-      users <- userDAO.findAll
-    } yield users.map(schedulePullingFromGithub).foreach(addCancellableWithReplacement)
+    userDAO.findAll(callbackUsersProcessor)
   }
 
   override def receive: Receive = LoggingReceive {
@@ -56,6 +55,12 @@ class UsersSupervisor @Inject()(userDAO: UserDAO, oAuth2InfoDAO: OAuth2InfoDAO, 
   private def schedulePullingFromGithub(user: User): (LoginInfo, Cancellable) = {
     user.loginInfo -> context.system.scheduler.schedule(0.microseconds, 1.hour, self, AskGithubForUserContributions(user.loginInfo))
   }
+
+  /**
+   * Responsible for the callback from the streaming of users from the database, scheduling updates.
+   * @param user Each user returned on the stream
+   */
+  def callbackUsersProcessor(user: Any): Future[Unit] = Future{ addCancellableWithReplacement(schedulePullingFromGithub(user.asInstanceOf[User]))}
 
   /**
    * cancel previous schedule if exists and add new one to cancellableUpdates

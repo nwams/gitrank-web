@@ -1,7 +1,12 @@
 package models.daos
 
 import javax.inject.Inject
+import javax.swing.tree.TreeNode
 
+import akka.actor.Status.{Failure, Success}
+import com.fasterxml.jackson.core
+import com.fasterxml.jackson.core.{JsonToken, JsonParser}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.mohiva.play.silhouette.api.LoginInfo
 import models.User
 import models.daos.drivers.Neo4J
@@ -10,6 +15,7 @@ import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util
 
 /**
  * Give access to the user object.
@@ -34,8 +40,13 @@ class UserDAO @Inject() (neo: Neo4J) {
    *
    * @return The seq of all users in Neo4j
    */
-  def findAll: Future[Seq[User]] = {
-    ???
+  def findAll(callback: (Any) => Future[Unit]): Future[Unit] = {
+    val jsonParser = neo.cypherStream("MATCH (n:User) RETURN n ")
+    jsonParser.onComplete{
+      case util.Success(parser) =>  return parseJson(parser, callback)
+      case _ => return null
+    }
+    return null
   }
 
 
@@ -112,5 +123,39 @@ class UserDAO @Inject() (neo: Neo4J) {
         ))
       }
     }
+  }
+
+  /**
+   * Parse a stream  with a list of  objects
+   * @param jsonParser json parser responsible for parsing the stream
+   *
+   */
+  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Future[Unit] ={
+    jsonParser.setCodec(new ObjectMapper())
+    jsonParser.nextFieldName() match {
+      case "row" => {
+        while( { val token = jsonParser.nextToken(); token != JsonToken.END_ARRAY }){
+          jsonParser.nextToken() match{
+            case JsonToken.START_OBJECT =>{
+              val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
+              val loginInfo = jsonTree.get("loginInfo").asText().split(":")
+              callback(Some(User(
+                LoginInfo(loginInfo(0), loginInfo(1)),
+                jsonTree.get("username").asText(),
+                if (jsonTree.get("fullName")!=null) Some(jsonTree.get("fullName").asText()) else Some(null),
+                if (jsonTree.get("email")!=null) Some(jsonTree.get("email").asText()) else Some(null),
+                if (jsonTree.get("avatarURL")!=null) Some(jsonTree.get("avatarURL").asText()) else Some(null),
+                jsonTree.get("karma").asInt(),
+                if (jsonTree.get("publicEventsETag")!=null) Some(jsonTree.get("publicEventsETag").asText()) else Some(null),
+                if (jsonTree.get("lastPublicEventPull")!=null) Some(jsonTree.get("lastPublicEventPull").asLong()) else Some(0l)
+              )))
+            }
+            case _ =>
+          }
+        }
+      }
+      case _ => parseJson(jsonParser, callback)
+    }
+    return null
   }
 }
