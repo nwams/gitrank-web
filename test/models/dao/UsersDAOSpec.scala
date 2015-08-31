@@ -45,10 +45,11 @@ class UsersDAOSpec extends  Specification with Mockito{
       there was two(mockedFunction).callback(any[Any])
     }
     "ParseJsonWithNoUsers" in {
+      val mockedFunctionInner = mock[UsersDAOSpec]
       var goodJsonParserNoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[]}]}],\"errors\":[]}");
       val dao = new UserDAO(neo4jMock)
-      dao.parseJson(goodJsonParserNoUsers, mockedFunction.callback)
-      there was no(mockedFunction).callback(any[Any])
+      dao.parseJson(goodJsonParserNoUsers, mockedFunctionInner.callback)
+      there was no(mockedFunctionInner).callback(any[Any])
     }
   }
 
