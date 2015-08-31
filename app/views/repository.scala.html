@@ -4,9 +4,9 @@
         gitHubProvider: CustomGitHubProvider,
         user: Option[models.User],
         repo: Repository
-)(owner: String, repository:String)(implicit request: RequestHeader)
+)(owner: String, repositoryName :String)(implicit request: RequestHeader)
 
-@main("GitRank - "+owner+"/"+repository, gitHubProvider, user) {
+@main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
     @if(repo.karmaWeight == 0 ) {
         <div class="ui active page dimmer">
@@ -15,7 +15,7 @@
                     <h2 class="ui inverted header">
                         No registered feedback for this repository, yet
                     </h2>
-                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repository)" class="ui primary labeled icon button">
+                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary labeled icon button">
                         <i class="plus icon"></i>
                         Add First feedback
                     </a>
@@ -28,7 +28,7 @@
             <h2 class="ui repository header">
                 <i class="mega-octicon octicon-repo"></i>
                 <div class="content">
-                    <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
+                    <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repositoryName">@repositoryName</a>
                 </div>
             </h2>
 
@@ -40,7 +40,7 @@
                     <div class="three wide center aligned column">
                         <div class="ui statistic">
                             <div class="value">
-                                4/5
+                                @repo.score/5
                             </div>
                             <div class="label">
                                 Score
@@ -57,7 +57,7 @@
                     <div class="content">
                         Feedback
                     </div>
-                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repository)" class="ui primary button"><i class="plus icon"></i> Add</a>
+                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary button"><i class="plus icon"></i> Add</a>
                 </h3>
 
                 <div class="comment">
