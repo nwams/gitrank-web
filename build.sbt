@@ -1,3 +1,5 @@
+import java.nio.file.{Paths, Files, StandardOpenOption}
+
 name := """gitrank-web"""
 
 organization := "gitlinks"
@@ -21,9 +23,11 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % "3.0.0-RC1",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0-RC1" % "test",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
-  "org.webjars" % "bootstrap" % "3.3.4",
-  "org.webjars" % "bootswatch-paper" % "3.3.1+2",
+  "org.webjars" % "Semantic-UI" % "2.0.7",
+  "org.webjars.bower" % "lodash" % "3.10.1",
+  "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
+  "org.webjars" % "d3js" % "3.5.5-1",
   specs2 % Test,
   cache,
   filters,
@@ -46,6 +50,25 @@ scalacOptions ++= Seq(
 )
 
 enablePlugins(JavaServerAppPackaging)
+
+lazy val addBuildNumber = TaskKey[Unit]("addBuildNumber", "Adds build number parameter to the conf file")
+
+addBuildNumber := {
+
+  val log = streams.value.log
+
+  log.info("Getting build number ...")
+
+  if (sys.env.contains("CIRCLE_BUILD_NUM")) {
+    Files.write(Paths.get("conf/build.conf"), ("buildNumber=" + sys.env("CIRCLE_BUILD_NUM")).getBytes())
+    log.info("Running build #" + sys.env("CIRCLE_BUILD_NUM"))
+  } else {
+    log.info("No build number found, local version running ...")
+  }
+}
+
+
+(test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 
 dockerBaseImage := "colisweb/debian-oracle-java8"
 

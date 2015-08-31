@@ -1,10 +1,8 @@
 package models
 
-import java.util.UUID
-
-import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
-import play.api.libs.json._
+import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 trait Identifiable {
   def loginInfo: LoginInfo
@@ -22,20 +20,25 @@ trait Identifiable {
  */
 case class User(
                  loginInfo: LoginInfo,
-                 username: Option[String],
+                 username: String,
                  fullName: Option[String],
                  email: Option[String],
                  avatarURL: Option[String],
-                 karma: Int) extends Identity with Identifiable
+                 karma: Int,
+                 publicEventsETag: Option[String], // An ETag is used to know if the data has been modified since the last poll
+                 lastPublicEventPull: Option[Long] // Used to filter the already retrieved events
+               ) extends Identity with Identifiable
 
 object User {
   implicit val userWrites: Writes[User] = (
     (JsPath \ "loginInfo").write[LoginInfo] and
-    (JsPath \ "username").writeNullable[String] and
+    (JsPath \ "username").write[String] and
     (JsPath \ "fullName").writeNullable[String] and
     (JsPath \ "email").writeNullable[String] and
     (JsPath \ "avatarURL").writeNullable[String] and
-    (JsPath \ "karma").write[Int]
+    (JsPath \ "karma").write[Int] and
+    (JsPath \ "publicEventsETag").writeNullable[String] and
+    (JsPath \ "lastPublicEventPull").writeNullable[Long]
     )(unlift(User.unapply))
 }
 

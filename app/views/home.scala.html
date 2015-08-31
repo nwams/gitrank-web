@@ -2,5 +2,11 @@
 @(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(implicit request: RequestHeader)
 
 @main("GitRank - Home", gitHubProvider, user) {
-    <!-- HTML Here -->
+    <div class="masthead home">
+        <div class="ui container">
+            <h1 class="ui header inverted">Welcome to <b>Git</b>Rank</h1>
+            <h4 class="ui header inverted">A platform where you can easily compare and feedback GitHub open source projects.</h4>
+            @goToRepoForm()
+        </div>
+    </div>
 }

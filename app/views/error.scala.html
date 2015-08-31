@@ -1,0 +1,48 @@
+@(errorClass: String, status: Int, statusMessage: String, message: String)
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>404 - Not Found</title>
+        <link rel="stylesheet" href="@routes.Assets.at("lib/octicons/octicons/octicons.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("lib/Semantic-UI/semantic.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("../../public/images/favicon.png")">
+        <script src="@routes.Assets.at("lib/jquery/jquery.min.js")" type="text/javascript"></script>
+    </head>
+    <body>
+
+        <nav class="ui large borderless top menu">
+            <div class="ui container">
+                <div class="link item">
+                    <a href="@routes.ApplicationController.index()"><b>Git</b>Rank</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="masthead @errorClass">
+            <div class="ui container">
+                <div class="ui two column middle aligned grid">
+                    <div class="row">
+                        <div class="center aligned column">
+                            <h1 class="ui header inverted">@status</h1>
+                            <h3 class="ui header inverted">@statusMessage</h3>
+                        </div>
+                        <div class="column">
+                            <div class="ui segment">
+                                <h1>Ooooops !</h1>
+                                <p>@message</p>
+                                @goToRepoForm()
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @footer()
+
+        <script src="@routes.Assets.at("lib/Semantic-UI/semantic.min.js")" type="text/javascript"></script>
+    </body>
+</html>

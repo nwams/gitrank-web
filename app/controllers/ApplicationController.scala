@@ -32,4 +32,13 @@ class ApplicationController @Inject() (
   def index = UserAwareAction.async { implicit request =>
     Future.successful(Ok(views.html.home(gitHubProvider, request.identity)))
   }
+
+  /**
+   * Handles the repository view
+   *
+   * @return The html page of the repository
+   */
+  def gitHubRepository(owner: String, repository: String) = UserAwareAction.async { implicit request =>
+    Future.successful(Ok(views.html.repository(gitHubProvider, request.identity)(owner, repository)))
+  }
 }

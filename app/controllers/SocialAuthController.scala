@@ -3,14 +3,12 @@ package controllers
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
-import com.mohiva.play.silhouette.impl.providers._
 import models.User
 import models.services.UserService
-import modules.{CustomGitHubProvider, CustomSocialProfile}
-import play.api.i18n.{ MessagesApi, Messages }
+import modules.CustomGitHubProvider
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
 
@@ -44,7 +42,7 @@ class SocialAuthController @Inject() (
       case Left(result) => Future.successful(result)
       case Right(authInfo) => for {
         profile <- gitHubProvider.retrieveProfile(authInfo)
-        user <- userService.save(profile)
+        user <- userService.save(profile, authInfo)
         authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
         authenticator <- env.authenticatorService.create(profile.loginInfo)
         value <- env.authenticatorService.init(authenticator)

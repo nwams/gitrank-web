@@ -1,3 +1,48 @@
-@import "lib/bootstrap/less/bootstrap.less";
-@import "lib/bootswatch-paper/less/bootswatch.less";
-@import "lib/bootswatch-paper/less/variables.less";
+@import "repository.less";
+
+.align-center {
+  text-align: center;
+}
+
+.masthead {
+  min-height: 85vh;
+  background-size: cover;
+  margin-top: -14px;
+  padding-top: 25vh;
+  position: relative;
+  box-shadow: inset 0 0 0 1000px rgba(0,0,0,.4);
+}
+
+.home {
+  background: url('/assets/images/bg01.jpg') 50% 50%;
+  padding-right: 20vh;
+}
+
+.ui.borderless.menu.top {
+  position:relative;
+  z-index: 100;
+}
+
+.notFound{
+  background: url('/assets/images/notFound.jpg') 50% 50%;
+  margin-bottom: 1em;
+}
+
+.notFound .ui.container h1.header{
+  font-size: 20vh;
+}
+.notFound .ui.container h3{
+  font-size: 8vh;
+}
+
+footer {
+  padding-top: 1.5em;
+  padding-bottom: 1.5em;
+  text-align: center;
+  color: gainsboro ;
+}
+
+footer > a {
+  color: gainsboro;
+  text-decoration: underline;;
+}

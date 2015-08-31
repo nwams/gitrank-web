@@ -1,7 +1,9 @@
 machine:
   environment:
-    JAVA_OPTS: "-Xms256m -Xmx512m"
+    SBT_VERSION: 0.13.8
+    SBT_OPTS: "-Xms512M -Xmx1536M"
   pre:
+    - sudo apt-get update
     - sudo sed -i "s|#wrapper.java.maxmemory=512|wrapper.java.maxmemory=1024|g" /etc/neo4j/neo4j-wrapper.conf
     - sudo sed -i "s|dbms.security.auth_enabled=true|dbms.security.auth_enabled=false|g" /etc/neo4j/neo4j-server.properties
     - sudo curl -L -o /usr/bin/docker 'http://s3-external-1.amazonaws.com/circle-downloads/docker-1.6.2-circleci'; sudo chmod 0755 /usr/bin/docker; true
@@ -17,6 +19,16 @@ notify:
     - url: https://webhooks.gitter.im/e/bb201391ca2a83b29080
 
 dependencies:
+  cache_directories:
+    - "~/.sbt"
+  pre:
+    - wget --output-document=$HOME/bin/sbt-launch.jar
+      https://repo.typesafe.com/typesafe/ivy-releases/org.scala-sbt/sbt-launch/"$SBT_VERSION"/sbt-launch.jar
+    - echo "java $SBT_OPTS -jar \`dirname \$0\`/sbt-launch.jar \"\$@\""
+      > $HOME/bin/sbt
+    - chmod u+x $HOME/bin/sbt
+    - which sbt
+    - sbt sbt-version
   override:
     - sbt update
 

@@ -1,7 +1,5 @@
 package models
 
-import java.util.UUID
-
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Writes}
 
@@ -16,7 +14,7 @@ import play.api.libs.json.{JsPath, Writes}
  * @param score The current score of the repository
  */
 case class Repository(
-                 repoID: UUID,
+                 repoID: Int,
                  addedLines: Int,
                  removedLines: Int,
                  karmaWeight: Int,
@@ -25,7 +23,7 @@ case class Repository(
 
 object Repository {
   implicit val repoWrites: Writes[Repository] = (
-    (JsPath \ "repoID").write[UUID] and
+    (JsPath \ "repoID").write[Int] and
       (JsPath \ "addedLines").write[Int] and
       (JsPath \ "removedLines").write[Int] and
       (JsPath \ "karmaWeight").write[Int] and

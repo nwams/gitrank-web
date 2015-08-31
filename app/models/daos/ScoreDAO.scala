@@ -34,6 +34,20 @@ class ScoreDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName,
         "props" -> Json.toJson(score)
       )
-    ).map(neo.parseNeoScore)
+    ).map(parseNeoScore)
   }
+
+  /**
+   * Parses a neo Score into a model
+   *
+   * @param response response from neo
+   * @return
+   */
+  def parseNeoScore(response: WSResponse): Option[Score] = {
+    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+      case _: JsUndefined => None
+      case score => score.asOpt[Score]
+    }
+  }
+
 }

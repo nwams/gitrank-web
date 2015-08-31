@@ -4,6 +4,7 @@
 
 # Home page
 GET        /                              @controllers.ApplicationController.index
+GET        /github/:owner/:repository     @controllers.ApplicationController.gitHubRepository(owner, repository)
 GET        /authenticate/:provider        @controllers.SocialAuthController.authenticate(provider)
 
 
