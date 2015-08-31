@@ -95,4 +95,5 @@ class ContributionDAO @Inject() (neo: Neo4J){
       case repo => repo.asOpt[Contribution]
     }
   }
+
 }

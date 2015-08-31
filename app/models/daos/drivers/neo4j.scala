@@ -1,15 +1,16 @@
 package models.daos.drivers
 
-import java.io.{ByteArrayOutputStream, ByteArrayInputStream, InputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream}
+import java.util.UUID
 import javax.inject.Inject
 
-import com.fasterxml.jackson.core.{JsonParser, JsonFactory, JsonToken}
-import com.fasterxml.jackson.databind.{ObjectMapper, JsonNode}
-import models.User
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
+import com.mohiva.play.silhouette.api.LoginInfo
+import models.{Contribution, Repository, Score, User}
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.iteratee.{Iteratee, Enumerator}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.{JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -121,7 +122,9 @@ class Neo4J @Inject() (ws: WSClient){
           }
         }
         new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray));
-
     }
   }
+
+
+
 }

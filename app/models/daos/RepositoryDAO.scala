@@ -1,10 +1,12 @@
 package models.daos
 
+import java.util.UUID
 import javax.inject.Inject
 
-import models.Repository
+import com.mohiva.play.silhouette.api.LoginInfo
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsUndefined, Json}
+import models.{Contribution, Contributor, Repository, User}
+import play.api.libs.json.{JsArray, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,14 +61,13 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
     neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} SET n={props} RETURN n", Json.obj(
       "uuid" -> repository.repoID.toString,
       "props" -> Json.toJson(repository)
-    )).map(response => repository)
-  }
+    )).map(response => repository)}
+
 
   /**
-   * Parse a Repository from a neo4j row result
+   * Gets all the contributors for a given repository with all their contributions
    *
-   * @param response response object
-   * @return The parsed Repository.
+   * @return A Sequence of contributors
    */
   def parseNeoRepo(response: WSResponse): Option[Repository] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
@@ -83,4 +84,5 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
       }
     }
   }
+
 }
