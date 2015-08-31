@@ -26,7 +26,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return Contribution to be used as an update.
    */
   def getUserContribution(repositoryName: String, user: User, oAuth2Info: OAuth2Info): Future[Option[Contribution]] = {
-    buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
+    buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName + "/stats/contributors"), Some(oAuth2Info))
       .get()
       .map(response => {
       val userContribution = response.json.as[JsArray].value
@@ -55,30 +55,33 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @param repositoryName full name of the repository to retrieve
    * @param oAuth2Info authentication information to use the api
    * @return A repository with all fields initiated except for the score and weight field that are initiated by default
-   *         to 0
+   *         to 0, returns None if the repository was not found
    */
-  def getRepository(repositoryName: String, oAuth2Info: OAuth2Info): Future[Repository] = {
+  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None): Future[Option[Repository]] = {
     buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
       .get()
       .flatMap(response => {
+      response.status match {
+        case 200 =>
+          val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+              (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
+            }
+          })
 
-      val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-        (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
-          (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
-        }
-      })
+          val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+              (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
+            }
+          })
 
-      val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-        (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
-          (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
-        }
-      })
-
-      buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName), oAuth2Info)
-        .get()
-        .map(response => {
-          Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0)
-      })
+          buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName), oAuth2Info)
+            .get()
+            .map(response => {
+            Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
+          })
+        case _ => Future(None)
+      }
     })
   }
 
@@ -103,7 +106,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return Set of repository names
    */
   private def doContributionRequest(url: String, user: User, oAuth2Info: OAuth2Info): Future[Set[String]] = {
-    buildGitHubReq(ws.url(url), oAuth2Info)
+    buildGitHubReq(ws.url(url), Some(oAuth2Info))
       .withHeaders("If-None-Match" -> user.publicEventsETag.getOrElse(""))
       .get()
       .flatMap(response => {
@@ -131,12 +134,18 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @param req set request with the URL to go to
    * @return A Ws Request populated with auth info.
    */
-  private def buildGitHubReq(req: WSRequest, oauthInfo: OAuth2Info): WSRequest = req
-    .withHeaders(
-      "Accept" -> "application/json ; charset=UTF-8",
-      "Content-Type" -> "application/json",
-      "Authorization" -> ("token "+ oauthInfo.accessToken))
-    .withRequestTimeout(10000)
+  private def buildGitHubReq(req: WSRequest, oauthInfo: Option[OAuth2Info] = None): WSRequest = {
+    req
+      .withHeaders(
+        "Accept" -> "application/json ; charset=UTF-8",
+        "Content-Type" -> "application/json")
+      .withRequestTimeout(10000)
+
+    oauthInfo match {
+      case None => req
+      case Some(oAuth) =>req.withHeaders("Authorization" -> ("token "+ oAuth.accessToken))
+    }
+  }
 
   /**
    * Parses a link String from GitHub to get the purposes and the links out of it

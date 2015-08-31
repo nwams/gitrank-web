@@ -1,165 +1,132 @@
 @import modules.CustomGitHubProvider
 
-@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository:String)(implicit request: RequestHeader)
+@(
+        gitHubProvider: CustomGitHubProvider,
+        user: Option[models.User],
+        repo: Repository
+)(owner: String, repositoryName :String)(implicit request: RequestHeader)
 
-@main("GitRank - "+owner+"/"+repository, gitHubProvider, user) {
+@main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
-    <div class="ui container">
-
-        <div class="ui middle aligned grid">
-            <div class="row">
-                <div class="eight wide column">
-                    <h2 class="ui header">
-                        <i class="mega-octicon octicon-repo"></i>
-                        <div class="content">
-                            <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
-                        </div>
+    @if(repo.karmaWeight == 0 ) {
+        <div class="ui active page dimmer">
+            <div class="content">
+                <div class="center">
+                    <h2 class="ui inverted header">
+                        No registered feedback for this repository, yet
                     </h2>
-                </div>
-                <div class="eight wide right aligned column">
-                    <div class="ui compact labeled icon menu">
-                        <a class="item feedbackLink">
-                            <i class="announcement icon"></i>
-                            Give Feedback
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="divided row">
-                <div class="thirteen wide column">
-                    <h3 class="ui dividing header ">Last 100 feedback scores</h3>
-                    <div class="parcoords" id="scoreChart"></div>
-                </div>
-                <div class="three wide center aligned column">
-                    <div class="ui statistic">
-                        <div class="value">
-                            4/5
-                        </div>
-                        <div class="label">
-                            Score
-                        </div>
-                    </div>
+                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary labeled icon button">
+                        <i class="plus icon"></i>
+                        Add First feedback
+                    </a>
                 </div>
             </div>
         </div>
+    } else {
+        <div class="ui container">
 
-
-        <div class="ui comments feedback">
-            <h3 class="ui dividing header">Feedback</h3>
-            <div class="comment">
-                <a class="avatar">
-                    <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
-                </a>
+            <h2 class="ui repository header">
+                <i class="mega-octicon octicon-repo"></i>
                 <div class="content">
-                    <a class="author">Thomas</a>
-                    <div class="metadata">
-                        <span data-content="Karma" class="popup">345 <i class="fire icon"></i></span>
-                        <span class="date">Today at 5:42PM </span>
-                    </div>
-                    <div class="text">
-                        This is a feedback written for this repository. This project has a very good api. It is mature
-                        and doesn't feel laggy. Very efficient and powerful tool ! Keep it up !
-                    </div>
-                    <div class="actions">
-                        <span data-content="Documentation" class="popup">4 <i class="icon book"></i></span>
-                        <span data-content="Maturity" class="popup">3 <i class="icon leaf"></i></span>
-                        <span data-content="Design" class="popup">3 <i class="icon university"></i></span>
-                        <span data-content="Support" class="popup">5 <i  class="icon life ring"></i></span>
-                    </div>
+                    <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repositoryName">@repositoryName</a>
                 </div>
-            </div>
-            <div class="comment">
-                <a class="avatar">
-                    <img src="http://api.adorable.io/avatars/285/jacob@@adorable.svg">
-                </a>
-                <div class="content">
-                    <a class="author">Jacob</a>
-                    <div class="metadata">
-                        <span data-content="Karma" class="popup">410 <i class="fire icon"></i></span>
-                        <span class="date">Today at 4:42PM</span>
-                    </div>
-                    <div class="text">
-                        This is crap I think those guys coded with their feets when they started this thing. I don't know
-                        but I know I don't like it.
-                    </div>
-                    <div class="actions">
-                        <span data-content="Documentation" class="popup">2 <i class="icon book"></i></span>
-                        <span data-content="Maturity" class="popup">1 <i class="icon leaf"></i></span>
-                        <span data-content="Design" class="popup">1 <i class="icon university"></i></span>
-                        <span data-content="Support" class="popup">3 <i  class="icon life ring"></i></span>
-                    </div>
-                </div>
-            </div>
-        </div>
+            </h2>
 
-        <div class="align-center">
-            <div class="ui pagination menu">
-                <a class="active item">
-                    1
-                </a>
-                <a class="item">
-                    2
-                </a>
-                <div class="disabled item">
-                    ...
-                </div>
-                <a class="item">
-                    11
-                </a>
-                <a class="item">
-                    12
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Feedback Modal -->
-    <div id="feedbackModal" class="ui modal">
-        <i class="close icon"></i>
-        <div class="header">
-            <i class="announcement icons"></i>
-            Give Feedback on @owner/@repository
-        </div>
-        <div class="content">
-            <form class="ui form">
-                <h4 class="ui dividing header">Scores</h4>
-                <div class="three fields">
-                    <div class="field">
-                        <label><i class="book icon"></i> Documentation</label>
-                        <div class="ui rating" data-max-rating="5"></div>
+            <div class="ui middle aligned grid">
+                <div class="divided row">
+                    <div class="thirteen wide column">
+                        <div class="parcoords" id="scoreChart"></div>
                     </div>
-                    <div class="field">
-                        <label><i class="icon leaf"></i>Maturity</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                    <div class="field">
-                        <label><i class="icon university"></i>Design</label>
-                        <div class="ui rating" data-max-rating="5"></div>
-                    </div>
-                    <div class="field">
-                        <label><i class="icon life ring"></i>Support</label>
-                        <div class="ui rating" data-max-rating="5"></div>
+                    <div class="three wide center aligned column">
+                        <div class="ui statistic">
+                            <div class="value">
+                                @repo.score/5
+                            </div>
+                            <div class="label">
+                                Score
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="field">
-                    <label>Comment</label>
-                    <textarea></textarea>
+
+            <div class="ui comments feedback">
+                <h3 class="ui dividing header">
+                    <i class="bullhorn icon"></i>
+                    <div class="content">
+                        Feedback
+                    </div>
+                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary button"><i class="plus icon"></i> Add</a>
+                </h3>
+
+                <div class="comment">
+                    <a class="avatar">
+                        <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
+                    </a>
+                    <div class="content">
+                        <a class="author">Thomas</a>
+                        <div class="metadata">
+                            <span data-content="Karma" class="popup">345 <i class="fire icon"></i></span>
+                            <span class="date">Today at 5:42PM </span>
+                        </div>
+                        <div class="text">
+                            This is a feedback written for this repository. This project has a very good api. It is mature
+                            and doesn't feel laggy. Very efficient and powerful tool ! Keep it up !
+                        </div>
+                        <div class="actions">
+                            <span data-content="Documentation" class="popup">4 <i class="icon book"></i></span>
+                            <span data-content="Maturity" class="popup">3 <i class="icon leaf"></i></span>
+                            <span data-content="Design" class="popup">3 <i class="icon university"></i></span>
+                            <span data-content="Support" class="popup">5 <i  class="icon life ring"></i></span>
+                        </div>
+                    </div>
                 </div>
-            </form>
-        </div>
-        <div class="actions">
-            <div class="ui black deny button">
-                Nope
+                <div class="comment">
+                    <a class="avatar">
+                        <img src="http://api.adorable.io/avatars/285/jacob@@adorable.svg">
+                    </a>
+                    <div class="content">
+                        <a class="author">Jacob</a>
+                        <div class="metadata">
+                            <span data-content="Karma" class="popup">410 <i class="fire icon"></i></span>
+                            <span class="date">Today at 4:42PM</span>
+                        </div>
+                        <div class="text">
+                            This is crap I think those guys coded with their feets when they started this thing. I don't know
+                            but I know I don't like it.
+                        </div>
+                        <div class="actions">
+                            <span data-content="Documentation" class="popup">2 <i class="icon book"></i></span>
+                            <span data-content="Maturity" class="popup">1 <i class="icon leaf"></i></span>
+                            <span data-content="Design" class="popup">1 <i class="icon university"></i></span>
+                            <span data-content="Support" class="popup">3 <i  class="icon life ring"></i></span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="ui positive right labeled icon button">
-                <i class="plus icon"></i>
-                Add Feedback
-            </div>
-        </div>
-    </div>
 
+            <div class="align-center">
+                <div class="ui pagination menu">
+                    <a class="active item">
+                        1
+                    </a>
+                    <a class="item">
+                        2
+                    </a>
+                    <div class="disabled item">
+                        ...
+                    </div>
+                    <a class="item">
+                        11
+                    </a>
+                    <a class="item">
+                        12
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
 
     <script src="@routes.Assets.at("lib/d3js/d3.min.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/d3.parcoords.js")" type="text/javascript"></script>
