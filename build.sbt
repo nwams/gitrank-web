@@ -59,7 +59,7 @@ addBuildNumber := {
 
   log.info("Getting build number ...")
 
-  if (sys.env.contains("CIRCLE_BUILD_NUM")){
+  if (sys.env.contains("CIRCLE_BUILD_NUM")) {
     Files.write(Paths.get("conf/build.conf"), ("buildNumber=" + sys.env("CIRCLE_BUILD_NUM")).getBytes())
     log.info("Running build #" + sys.env("CIRCLE_BUILD_NUM"))
   } else {

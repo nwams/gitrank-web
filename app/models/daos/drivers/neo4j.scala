@@ -1,10 +1,16 @@
 package models.daos.drivers
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream}
+import java.util.UUID
 import javax.inject.Inject
 
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
+import com.mohiva.play.silhouette.api.LoginInfo
+import models.{Contribution, Repository, Score, User}
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.{JsObject, JsUndefined, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -81,4 +87,44 @@ class Neo4J @Inject() (ws: WSClient){
       .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withRequestTimeout(10000)
+
+  def stream() : InputStream= ???
+
+
+
+  /**
+   * Execute a query with a stream result
+   * @param query query for using on the neo4j database
+   *
+   */
+  def cypherStream(query: String): Future[JsonParser] = {
+    val outputStream = new ByteArrayOutputStream()
+    buildNeo4JRequest(ws.url(NEO4J_ENDPOINT + "transaction/commit"))
+      .withHeaders("X-Stream" -> "true")
+      .withMethod("POST")
+      .withBody(Json.obj(
+      "statements" -> Json.arr(
+        Json.obj(
+          "statement" -> query
+        )
+      )
+    ))
+      .stream().map{
+      case (response,body) =>
+        if(response.status == 200){
+          val iteratee = Iteratee.foreach[Array[Byte]] { bytes =>
+            outputStream.write(bytes)
+          }
+          (body |>>> iteratee).andThen {
+            case result =>
+              outputStream.close()
+              result.get
+          }
+        }
+        new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray));
+    }
+  }
+
+
+
 }

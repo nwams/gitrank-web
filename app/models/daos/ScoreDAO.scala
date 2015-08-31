@@ -49,4 +49,5 @@ class ScoreDAO @Inject() (neo: Neo4J){
       case score => score.asOpt[Score]
     }
   }
+
 }

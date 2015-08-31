@@ -1,14 +1,15 @@
 package models.services
 
+import java.util.UUID
 import javax.inject.Inject
 
-import models.{Contribution, Repository}
-import models.daos.{ContributionDAO, RepositoryDAO}
+import models.daos.{UserDAO, ContributionDAO, RepositoryDAO}
+import models.{User, Contribution, Contributor, Repository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: ContributionDAO) {
+class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: ContributionDAO, userDAO: UserDAO) {
 
   /**
    * Saves or create a repository to the database according to the current needs
@@ -72,7 +73,7 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: Cont
   def retrieve(name: String): Future[Option[Repository]] = repoDAO.find(name)
 
   /**
-   * Retrives a repository according to its UUID
+   * Retrieves a repository according to its UUID
    *
    * @param repoId UUID of the repository to be retrieved.
    * @return
@@ -99,5 +100,17 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: Cont
   private def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
     val str = currentWeekBuffer.getOrElse("a0d0")
     str.substring(str.indexOf("d"), str.length).toInt
+  }
+
+  /**
+   * Gets all the contributors for a given repository with all their contributions
+   *
+   * @param repoName name of the repository to look for
+   * @return A Sequence of contributors
+   */
+  def findContributors(repoName: String): Future[Seq[User]] ={
+    repoDAO.find(repoName).map({
+      case repo => return userDAO.findAllFromRepo(repo.get)
+    })
   }
 }

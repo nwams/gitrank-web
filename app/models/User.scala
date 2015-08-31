@@ -44,4 +44,4 @@ object User {
 
 case class Contributor(
                         user: User,
-                        contributions: Seq[Contribution])
+                        contributions: Contribution)
