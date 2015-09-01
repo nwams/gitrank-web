@@ -1,22 +1,14 @@
 package models.dao
 
-import java.io.ByteArrayInputStream
-
 import com.fasterxml.jackson.core.JsonFactory
 import models.User
 import models.daos.UserDAO
 import models.daos.drivers.Neo4J
+import org.junit.runner._
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner._
-import org.junit.runner._
-
-import play.api.test._
-import play.api.test.Helpers._
-
 import scala.concurrent.Future
-
-
 /**
  * Created by brunnoattorre1 on 8/30/15.
  */
