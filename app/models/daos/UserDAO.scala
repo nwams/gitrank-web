@@ -177,12 +177,12 @@ class UserDAO @Inject() (neo: Neo4J) {
               callback(Some(User(
                 LoginInfo(loginInfo(0), loginInfo(1)),
                 jsonTree.get("username").asText(),
-                Some(jsonTree.get("fullName")).map(test =>{test.asText()}),
-                Some(jsonTree.get("email")).map(test =>{test.asText()}),
-                Some(jsonTree.get("avatarURL")).map(test =>{test.asText()}),
+                Option(jsonTree.get("fullName")).map(_.asText),
+                Option(jsonTree.get("email")).map(_.asText),
+                Option(jsonTree.get("avatarURL")).map(_.asText),
                 jsonTree.get("karma").asInt(),
-                Some(jsonTree.get("publicEventsETag")).map(test =>{test.asText()}),
-                Some(jsonTree.get("lastPublicEventPull")).map(test =>{test.asLong()})
+                Option(jsonTree.get("publicEventsETag")).map(_.asText),
+                Option(jsonTree.get("lastPublicEventPull")).map(_.asLong())
               )))
             }
             case _ =>
