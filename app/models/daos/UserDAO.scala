@@ -46,7 +46,7 @@ class UserDAO @Inject() (neo: Neo4J) {
     Future{
       val jsonParser = neo.cypherStream("MATCH (n:User) RETURN n ")
       jsonParser.onComplete{
-        case util.Success(parser) =>  return parseJson(parser, callback)
+        case util.Success(parser) =>  parseJson(parser, callback)
         case _ =>
       }
     }
@@ -165,7 +165,7 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param jsonParser json parser responsible for parsing the stream
    *
    */
-  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Future[Unit] ={
+  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
     jsonParser.nextFieldName() match {
       case "row" => {
@@ -177,12 +177,12 @@ class UserDAO @Inject() (neo: Neo4J) {
               callback(Some(User(
                 LoginInfo(loginInfo(0), loginInfo(1)),
                 jsonTree.get("username").asText(),
-                if (jsonTree.get("fullName")!=null) Some(jsonTree.get("fullName").asText()) else Some(null),
-                if (jsonTree.get("email")!=null) Some(jsonTree.get("email").asText()) else Some(null),
-                if (jsonTree.get("avatarURL")!=null) Some(jsonTree.get("avatarURL").asText()) else Some(null),
+                Some(jsonTree.get("fullName")).map(test =>{test.asText()}),
+                Some(jsonTree.get("email")).map(test =>{test.asText()}),
+                Some(jsonTree.get("avatarURL")).map(test =>{test.asText()}),
                 jsonTree.get("karma").asInt(),
-                if (jsonTree.get("publicEventsETag")!=null) Some(jsonTree.get("publicEventsETag").asText()) else Some(null),
-                if (jsonTree.get("lastPublicEventPull")!=null) Some(jsonTree.get("lastPublicEventPull").asLong()) else Some(0l)
+                Some(jsonTree.get("publicEventsETag")).map(test =>{test.asText()}),
+                Some(jsonTree.get("lastPublicEventPull")).map(test =>{test.asLong()})
               )))
             }
             case _ =>
@@ -190,7 +190,5 @@ class UserDAO @Inject() (neo: Neo4J) {
         }
       }
       case _ => parseJson(jsonParser, callback)
-    }
-    return null
-  }
+    }}
 }

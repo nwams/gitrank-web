@@ -2,11 +2,13 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.Contribution
+import models.{Repository, User, Contribution}
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsUndefined, Json}
+import play.api.libs.json.{JsObject, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
+import scala.collection.immutable.HashMap
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -31,6 +33,25 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName
       )
     ).map(parseNeoContribution)
+  }
+
+  /**
+   * Finds all contributions of a given user in the data store.
+   *
+   * @param username name of the contributing user
+   * @return the found Contribution if any.
+   */
+  def findAll(username: String): Future[HashMap[Repository,Contribution]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
+        WHERE u.username={username}
+        RETURN r, c
+      """,
+      Json.obj(
+        "username" -> username
+      )
+    ).map(parseNeoContributions)
   }
 
   /**
@@ -94,6 +115,16 @@ class ContributionDAO @Inject() (neo: Neo4J){
       case _: JsUndefined => None
       case repo => repo.asOpt[Contribution]
     }
+  }
+
+  def parseNeoContributions(response: WSResponse): HashMap[Repository,Contribution] = {
+    var listContribution = HashMap[Repository,Contribution]()
+    ((Json.parse(response.body) \\ "row")).foreach{
+      case contribution => {
+        listContribution + (contribution(0).asOpt[Repository].get-> contribution(1).asOpt[Contribution].get)
+      }
+    }
+    listContribution
   }
 
 }

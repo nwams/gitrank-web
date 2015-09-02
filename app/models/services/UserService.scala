@@ -26,6 +26,7 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
                                  contributionDAO: ContributionDAO,
                                  scoreDAO: ScoreDAO,
                                  oAuth2InfoDAO: OAuth2InfoDAO,
+                                 karmaService: KarmaService,
                                  @Named("github-actor") gitHubActor: ActorRef) extends IdentityService[User]{
 
   /**
@@ -34,7 +35,8 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    * @param loginInfo The login info to retrieve a user.
    * @return The retrieved user or None if no user could be retrieved for the given login info.
    */
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userDAO.find(loginInfo)
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = {
+    userDAO.find(loginInfo)}
 
   /**
    * Saves a user.
@@ -61,7 +63,6 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
           avatarURL = profile.avatarURL
         ))
       case None => // Insert a new use
-        println("Creating a new User")
         userDAO.create(User(
           loginInfo = profile.loginInfo,
           username = profile.username.get,
@@ -98,6 +99,6 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    */
   def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] = scoreDAO.save(username, repoName, score)
 
-  def propagateKarma (user: User) = ???
+  def propagateKarma (user: User) = karmaService.propagateUserKarma(user)
 
 }
