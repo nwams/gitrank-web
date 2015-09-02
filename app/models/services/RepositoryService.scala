@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import models.daos.drivers.GitHubAPI
 import models.daos.{ScoreDAO, ContributionDAO, RepositoryDAO, UserDAO}
-import models.{Score, Contribution, Repository, User}
+import models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -146,5 +146,5 @@ class RepositoryService @Inject() (
    * @param repoName name of the repository to get the scores from ("owner/repo")
    * @return Seq of Scores.
    */
-  def getFeedback(repoName: String): Future[Seq[Score]] = scoreDAO.findRepositoryScores(repoName)
+  def getFeedback(repoName: String): Future[Seq[Feedback]] = scoreDAO.findRepositoryFeedback(repoName)
 }

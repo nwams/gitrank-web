@@ -2,7 +2,7 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.Score
+import models.{Feedback, Score}
 import models.daos.drivers.Neo4J
 import play.api.libs.json.{JsArray, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
@@ -43,15 +43,15 @@ class ScoreDAO @Inject() (neo: Neo4J){
    * @param repoName name of the repository to get the scores from ("owner/repo")
    * @return Seq of Scores.
    */
-  def findRepositoryScores(repoName: String): Future[Seq[Score]] ={
+  def findRepositoryFeedback(repoName: String): Future[Seq[Feedback]] ={
     neo.cypher(
       """
         MATCH (u:User)-[c:SCORED]->(r:Repository)
         WHERE r.name={repoName}
-        RETURN c
+        RETURN c, u
       """,
       Json.obj("repoName" -> repoName)
-    ).map(parseNeoScoreList)
+    ).map(parseNeoFeedbackList)
   }
 
   /**
@@ -60,8 +60,9 @@ class ScoreDAO @Inject() (neo: Neo4J){
    * @param response response from neo
    * @return Seq of Scores
    */
-  def parseNeoScoreList(response: WSResponse): Seq[Score] =
-    ((Json.parse(response.body) \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
+  def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
+    ((Json.parse(response.body) \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+      Feedback(neo.parseSingleUser((jsValue \ "row")(0)).get, (jsValue \ "row")(0).as[Score]))
 
   /**
    * Parses a neo Score into a model

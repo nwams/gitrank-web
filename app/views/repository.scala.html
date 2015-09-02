@@ -4,7 +4,7 @@
         gitHubProvider: CustomGitHubProvider,
         user: Option[models.User],
         repo: Repository,
-        feedback: Seq[Score]
+        feedback: Seq[Feedback]
 )(owner: String, repositoryName :String)(implicit request: RequestHeader)
 
 @main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
@@ -63,20 +63,20 @@
                 @for(f <- feedback) {
                     <div class="comment">
                         <a class="avatar">
-                            <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
+                            <img src="@f.user.avatarURL">
                         </a>
                         <div class="content">
-                            <a class="author">Thomas</a>
+                            <a class="author">@f.user.fullName</a>
                             <div class="metadata">
-                                <span data-content="Karma" class="popup"> @f.karma <i class="fire icon"></i></span>
-                                <span class="date">on @f.timestamp.format("dd MMM yyyy") </span>
+                                <span data-content="Karma" class="popup"> @f.score.karma <i class="fire icon"></i></span>
+                                <span class="date">on @f.score.timestamp.format("dd MMM yyyy") </span>
                             </div>
-                            <div class="text"> @f.feedback </div>
+                            <div class="text"> @f.score.feedback </div>
                             <div class="actions">
-                                <span data-content="Documentation" class="popup"> @f.docScore <i class="icon book"></i></span>
-                                <span data-content="Maturity" class="popup"> @f.maturityScore <i class="icon leaf"></i></span>
-                                <span data-content="Design" class="popup"> @f.designScore <i class="icon university"></i></span>
-                                <span data-content="Support" class="popup"> @f.supportScore <i  class="icon life ring"></i></span>
+                                <span data-content="Documentation" class="popup"> @f.score.docScore <i class="icon book"></i></span>
+                                <span data-content="Maturity" class="popup"> @f.score.maturityScore <i class="icon leaf"></i></span>
+                                <span data-content="Design" class="popup"> @f.score.designScore <i class="icon university"></i></span>
+                                <span data-content="Support" class="popup"> @f.score.supportScore <i  class="icon life ring"></i></span>
                             </div>
                         </div>
                     </div>
