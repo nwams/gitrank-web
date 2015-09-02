@@ -3,8 +3,8 @@ package models.services
 import javax.inject.Inject
 
 import models.daos.drivers.GitHubAPI
-import models.daos.{ContributionDAO, RepositoryDAO, UserDAO}
-import models.{Contribution, Repository, User}
+import models.daos.{ScoreDAO, ContributionDAO, RepositoryDAO, UserDAO}
+import models.{Score, Contribution, Repository, User}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -13,6 +13,7 @@ class RepositoryService @Inject() (
                                     repoDAO: RepositoryDAO,
                                     contributionDAO: ContributionDAO,
                                     userDAO: UserDAO,
+                                    scoreDAO: ScoreDAO,
                                     gitHub: GitHubAPI,
                                     userService: UserService) {
 
@@ -110,7 +111,7 @@ class RepositoryService @Inject() (
   /**
    * Gets all the contributors for a given repository with all their contributions
    *
-   * @param repoName name of the repository to look for
+   * @param repoName name of the repository to look for, "owner/repo"
    * @return A Sequence of contributors
    */
   def findContributors(repoName: String): Future[Seq[User]] ={
@@ -125,17 +126,25 @@ class RepositoryService @Inject() (
    * If not, it returns None
    *
    * @param identity identity of the current user, can be None if no user is connected
-   * @param repositoryStringId "owner/repo"
+   * @param repoName "owner/repo"
    *
    * @return Future of Option of repository
    */
-  def getFromNeoOrGitHub (identity: Option[User], repositoryStringId: String): Future[Option[Repository]] = {
-    retrieve(repositoryStringId).flatMap((repoOption: Option[Repository]) => repoOption match {
+  def getFromNeoOrGitHub (identity: Option[User], repoName: String): Future[Option[Repository]] = {
+    retrieve(repoName).flatMap((repoOption: Option[Repository]) => repoOption match {
       case Some(repository) => Future(Some(repository))
       case None => identity match {
-        case None => gitHub.getRepository(repositoryStringId)
-        case Some(user) => userService.getOAuthInfo(user).flatMap(oAuthInfo => gitHub.getRepository(repositoryStringId, oAuthInfo))
+        case None => gitHub.getRepository(repoName)
+        case Some(user) => userService.getOAuthInfo(user).flatMap(oAuthInfo => gitHub.getRepository(repoName, oAuthInfo))
       }
     })
   }
+
+  /**
+   * get all the scoring made for a repository.
+   *
+   * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @return Seq of Scores.
+   */
+  def getFeedback(repoName: String): Future[Seq[Score]] = scoreDAO.findRepositoryScores(repoName)
 }

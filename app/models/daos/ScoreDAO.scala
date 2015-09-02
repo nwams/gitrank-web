@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import models.Score
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsUndefined, Json}
+import play.api.libs.json.{JsArray, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
@@ -36,6 +36,32 @@ class ScoreDAO @Inject() (neo: Neo4J){
       )
     ).map(parseNeoScore)
   }
+
+  /**
+   * get all the scoring made for a repository.
+   *
+   * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @return Seq of Scores.
+   */
+  def findRepositoryScores(repoName: String): Future[Seq[Score]] ={
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE r.name={repoName}
+        RETURN c
+      """,
+      Json.obj("repoName" -> repoName)
+    ).map(parseNeoScoreList)
+  }
+
+  /**
+   * Should parse a result list of scores and get it back
+   *
+   * @param response response from neo
+   * @return Seq of Scores
+   */
+  def parseNeoScoreList(response: WSResponse): Seq[Score] =
+    ((Json.parse(response.body) \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
 
   /**
    * Parses a neo Score into a model

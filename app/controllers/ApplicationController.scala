@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
-import models.User
+import models.{Score, User}
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
 import modules.CustomGitHubProvider
@@ -46,9 +46,12 @@ class ApplicationController @Inject() (
    * @return The html page of the repository
    */
   def gitHubRepository(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map({
-      case Some(repository) => Ok(views.html.repository(gitHubProvider, request.identity, repository)(owner, repositoryName))
-      case None => NotFound(views.html.error("notFound",404 , "Not Found", "We cannot find the repository page, it is likely that you misspelled it, try something else !"))
+    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
+      case Some(repository) => repoService.getFeedback(owner + "/" + repositoryName).map((scores: Seq[Score])=>
+        Ok(views.html.repository(gitHubProvider, request.identity, repository, scores)(owner, repositoryName))
+      )
+      case None => Future(NotFound(views.html.error("notFound", 404 , "Not Found",
+        "We cannot find the repository page, it is likely that you misspelled it, try something else !")))
     })
   }
 
@@ -62,7 +65,8 @@ class ApplicationController @Inject() (
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async {implicit request =>
     repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map({
       case Some(repository) => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName))
-      case None => NotFound(views.html.error("notFound",404 , "Not Found", "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !"))
+      case None => NotFound(views.html.error("notFound",404 , "Not Found",
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !"))
     })
   }
 }
