@@ -1,15 +1,20 @@
 package models.services
 
-import java.util.UUID
 import javax.inject.Inject
 
-import models.daos.{UserDAO, ContributionDAO, RepositoryDAO}
-import models.{User, Contribution, Contributor, Repository}
+import models.daos.drivers.GitHubAPI
+import models.daos.{ContributionDAO, RepositoryDAO, UserDAO}
+import models.{Contribution, Repository, User}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: ContributionDAO, userDAO: UserDAO) {
+class RepositoryService @Inject() (
+                                    repoDAO: RepositoryDAO,
+                                    contributionDAO: ContributionDAO,
+                                    userDAO: UserDAO,
+                                    gitHub: GitHubAPI,
+                                    userService: UserService) {
 
   /**
    * Saves or create a repository to the database according to the current needs
@@ -111,6 +116,26 @@ class RepositoryService @Inject() (repoDAO: RepositoryDAO, contributionDAO: Cont
   def findContributors(repoName: String): Future[Seq[User]] ={
     repoDAO.find(repoName).map({
       case repo => return userDAO.findAllFromRepo(repo.get)
+    })
+  }
+
+  /**
+   * Function that check if a repository exists in the database, if it does, returns the corresponding repository
+   * If not, it checks if the repository exists on GitHub. if it does, it returns the corresponding repository
+   * If not, it returns None
+   *
+   * @param identity identity of the current user, can be None if no user is connected
+   * @param repositoryStringId "owner/repo"
+   *
+   * @return Future of Option of repository
+   */
+  def getFromNeoOrGitHub (identity: Option[User], repositoryStringId: String): Future[Option[Repository]] = {
+    retrieve(repositoryStringId).flatMap((repoOption: Option[Repository]) => repoOption match {
+      case Some(repository) => Future(Some(repository))
+      case None => identity match {
+        case None => gitHub.getRepository(repositoryStringId)
+        case Some(user) => userService.getOAuthInfo(user).flatMap(oAuthInfo => gitHub.getRepository(repositoryStringId, oAuthInfo))
+      }
     })
   }
 }
