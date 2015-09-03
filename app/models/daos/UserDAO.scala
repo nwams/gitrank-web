@@ -53,7 +53,7 @@ class UserDAO @Inject() (neo: Neo4J) {
    * Returns all user that contributed to a specific repo
    * @param repository Repository that has received contributions
    */
-  def findAllFromRepo(repository: Repository): Future[Seq[Option[User]]] = {
+  def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u", Json.obj("repoID" -> repository.repoID)).map(parseNeoUsers)
   }
@@ -117,9 +117,8 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseNeoUser(response: WSResponse): Option[User] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
       case user => {
-        parseSingleUser(user)
+        Some(parseSingleUser(user))
       }
     }
   }
@@ -130,19 +129,17 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param response response object
    * @return The parsed users.
    */
-  def parseNeoUsers(response: WSResponse): Seq[Option[User]] = {
-    (Json.parse(response.body) \\ "user").map(_.as[JsObject]).map(parseSingleUser(_))
-  }
+  def parseNeoUsers(response: WSResponse): Seq[User] = (Json.parse(response.body) \\ "user").map(parseSingleUser(_))
 
   /**
    * Parser responsible for parsing the jsLookup
    * @param user jsLookup for single user
    * @return a single user
    */
-  def  parseSingleUser(user : JsLookup): Option[User] = {
+  def  parseSingleUser(user : JsLookup): User = {
     val loginInfo = (user \ "loginInfo").as[String]
     val logInfo = loginInfo.split(":")
-    Some(User(
+    User(
       LoginInfo(logInfo(0), logInfo(1)),
       (user \ "username").as[String],
       (user \ "fullName").asOpt[String],
@@ -151,7 +148,7 @@ class UserDAO @Inject() (neo: Neo4J) {
       (user \ "karma").as[Int],
       (user \ "publicEventsETag").asOpt[String],
       (user \ "lastPublicEventPull").asOpt[Long]
-    ))
+    )
   }
   /**
    * Parse a stream  with a list of  objects

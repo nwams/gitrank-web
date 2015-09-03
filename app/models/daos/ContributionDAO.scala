@@ -125,7 +125,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
    */
   def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
       ((Json.parse(response.body) \\ "row")).map{
-        case contribution => (contribution(0).asOpt[Repository].get, contribution(1).asOpt[Contribution].get)
+        case contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])
       }.seq
   }
 
