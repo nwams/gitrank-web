@@ -98,6 +98,6 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    */
   def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] = scoreDAO.save(username, repoName, score)
 
-  def propagateKarma (user: User) = karmaService.propagateUserKarma(user)
+  def propagateKarma (user: Option[User]) = karmaService.propagateUserKarma(user.get)
 
 }

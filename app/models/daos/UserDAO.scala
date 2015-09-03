@@ -43,20 +43,17 @@ class UserDAO @Inject() (neo: Neo4J) {
    *
    */
   def findAll(callback: (Any) => Future[Unit]): Future[Unit] = {
-    Future{
-      val jsonParser = neo.cypherStream("MATCH (n:User) RETURN n ")
-      jsonParser.onComplete{
+     Future( neo.cypherStream("MATCH (n:User) RETURN n ").onComplete{
         case util.Success(parser) =>  parseJson(parser, callback)
         case _ =>
-      }
-    }
+      })
   }
 
   /**
    * Returns all user that contributed to a specific repo
    * @param repository Repository that has received contributions
    */
-  def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
+  def findAllFromRepo(repository: Repository): Future[Seq[Option[User]]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u", Json.obj("repoID" -> repository.repoID)).map(parseNeoUsers)
   }
@@ -133,12 +130,8 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param response response object
    * @return The parsed users.
    */
-  def parseNeoUsers(response: WSResponse): Seq[User] = {
-    var listUser = ArrayBuffer[User]()
-    (Json.parse(response.body) \\ "user").map(_.as[JsObject]).toList.foreach{
-        listUser +=  parseSingleUser(_).get
-    }
-    listUser
+  def parseNeoUsers(response: WSResponse): Seq[Option[User]] = {
+    (Json.parse(response.body) \\ "user").map(_.as[JsObject]).map(parseSingleUser(_))
   }
 
   /**
@@ -146,7 +139,7 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param user jsLookup for single user
    * @return a single user
    */
-  private def  parseSingleUser(user : JsLookup): Option[User] = {
+  def  parseSingleUser(user : JsLookup): Option[User] = {
     val loginInfo = (user \ "loginInfo").as[String]
     val logInfo = loginInfo.split(":")
     Some(User(

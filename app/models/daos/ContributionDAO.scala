@@ -42,7 +42,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
    * @param username name of the contributing user
    * @return the found Contribution if any.
    */
-  def findAll(username: String): Future[mutable.HashMap[Repository,Contribution]] = {
+  def findAll(username: String): Future[Seq[(Repository,Contribution)]] = {
     neo.cypher(
       """
         MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
@@ -123,14 +123,10 @@ class ContributionDAO @Inject() (neo: Neo4J){
    * @param response response from neo4j
    * @return map with each contribution from repo
    */
-  def parseNeoContributions(response: WSResponse): mutable.HashMap[Repository,Contribution] = {
-      var listContribution = mutable.HashMap[Repository,Contribution]()
-      ((Json.parse(response.body) \\ "row")).foreach{
-      case contribution => {
-        listContribution.update(contribution(0).asOpt[Repository].get, contribution(1).asOpt[Contribution].get)
-        }
-      }
-      listContribution
+  def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
+      ((Json.parse(response.body) \\ "row")).map{
+        case contribution => (contribution(0).asOpt[Repository].get, contribution(1).asOpt[Contribution].get)
+      }.seq
   }
 
 }

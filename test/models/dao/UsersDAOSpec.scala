@@ -29,14 +29,14 @@ class UsersDAOSpec extends  Specification with Mockito{
   "userDAO#parseJson" should {
       "ParseJsonWithSingleUser" in {
         val mockedFunction = mock[UsersDAOSpec]
-        var goodJsonParser = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
+        val goodJsonParser = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
         val dao = new UserDAO(neo4jMock)
         dao.parseJson(goodJsonParser, mockedFunction.callback)
         there was one(mockedFunction).callback(any[Any])
       }
     "ParseJsonWithMultipleUsers" in {
       val mockedFunction = mock[UsersDAOSpec]
-      var goodJsonParserTwoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0},{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
+      val goodJsonParserTwoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0},{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
       val dao = new UserDAO(neo4jMock)
       dao.parseJson(goodJsonParserTwoUsers, mockedFunction.callback)
       there was two(mockedFunction).callback(any[Any])
@@ -44,7 +44,7 @@ class UsersDAOSpec extends  Specification with Mockito{
     }
     "ParseJsonWithNoUsers" in {
       val mockedFunctionInner = mock[UsersDAOSpec]
-      var goodJsonParserNoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[]}]}],\"errors\":[]}");
+      val goodJsonParserNoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[]}]}],\"errors\":[]}");
       val dao = new UserDAO(neo4jMock)
       dao.parseJson(goodJsonParserNoUsers, mockedFunctionInner.callback)
       there was no(mockedFunctionInner).callback(any[Any])

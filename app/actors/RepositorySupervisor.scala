@@ -26,6 +26,6 @@ class RepositorySupervisor @Inject()(userDAO: UserDAO, userService: UserService)
     case ScoreRepository(repository, score) =>
       for {
         users <- userDAO.findAllFromRepo(repository)
-      } yield users.map(userService.propagateKarma)
+      } yield users.foreach(userService.propagateKarma)
   }
 }
