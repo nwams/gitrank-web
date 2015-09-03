@@ -21,9 +21,9 @@ class UsersDAOSpec extends  Specification with Mockito{
 
 
   def callback (user:Any): Future[Unit] ={
-    Future{
+    Future(
       user.asInstanceOf[Some[User]].get shouldNotEqual null
-    }
+    )
   }
 
   "userDAO#parseJson" should {
