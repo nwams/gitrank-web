@@ -35,8 +35,7 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    * @param loginInfo The login info to retrieve a user.
    * @return The retrieved user or None if no user could be retrieved for the given login info.
    */
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = {
-    userDAO.find(loginInfo)}
+  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = userDAO.find(loginInfo)
 
   /**
    * Saves a user.

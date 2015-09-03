@@ -135,7 +135,7 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseNeoUsers(response: WSResponse): Seq[User] = {
     var listUser = ArrayBuffer[User]()
-    ((((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) \\ "user").map(_.as[JsObject]).toList.foreach{
+    (Json.parse(response.body) \\ "user").map(_.as[JsObject]).toList.foreach{
         listUser +=  parseSingleUser(_).get
     }
     listUser

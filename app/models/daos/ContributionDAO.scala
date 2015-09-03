@@ -8,6 +8,7 @@ import play.api.libs.json.{JsObject, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +42,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
    * @param username name of the contributing user
    * @return the found Contribution if any.
    */
-  def findAll(username: String): Future[HashMap[Repository,Contribution]] = {
+  def findAll(username: String): Future[mutable.HashMap[Repository,Contribution]] = {
     neo.cypher(
       """
         MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
@@ -117,14 +118,19 @@ class ContributionDAO @Inject() (neo: Neo4J){
     }
   }
 
-  def parseNeoContributions(response: WSResponse): HashMap[Repository,Contribution] = {
-    var listContribution = HashMap[Repository,Contribution]()
-    ((Json.parse(response.body) \\ "row")).foreach{
+  /**
+   * Parse multiple contributions and repos
+   * @param response response from neo4j
+   * @return map with each contribution from repo
+   */
+  def parseNeoContributions(response: WSResponse): mutable.HashMap[Repository,Contribution] = {
+      var listContribution = mutable.HashMap[Repository,Contribution]()
+      ((Json.parse(response.body) \\ "row")).foreach{
       case contribution => {
-        listContribution + (contribution(0).asOpt[Repository].get-> contribution(1).asOpt[Contribution].get)
+        listContribution.update(contribution(0).asOpt[Repository].get, contribution(1).asOpt[Contribution].get)
+        }
       }
-    }
-    listContribution
+      listContribution
   }
 
 }
