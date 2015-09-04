@@ -153,32 +153,40 @@ class UserDAO @Inject() (neo: Neo4J) {
   /**
    * Parse a stream  with a list of  objects
    * @param jsonParser json parser responsible for parsing the stream
-   *
+   * @param callback callback function for each item
    */
   def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
     jsonParser.nextFieldName() match {
       case "row" => {
-        while( { val token = jsonParser.nextToken(); token != JsonToken.END_ARRAY }){
-          jsonParser.getCurrentToken() match{
-            case JsonToken.START_OBJECT =>{
-              val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
-              val loginInfo = jsonTree.get("loginInfo").asText().split(":")
-              callback(Some(User(
-                LoginInfo(loginInfo(0), loginInfo(1)),
-                jsonTree.get("username").asText(),
-                Option(jsonTree.get("fullName")).map(_.asText),
-                Option(jsonTree.get("email")).map(_.asText),
-                Option(jsonTree.get("avatarURL")).map(_.asText),
-                jsonTree.get("karma").asInt(),
-                Option(jsonTree.get("publicEventsETag")).map(_.asText),
-                Option(jsonTree.get("lastPublicEventPull")).map(_.asLong())
-              )))
-            }
-            case _ =>
-          }
-        }
+        Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
       }
       case _ => parseJson(jsonParser, callback)
     }}
-}
+
+  /**
+   *
+   * Parse a fragment of a User Json
+   * @param jsonParser parser with the whole json stream
+   * @param callback callback function for each item
+   */
+  def parseJsonFragment(jsonParser: JsonParser,callback: (Any) => Future[Unit])= {
+      jsonParser.getCurrentToken() match{
+        case JsonToken.START_OBJECT =>{
+          val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
+          val loginInfo = jsonTree.get("loginInfo").asText().split(":")
+          callback(Some(User(
+            LoginInfo(loginInfo(0), loginInfo(1)),
+            jsonTree.get("username").asText(),
+            Option(jsonTree.get("fullName")).map(_.asText),
+            Option(jsonTree.get("email")).map(_.asText),
+            Option(jsonTree.get("avatarURL")).map(_.asText),
+            jsonTree.get("karma").asInt(),
+            Option(jsonTree.get("publicEventsETag")).map(_.asText),
+            Option(jsonTree.get("lastPublicEventPull")).map(_.asLong())
+          )))
+        }
+        case _ =>
+      }
+  }
+ }
