@@ -33,7 +33,7 @@ class KarmaService @Inject()(userDAO: UserDAO, repositoryDAO: RepositoryDAO, con
 
   def calculateKarma(user: User, contributions: Seq[(Repository,Contribution)]): Int ={
     contributions.map{
-      case (key,value) => (((value.addedLines.toFloat+value.removedLines)/(key.addedLines+key.removedLines)))*(key.score*key.score)
+      case value => (((value._2.addedLines.toFloat+value._2.removedLines)/(value._1.addedLines+value._1.removedLines)))*(value._1.score*value._1.score)
     }.sum.toInt
   }
   /**

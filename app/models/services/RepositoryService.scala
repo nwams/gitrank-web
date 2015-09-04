@@ -115,9 +115,7 @@ class RepositoryService @Inject() (
    * @return A Sequence of contributors
    */
   def findContributors(repoName: String): Future[Seq[Option[User]]] ={
-    repoDAO.find(repoName).map({
-      case repo => return userDAO.findAllFromRepo(repo.get)
-    })
+    repoDAO.find(repoName).map(repo => return userDAO.findAllFromRepo(repo.get))
   }
 
   /**
