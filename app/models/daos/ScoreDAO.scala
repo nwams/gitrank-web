@@ -38,20 +38,47 @@ class ScoreDAO @Inject() (neo: Neo4J){
   }
 
   /**
-   * get all the scoring made for a repository.
+   * Get all the scoring made for a repository corresponding to the page and items per page specified arguments.
    *
    * @param repoName name of the repository to get the scores from ("owner/repo")
-   * @return Seq of Scores.
+   * @param page page number to get from the database. Default value to 1
+   * @param itemsPerPage number of items to display in a database page
+   * @return Seq of Feedback.
    */
-  def findRepositoryFeedback(repoName: String): Future[Seq[Feedback]] ={
+  def findRepositoryFeedback(repoName: String, page: Int=1, itemsPerPage: Int=10): Future[Seq[Feedback]] = {
+
+    if (page == 0){
+      throw new Exception("Page 0 does not exist !")
+    }
+
     neo.cypher(
       """
         MATCH (u:User)-[c:SCORED]->(r:Repository)
         WHERE r.name={repoName}
-        RETURN c, u
-      """,
-      Json.obj("repoName" -> repoName)
+        RETURN c, u ORDER BY c.timestamp DESC SKIP {feedbackSkip} LIMIT {pageSize}
+      """, Json.obj(
+        "repoName" -> repoName,
+        "feedbackSkip" -> (page - 1) * itemsPerPage,
+        "pageSize" -> itemsPerPage
+      )
     ).map(parseNeoFeedbackList)
+  }
+
+  /**
+   * Gets the number of feedback there is for a given repository
+   *
+   * @param repoName name of the repository to get the feedback count from
+   * @return
+   */
+  def countRepositoryFeedback(repoName: String): Future[Int] = {
+    neo.cypher(
+    """
+      MATCH (u:User)-[c:SCORED]->(r:Repository)
+      WHERE r.name={repoName}
+      RETURN count(c) AS feedbackCount
+    """,
+      Json.obj("repoName" -> repoName)
+    ).map(response => (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
   }
 
   /**
@@ -61,7 +88,7 @@ class ScoreDAO @Inject() (neo: Neo4J){
    * @return Seq of Scores
    */
   def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
-    ((Json.parse(response.body) \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
       Feedback(neo.parseSingleUser((jsValue \ "row")(0)).get, (jsValue \ "row")(0).as[Score]))
 
   /**
@@ -71,10 +98,9 @@ class ScoreDAO @Inject() (neo: Neo4J){
    * @return
    */
   def parseNeoScore(response: WSResponse): Option[Score] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case score => score.asOpt[Score]
     }
   }
-
 }

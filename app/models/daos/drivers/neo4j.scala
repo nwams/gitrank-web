@@ -120,7 +120,6 @@ class Neo4J @Inject() (ws: WSClient){
     }
   }
 
-
   /**
    * Parser responsible for parsing the jsLookup
    *

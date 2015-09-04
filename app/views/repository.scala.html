@@ -4,8 +4,9 @@
         gitHubProvider: CustomGitHubProvider,
         user: Option[models.User],
         repo: Repository,
-        feedback: Seq[Feedback]
-)(owner: String, repositoryName :String)(implicit request: RequestHeader)
+        feedback: Seq[Feedback],
+        totalPages: Int
+)(owner: String, repositoryName :String, currentPage: Int)(implicit request: RequestHeader)
 
 @main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
@@ -81,26 +82,56 @@
                         </div>
                     </div>
                 }
-
-            <div class="align-center">
-                <div class="ui pagination menu">
-                    <a class="active item">
-                        1
-                    </a>
-                    <a class="item">
-                        2
-                    </a>
-                    <div class="disabled item">
-                        ...
-                    </div>
-                    <a class="item">
-                        11
-                    </a>
-                    <a class="item">
-                        12
-                    </a>
-                </div>
             </div>
+
+            @if(totalPages != 0) {
+                <div class="align-center">
+                    <div class="ui pagination menu">
+
+                        <a
+                        href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                        class="@if(currentPage == 1) {disabled} item">
+                            <
+                        </a>
+
+                        @if(currentPage != 1 && currentPage != 2) {
+                            <a class="disabled item">
+                                ...
+                            </a>
+                        }
+
+                        @if(currentPage - 1 > 0) {
+                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                            class="item">
+                            @(currentPage - 1)
+                            </a>
+                        }
+
+                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage))"
+                        class="item">
+                        @currentPage
+                        </a>
+
+                        @if(currentPage + 1 < totalPages) {
+                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                            class="item">
+                            @(currentPage + 1)
+                            </a>
+                        }
+
+                        @if(currentPage != totalPages && currentPage != totalPages - 1) {
+                            <a class="disabled item">
+                                ...
+                            </a>
+                        }
+
+                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                        class="@if(currentPage == totalPages) {disabled} item">
+                            >
+                        </a>
+                    </div>
+                </div>
+            }
         </div>
     }
 

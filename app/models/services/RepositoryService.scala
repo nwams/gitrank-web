@@ -141,10 +141,37 @@ class RepositoryService @Inject() (
   }
 
   /**
-   * get all the scoring made for a repository.
+   * get all the scoring made for a repository for the given page and item per page.
    *
    * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @param page page number to get from the database. Default value to 1
+   * @param itemsPerPage number of items to display in a database page
    * @return Seq of Scores.
    */
-  def getFeedback(repoName: String): Future[Seq[Feedback]] = scoreDAO.findRepositoryFeedback(repoName)
+  def getFeedback(repoName: String, page: Option[Int], itemsPerPage: Int=10): Future[Seq[Feedback]] = page match {
+    case Some(p) => scoreDAO.findRepositoryFeedback(repoName, p, itemsPerPage)
+    case None => scoreDAO.findRepositoryFeedback(repoName, 1 , itemsPerPage)
+  }
+
+
+  /**
+   * Gets the number of feedback page result for a given repository.
+   *
+   * @param repoName name of the repository to get the page count from
+   * @param itemsPerPage number of items to put in the page
+   * @return number of page as an integer.
+   */
+  def getFeedbackPageCount(repoName: String, itemsPerPage: Int=10): Future[Int] = {
+
+    if (itemsPerPage == 0){
+      throw new Exception("There can't be 0 items on a page")
+    }
+
+    scoreDAO.countRepositoryFeedback(repoName).map(feedbackCount => {
+      feedbackCount % itemsPerPage match {
+        case 0 => feedbackCount / itemsPerPage
+        case _ => (feedbackCount / itemsPerPage) + 1
+      }
+    })
+  }
 }
