@@ -4,7 +4,7 @@
 
 # Home page
 GET        /                                       @controllers.ApplicationController.index
-GET        /github/:owner/:repository              @controllers.ApplicationController.gitHubRepository(owner, repository)
+GET        /github/:owner/:repository              @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
 GET        /github/:owner/:repository/feedback     @controllers.ApplicationController.giveFeedbackPage(owner, repository)
 GET        /authenticate/:provider                 @controllers.SocialAuthController.authenticate(provider)
 

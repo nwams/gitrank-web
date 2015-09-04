@@ -3,8 +3,8 @@ package models.services
 import javax.inject.Inject
 
 import models.daos.drivers.GitHubAPI
-import models.daos.{ContributionDAO, RepositoryDAO, UserDAO}
-import models.{Contribution, Repository, User}
+import models.daos.{ScoreDAO, ContributionDAO, RepositoryDAO, UserDAO}
+import models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -13,6 +13,7 @@ class RepositoryService @Inject() (
                                     repoDAO: RepositoryDAO,
                                     contributionDAO: ContributionDAO,
                                     userDAO: UserDAO,
+                                    scoreDAO: ScoreDAO,
                                     gitHub: GitHubAPI,
                                     userService: UserService) {
 
@@ -110,7 +111,7 @@ class RepositoryService @Inject() (
   /**
    * Gets all the contributors for a given repository with all their contributions
    *
-   * @param repoName name of the repository to look for
+   * @param repoName name of the repository to look for, "owner/repo"
    * @return A Sequence of contributors
    */
   def findContributors(repoName: String): Future[Seq[User]] ={
@@ -125,16 +126,51 @@ class RepositoryService @Inject() (
    * If not, it returns None
    *
    * @param identity identity of the current user, can be None if no user is connected
-   * @param repositoryStringId "owner/repo"
+   * @param repoName "owner/repo"
    *
    * @return Future of Option of repository
    */
-  def getFromNeoOrGitHub (identity: Option[User], repositoryStringId: String): Future[Option[Repository]] = {
-    retrieve(repositoryStringId).flatMap((repoOption: Option[Repository]) => repoOption match {
+  def getFromNeoOrGitHub (identity: Option[User], repoName: String): Future[Option[Repository]] = {
+    retrieve(repoName).flatMap((repoOption: Option[Repository]) => repoOption match {
       case Some(repository) => Future(Some(repository))
       case None => identity match {
-        case None => gitHub.getRepository(repositoryStringId)
-        case Some(user) => userService.getOAuthInfo(user).flatMap(oAuthInfo => gitHub.getRepository(repositoryStringId, oAuthInfo))
+        case None => gitHub.getRepository(repoName)
+        case Some(user) => userService.getOAuthInfo(user).flatMap(oAuthInfo => gitHub.getRepository(repoName, oAuthInfo))
+      }
+    })
+  }
+
+  /**
+   * get all the scoring made for a repository for the given page and item per page.
+   *
+   * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @param page page number to get from the database. Default value to 1
+   * @param itemsPerPage number of items to display in a database page
+   * @return Seq of Scores.
+   */
+  def getFeedback(repoName: String, page: Option[Int], itemsPerPage: Int=10): Future[Seq[Feedback]] = page match {
+    case Some(p) => scoreDAO.findRepositoryFeedback(repoName, p, itemsPerPage)
+    case None => scoreDAO.findRepositoryFeedback(repoName, 1 , itemsPerPage)
+  }
+
+
+  /**
+   * Gets the number of feedback page result for a given repository.
+   *
+   * @param repoName name of the repository to get the page count from
+   * @param itemsPerPage number of items to put in the page
+   * @return number of page as an integer.
+   */
+  def getFeedbackPageCount(repoName: String, itemsPerPage: Int=10): Future[Int] = {
+
+    if (itemsPerPage == 0){
+      throw new Exception("There can't be 0 items on a page")
+    }
+
+    scoreDAO.countRepositoryFeedback(repoName).map(feedbackCount => {
+      feedbackCount % itemsPerPage match {
+        case 0 => feedbackCount / itemsPerPage
+        case _ => (feedbackCount / itemsPerPage) + 1
       }
     })
   }

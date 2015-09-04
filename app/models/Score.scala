@@ -11,6 +11,7 @@ case class Score (
                    docScore: Int,
                    supportScore: Int,
                    maturityScore: Int,
+                   feedback: String,
                    karma: Int)
 
 object Score {
@@ -20,6 +21,7 @@ object Score {
       (JsPath \ "docScore").write[Int] and
       (JsPath \ "supportScore").write[Int] and
       (JsPath \ "maturityScore").write[Int] and
+      (JsPath \ "feedback").write[String] and
       (JsPath \ "karma").write[Int]
     )(unlift(Score.unapply))
 
@@ -29,6 +31,12 @@ object Score {
       (JsPath \ "docScore").read[Int] and
       (JsPath \ "supportScore").read[Int] and
       (JsPath \ "maturityScore").read[Int] and
+      (JsPath \ "feedback").read[String] and
       (JsPath \ "karma").read[Int]
     )(Score.apply _)
 }
+
+case class Feedback (
+                    user: User,
+                    score: Score
+                      )

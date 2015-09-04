@@ -3,8 +3,10 @@
 @(
         gitHubProvider: CustomGitHubProvider,
         user: Option[models.User],
-        repo: Repository
-)(owner: String, repositoryName :String)(implicit request: RequestHeader)
+        repo: Repository,
+        feedback: Seq[Feedback],
+        totalPages: Int
+)(owner: String, repositoryName :String, currentPage: Int)(implicit request: RequestHeader)
 
 @main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
@@ -59,72 +61,77 @@
                     </div>
                     <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary button"><i class="plus icon"></i> Add</a>
                 </h3>
-
-                <div class="comment">
-                    <a class="avatar">
-                        <img src="http://api.adorable.io/avatars/285/thomas@@adorable.svg">
-                    </a>
-                    <div class="content">
-                        <a class="author">Thomas</a>
-                        <div class="metadata">
-                            <span data-content="Karma" class="popup">345 <i class="fire icon"></i></span>
-                            <span class="date">Today at 5:42PM </span>
-                        </div>
-                        <div class="text">
-                            This is a feedback written for this repository. This project has a very good api. It is mature
-                            and doesn't feel laggy. Very efficient and powerful tool ! Keep it up !
-                        </div>
-                        <div class="actions">
-                            <span data-content="Documentation" class="popup">4 <i class="icon book"></i></span>
-                            <span data-content="Maturity" class="popup">3 <i class="icon leaf"></i></span>
-                            <span data-content="Design" class="popup">3 <i class="icon university"></i></span>
-                            <span data-content="Support" class="popup">5 <i  class="icon life ring"></i></span>
+                @for(f <- feedback) {
+                    <div class="comment">
+                        <a class="avatar">
+                            <img src="@f.user.avatarURL">
+                        </a>
+                        <div class="content">
+                            <a class="author">@f.user.fullName</a>
+                            <div class="metadata">
+                                <span data-content="Karma" class="popup"> @f.score.karma <i class="fire icon"></i></span>
+                                <span class="date">on @f.score.timestamp.format("dd MMM yyyy") </span>
+                            </div>
+                            <div class="text"> @f.score.feedback </div>
+                            <div class="actions">
+                                <span data-content="Documentation" class="popup"> @f.score.docScore <i class="icon book"></i></span>
+                                <span data-content="Maturity" class="popup"> @f.score.maturityScore <i class="icon leaf"></i></span>
+                                <span data-content="Design" class="popup"> @f.score.designScore <i class="icon university"></i></span>
+                                <span data-content="Support" class="popup"> @f.score.supportScore <i  class="icon life ring"></i></span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="comment">
-                    <a class="avatar">
-                        <img src="http://api.adorable.io/avatars/285/jacob@@adorable.svg">
-                    </a>
-                    <div class="content">
-                        <a class="author">Jacob</a>
-                        <div class="metadata">
-                            <span data-content="Karma" class="popup">410 <i class="fire icon"></i></span>
-                            <span class="date">Today at 4:42PM</span>
-                        </div>
-                        <div class="text">
-                            This is crap I think those guys coded with their feets when they started this thing. I don't know
-                            but I know I don't like it.
-                        </div>
-                        <div class="actions">
-                            <span data-content="Documentation" class="popup">2 <i class="icon book"></i></span>
-                            <span data-content="Maturity" class="popup">1 <i class="icon leaf"></i></span>
-                            <span data-content="Design" class="popup">1 <i class="icon university"></i></span>
-                            <span data-content="Support" class="popup">3 <i  class="icon life ring"></i></span>
-                        </div>
-                    </div>
-                </div>
+                }
             </div>
 
-            <div class="align-center">
-                <div class="ui pagination menu">
-                    <a class="active item">
-                        1
-                    </a>
-                    <a class="item">
-                        2
-                    </a>
-                    <div class="disabled item">
-                        ...
+            @if(totalPages != 0) {
+                <div class="align-center">
+                    <div class="ui pagination menu">
+
+                        <a
+                        href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                        class="@if(currentPage == 1) {disabled} item">
+                            <
+                        </a>
+
+                        @if(currentPage != 1 && currentPage != 2) {
+                            <a class="disabled item">
+                                ...
+                            </a>
+                        }
+
+                        @if(currentPage - 1 > 0) {
+                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                            class="item">
+                            @(currentPage - 1)
+                            </a>
+                        }
+
+                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage))"
+                        class="item">
+                        @currentPage
+                        </a>
+
+                        @if(currentPage + 1 < totalPages) {
+                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                            class="item">
+                            @(currentPage + 1)
+                            </a>
+                        }
+
+                        @if(currentPage != totalPages && currentPage != totalPages - 1) {
+                            <a class="disabled item">
+                                ...
+                            </a>
+                        }
+
+                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                        class="@if(currentPage == totalPages) {disabled} item">
+                            >
+                        </a>
                     </div>
-                    <a class="item">
-                        11
-                    </a>
-                    <a class="item">
-                        12
-                    </a>
                 </div>
-            </div>
+            }
         </div>
     }
 

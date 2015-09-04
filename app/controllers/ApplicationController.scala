@@ -4,9 +4,9 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
-import models.User
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
+import models.{Feedback, User}
 import modules.CustomGitHubProvider
 import play.api.i18n.MessagesApi
 
@@ -45,10 +45,15 @@ class ApplicationController @Inject() (
    * @param repositoryName repository name on the repo system. (GitHub)
    * @return The html page of the repository
    */
-  def gitHubRepository(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map({
-      case Some(repository) => Ok(views.html.repository(gitHubProvider, request.identity, repository)(owner, repositoryName))
-      case None => NotFound(views.html.error("notFound",404 , "Not Found", "We cannot find the repository page, it is likely that you misspelled it, try something else !"))
+  def gitHubRepository(owner: String, repositoryName: String, page: Option[Int]) = UserAwareAction.async { implicit request =>
+    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
+      case Some(repository) => repoService.getFeedback(owner + "/" + repositoryName, page).flatMap((feedback: Seq[Feedback]) =>
+        repoService.getFeedbackPageCount(owner + "/" + repositoryName).map(totalPage =>{
+          Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)(owner, repositoryName, page.getOrElse(1)))
+        })
+      )
+      case None => Future(NotFound(views.html.error("notFound", 404 , "Not Found",
+        "We cannot find the repository page, it is likely that you misspelled it, try something else !")))
     })
   }
 
@@ -62,7 +67,8 @@ class ApplicationController @Inject() (
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async {implicit request =>
     repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map({
       case Some(repository) => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName))
-      case None => NotFound(views.html.error("notFound",404 , "Not Found", "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !"))
+      case None => NotFound(views.html.error("notFound",404 , "Not Found",
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !"))
     })
   }
 }

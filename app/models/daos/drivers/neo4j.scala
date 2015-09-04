@@ -1,16 +1,15 @@
 package models.daos.drivers
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, InputStream}
-import java.util.UUID
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.inject.Inject
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.{Contribution, Repository, Score, User}
+import models.User
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
-import play.api.libs.json.{JsObject, JsUndefined, Json}
+import play.api.libs.json.{JsLookup, JsObject, Json}
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -88,10 +87,6 @@ class Neo4J @Inject() (ws: WSClient){
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withRequestTimeout(10000)
 
-  def stream() : InputStream= ???
-
-
-
   /**
    * Execute a query with a stream result
    * @param query query for using on the neo4j database
@@ -125,6 +120,24 @@ class Neo4J @Inject() (ws: WSClient){
     }
   }
 
-
-
+  /**
+   * Parser responsible for parsing the jsLookup
+   *
+   * @param user jsLookup for single user
+   * @return a single user
+   */
+  def parseSingleUser(user : JsLookup): Option[User] = {
+    val loginInfo = (user \ "loginInfo").as[String]
+    val logInfo = loginInfo.split(":")
+    Some(User(
+      LoginInfo(logInfo(0), logInfo(1)),
+      (user \ "username").as[String],
+      (user \ "fullName").asOpt[String],
+      (user \ "email").asOpt[String],
+      (user \ "avatarURL").asOpt[String],
+      (user \ "karma").as[Int],
+      (user \ "publicEventsETag").asOpt[String],
+      (user \ "lastPublicEventPull").asOpt[Long]
+    ))
+  }
 }
