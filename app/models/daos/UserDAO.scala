@@ -1,20 +1,16 @@
 package models.daos
 
 import javax.inject.Inject
-import javax.swing.tree.TreeNode
 
-import akka.actor.Status.{Failure, Success}
-import com.fasterxml.jackson.core
-import com.fasterxml.jackson.core.{JsonFactory, JsonToken, JsonParser}
+import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.{Repository, User}
 import models.daos.drivers.Neo4J
+import models.{Repository, User}
 import play.api.libs.json._
 import play.api.libs.ws._
 
-import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util
@@ -118,7 +114,7 @@ class UserDAO @Inject() (neo: Neo4J) {
   def parseNeoUser(response: WSResponse): Option[User] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
       case user => {
-        Some(parseSingleUser(user))
+        neo.parseSingleUser(user)
       }
     }
   }
@@ -129,27 +125,9 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param response response object
    * @return The parsed users.
    */
-  def parseNeoUsers(response: WSResponse): Seq[User] = (Json.parse(response.body) \\ "user").map(parseSingleUser(_))
+  def parseNeoUsers(response: WSResponse): Seq[User] = (Json.parse(response.body) \\ "user").map(neo.parseSingleUser(_).get)
 
-  /**
-   * Parser responsible for parsing the jsLookup
-   * @param user jsLookup for single user
-   * @return a single user
-   */
-  def  parseSingleUser(user : JsLookup): User = {
-    val loginInfo = (user \ "loginInfo").as[String]
-    val logInfo = loginInfo.split(":")
-    User(
-      LoginInfo(logInfo(0), logInfo(1)),
-      (user \ "username").as[String],
-      (user \ "fullName").asOpt[String],
-      (user \ "email").asOpt[String],
-      (user \ "avatarURL").asOpt[String],
-      (user \ "karma").as[Int],
-      (user \ "publicEventsETag").asOpt[String],
-      (user \ "lastPublicEventPull").asOpt[Long]
-    )
-  }
+
   /**
    * Parse a stream  with a list of  objects
    * @param jsonParser json parser responsible for parsing the stream

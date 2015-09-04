@@ -43,7 +43,7 @@ test:
 
 deployment:
   hub:
-    branch: master
+    branch: develop
     commands:
       - docker version
       - docker login -e $DOCKERHUB_MAIL -p $DOCKERHUB_PASSWORD -u $DOCKERHUB_LOGIN

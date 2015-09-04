@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor._
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.User
+import models.{Contribution, Repository, User}
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
 
@@ -24,16 +24,16 @@ class GitHubActor @Inject()(
   import GitHubActor._
 
   def receive = {
-    case UpdateContributions(user: User, oAuth2Info: OAuth2Info) => {
-
+    case UpdateContributions(user: User, oAuth2Info: OAuth2Info) =>
       gitHubAPI.getContributedRepositories(user, oAuth2Info)
         .map(repositoryNames => {
           for (repositoryName <- repositoryNames){
             gitHubAPI.getUserContribution(repositoryName, user, oAuth2Info).map({
               case None => None
-              case Some(contribution) => {
-                gitHubAPI.getRepository(repositoryName, oAuth2Info).map(repository =>
-                  repoService.save(
+              case Some(contribution: Contribution) => gitHubAPI.getRepository(repositoryName, Some(oAuth2Info)).map(
+                (opt: Option[Repository])=> opt match {
+                  case None => None
+                  case Some(repository: Repository) => repoService.save(
                     repository.repoID,
                     repositoryName,
                     Some(repository.addedLines),
@@ -41,11 +41,9 @@ class GitHubActor @Inject()(
                     None,
                     None
                   ).map(repo => repoService.saveContribution(user.username, repositoryName, contribution))
-                )
-              }
+              })
             })
           }
       })
-    }
   }
 }

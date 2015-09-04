@@ -1,12 +1,10 @@
 package models.daos
 
-import java.util.UUID
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.LoginInfo
+import models.Repository
 import models.daos.drivers.Neo4J
-import models.{Contribution, Contributor, Repository, User}
-import play.api.libs.json.{JsArray, JsUndefined, Json}
+import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -61,7 +59,8 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
     neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} SET n={props} RETURN n", Json.obj(
       "uuid" -> repository.repoID.toString,
       "props" -> Json.toJson(repository)
-    )).map(response => repository)}
+    )).map(response => repository)
+  }
 
 
   /**

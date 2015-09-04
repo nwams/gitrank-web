@@ -62,7 +62,7 @@ class ErrorHandler @Inject() (
     case BAD_REQUEST => onBadRequest(request, message)
     case FORBIDDEN => onForbidden(request, message)
     case NOT_FOUND => Future.successful(NotFound(views.html.error(
-      "notFound", statusCode, "Not Found", "The requested page doesn't seem to exist"
+      "notFound", statusCode, "Not Found", "We cannot find the requested page, try something else !"
     )))
     case clientError if statusCode >= 400 && statusCode < 500 =>
       Future.successful(Results.Status(clientError)(views.html.defaultpages.badRequest(request.method, request.uri, message)))

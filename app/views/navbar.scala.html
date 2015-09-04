@@ -9,6 +9,12 @@
         </div>
 
         <div class="right menu">
+            <div class="item">
+                <div class="ui action input">
+                    <input id="goToRepoInput" type="text" placeholder="Enter owner/repository">
+                    <div id="goToRepoButton" class="ui primary button">Go</div>
+                </div>
+            </div>
             <div class="link item">
                 @user.map { u =>
                 <a href="https://github.com/@u.username">
