@@ -20,9 +20,7 @@ class KarmaService @Inject()(userDAO: UserDAO, repositoryDAO: RepositoryDAO, con
    * @param user User to propagate karma
    */
   def propagateUserKarma(user: User): Future[Unit] ={
-    contributionDAO.findAll(user.username).map {
-      case contrib => updateUser(user, calculateKarma(user, contrib))
-    }
+    contributionDAO.findAll(user.username).map { contrib => updateUser(user, calculateKarma(user, contrib))}
 
   }
 
