@@ -10,7 +10,6 @@ import models.{Repository, User}
 import play.api.libs.json._
 import play.api.libs.ws._
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util
@@ -51,10 +50,10 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def findAllFromRepo(repository: Repository): Future[Seq[Option[User]]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
-        "WHERE  r.name={repoName} RETURN u", Json.obj("repoID" -> repository.repoID)).map(parseNeoUsers)
+        "WHERE  r.name={repoName} RETURN u",
+        Json.obj("repoID" -> repository.repoID)
+      ).map(parseNeoUsers)
   }
-
-
 
   /**
    * Finds a user by its user ID.
