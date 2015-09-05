@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{JsPath, Writes}
+import play.api.libs.json.{Reads, JsPath, Writes}
 
 /**
  * The user object.
@@ -30,5 +30,13 @@ object Repository {
       (JsPath \ "name").write[String] and
       (JsPath \ "score").write[Int]
     )(unlift(Repository.unapply))
+  implicit val repoReads: Reads[Repository] = (
+      (JsPath \ "repoID").read[Int] and
+      (JsPath \ "addedLines").read[Int] and
+      (JsPath \ "removedLines").read[Int] and
+      (JsPath \ "karmaWeight").read[Int] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "score").read[Int]
+    )(Repository.apply _)
 }
 

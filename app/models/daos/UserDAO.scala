@@ -10,7 +10,6 @@ import models.{Repository, User}
 import play.api.libs.json._
 import play.api.libs.ws._
 
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util
@@ -39,25 +38,22 @@ class UserDAO @Inject() (neo: Neo4J) {
    *
    */
   def findAll(callback: (Any) => Future[Unit]): Future[Unit] = {
-    Future{
-      val jsonParser = neo.cypherStream("MATCH (n:User) RETURN n ")
-      jsonParser.onComplete{
-        case util.Success(parser) =>  return parseJson(parser, callback)
+     Future( neo.cypherStream("MATCH (n:User) RETURN n ").onComplete{
+        case util.Success(parser) =>  parseJson(parser, callback)
         case _ =>
-      }
-    }
+      })
   }
 
   /**
    * Returns all user that contributed to a specific repo
    * @param repository Repository that has received contributions
    */
-  def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
+  def findAllFromRepo(repository: Repository): Future[Seq[Option[User]]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
-        "WHERE  r.name={repoName} RETURN u", Json.obj("repoID" -> repository.repoID)).map(parseNeoUsers)
+        "WHERE  r.name={repoName} RETURN u",
+        Json.obj("repoID" -> repository.repoID)
+      ).map(parseNeoUsers)
   }
-
-
 
   /**
    * Finds a user by its user ID.
@@ -116,7 +112,6 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseNeoUser(response: WSResponse): Option[User] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
       case user => {
         neo.parseSingleUser(user)
       }
@@ -129,45 +124,46 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param response response object
    * @return The parsed users.
    */
-  def parseNeoUsers(response: WSResponse): Seq[User] = {
-    var listUser = ArrayBuffer[User]()
-    ((((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) \\ "user").map(_.as[JsObject]).toList.foreach{
-        listUser +=  neo.parseSingleUser(_).get
-    }
-    listUser
-  }
+  def parseNeoUsers(response: WSResponse): Seq[Option[User]] = (Json.parse(response.body) \\ "user").map(neo.parseSingleUser(_))
+
 
   /**
    * Parse a stream  with a list of  objects
    * @param jsonParser json parser responsible for parsing the stream
-   *
+   * @param callback callback function for each item
    */
-  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Future[Unit] ={
+  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
     jsonParser.nextFieldName() match {
       case "row" => {
-        while( { val token = jsonParser.nextToken(); token != JsonToken.END_ARRAY }){
-          jsonParser.getCurrentToken() match{
-            case JsonToken.START_OBJECT =>{
-              val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
-              val loginInfo = jsonTree.get("loginInfo").asText().split(":")
-              callback(Some(User(
-                LoginInfo(loginInfo(0), loginInfo(1)),
-                jsonTree.get("username").asText(),
-                if (jsonTree.get("fullName")!=null) Some(jsonTree.get("fullName").asText()) else Some(null),
-                if (jsonTree.get("email")!=null) Some(jsonTree.get("email").asText()) else Some(null),
-                if (jsonTree.get("avatarURL")!=null) Some(jsonTree.get("avatarURL").asText()) else Some(null),
-                jsonTree.get("karma").asInt(),
-                if (jsonTree.get("publicEventsETag")!=null) Some(jsonTree.get("publicEventsETag").asText()) else Some(null),
-                if (jsonTree.get("lastPublicEventPull")!=null) Some(jsonTree.get("lastPublicEventPull").asLong()) else Some(0l)
-              )))
-            }
-            case _ =>
-          }
-        }
+        Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
       }
       case _ => parseJson(jsonParser, callback)
-    }
-    return null
+    }}
+
+  /**
+   *
+   * Parse a fragment of a User Json
+   * @param jsonParser parser with the whole json stream
+   * @param callback callback function for each item
+   */
+  def parseJsonFragment(jsonParser: JsonParser,callback: (Any) => Future[Unit])= {
+      jsonParser.getCurrentToken() match{
+        case JsonToken.START_OBJECT =>{
+          val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
+          val loginInfo = jsonTree.get("loginInfo").asText().split(":")
+          callback(Some(User(
+            LoginInfo(loginInfo(0), loginInfo(1)),
+            jsonTree.get("username").asText(),
+            Option(jsonTree.get("fullName")).map(_.asText),
+            Option(jsonTree.get("email")).map(_.asText),
+            Option(jsonTree.get("avatarURL")).map(_.asText),
+            jsonTree.get("karma").asInt(),
+            Option(jsonTree.get("publicEventsETag")).map(_.asText),
+            Option(jsonTree.get("lastPublicEventPull")).map(_.asLong())
+          )))
+        }
+        case _ =>
+      }
   }
-}
+ }

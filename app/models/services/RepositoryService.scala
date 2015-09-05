@@ -114,9 +114,10 @@ class RepositoryService @Inject() (
    * @param repoName name of the repository to look for, "owner/repo"
    * @return A Sequence of contributors
    */
-  def findContributors(repoName: String): Future[Seq[User]] ={
-    repoDAO.find(repoName).map({
-      case repo => return userDAO.findAllFromRepo(repo.get)
+  def findContributors(repoName: String): Future[Seq[Option[User]]] = {
+    repoDAO.find(repoName).flatMap({
+      case Some(repository) => userDAO.findAllFromRepo(repository)
+      case None => Future(Seq())
     })
   }
 
