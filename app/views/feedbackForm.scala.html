@@ -15,7 +15,7 @@
         </h2>
 
         <h3 class="ui dividing header ">Feedback</h3>
-
+        @helper.form(action = routes.ApplicationController.giveScorePage(owner,repository), 'class -> "ui form") {
         <form class="ui form">
             <div class="three fields">
                 <div class="field">
@@ -45,7 +45,7 @@
                 <i class="icon plus"></i> Give Feedback
             </div>
         </form>
-        @helper.form(action = routes.ApplicationController.giveScorePage(owner,repository)) {
+
             @helper.CSRF.formField
             @helper.inputText(form("scoreDocumentation"))
             @helper.inputText(form("scoreMaturity"))
