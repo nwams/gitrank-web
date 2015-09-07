@@ -39,14 +39,18 @@ class SocialAuthController @Inject() (
    */
   def authenticate(provider: String) = Action.async { implicit request =>
     gitHubProvider.authenticate().flatMap {
-      case Left(result) => Future.successful(result)
+      case Left(result) => Future.successful(result.withSession(("login-referrer", request.headers.get(REFERER).get)))
       case Right(authInfo) => for {
         profile <- gitHubProvider.retrieveProfile(authInfo)
         user <- userService.save(profile, authInfo)
         authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
         authenticator <- env.authenticatorService.create(profile.loginInfo)
         value <- env.authenticatorService.init(authenticator)
-        result <- env.authenticatorService.embed(value, Redirect(routes.ApplicationController.index()))
+        result <- env.authenticatorService.embed(value,
+          request.session.get("login-referrer") match {
+            case Some(ref) => Redirect(ref)
+            case None => Redirect(routes.ApplicationController.index())
+          })
       } yield {
           env.eventBus.publish(LoginEvent(user, request, request2Messages))
           result

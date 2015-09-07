@@ -68,7 +68,6 @@ addBuildNumber := {
   }
 }
 
-
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 
 dockerBaseImage := "colisweb/debian-oracle-java8"
