@@ -15,47 +15,42 @@
         </h2>
 
         <h3 class="ui dividing header ">Feedback</h3>
-        <form class="ui form">
+        @helper.form(action = routes.ApplicationController.giveScorePage(owner,repository), 'class -> "ui form") {
+            @helper.CSRF.formField
             <div class="three fields">
                 <div class="field">
                     <label><i class="book icon"></i> Documentation</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="docScore" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreDocumentation"),'_label -> "",'value -> "0", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon leaf"></i>Maturity</label>
                     <div class="ui rating" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreMaturity"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon university"></i>Design</label>
                     <div class="ui rating" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreDesign"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon life ring"></i>Support</label>
                     <div class="ui rating" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreSupport"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
             </div>
 
             <div class="field">
                 <label>Feedback</label>
-                <textarea></textarea>
+                @helper.textarea(form("feedback"),'_label -> ""    , '_showConstraints -> false)
             </div>
-
-            <div class="fluid ui positive submit labeled icon button">
+            <button id="submit" type="submit" value="submit" class="fluid ui positive submit labeled icon button">
                 <i class="icon plus"></i> Give Feedback
-            </div>
-        </form>
-        @helper.form(action = routes.ApplicationController.giveScorePage(owner,repository), 'class -> "ui form") {
-            @helper.CSRF.formField
-            @helper.inputText(form("scoreDocumentation"))
-            @helper.inputText(form("scoreMaturity"))
-            @helper.inputText(form("scoreDesign"))
-            @helper.inputText(form("scoreSupport"))
-            @helper.inputText(form("feedback"))
-            <div class="form-group">
-                <div>
-                    <button id="submit" type="submit" value="submit"/>
-                </div>
-            </div>
+            </button>
         }
     </div>
 }
