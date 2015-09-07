@@ -72,6 +72,18 @@ class UserDAO @Inject() (neo: Neo4J) {
   }
 
   /**
+   * Finds a user by its username.
+   *
+   * @param username The username of the user to find.
+   * @return The found user or None if no user for the given ID could be found.
+   */
+  def find(username: String): Future[Option[User]] = {
+    neo.cypher("MATCH (n:User) WHERE n.username = {usernmae} RETURN n", Json.obj(
+      "username" -> username
+    )).map(parseNeoUser)
+  }
+
+  /**
    * Saves a user.
    *
    * @param user The user to save.

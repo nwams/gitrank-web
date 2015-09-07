@@ -1,5 +1,6 @@
 package models.services
 
+import java.util.{Date, Calendar}
 import javax.inject.Inject
 
 import models.daos.drivers.GitHubAPI
@@ -15,7 +16,8 @@ class RepositoryService @Inject() (
                                     userDAO: UserDAO,
                                     scoreDAO: ScoreDAO,
                                     gitHub: GitHubAPI,
-                                    userService: UserService) {
+                                    userService: UserService,
+                                    scoreService: ScoreService) {
 
   /**
    * Saves or create a repository to the database according to the current needs
@@ -174,4 +176,23 @@ class RepositoryService @Inject() (
       }
     })
   }
+
+  /**
+   * Gives a specific score to a repo.
+   * @param owner User logged in
+   * @param repositoryName name of the repo to be scored
+   * @param scoreDocumentation score given for documentation
+   * @param scoreMaturity score given for maturity
+   * @param scoreDesign score given for design
+   * @param scoreSupport score given for support
+   * @param feedback feedback written by user
+   * @return repo scored
+   */
+  def giveScoreToRepo(owner:String, user: User, repositoryName: String, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback:String): Future[Repository] = {
+   repoDAO.find(owner+"/"+repositoryName).map({
+     case Some(repo)=> scoreService.createScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
+     case None => throw new Exception("Repository does not exists!")
+   })
+  }
+
 }

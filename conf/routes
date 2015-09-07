@@ -3,12 +3,13 @@
 # ~~~~
 
 # Home page
-GET        /                                       @controllers.ApplicationController.index
-GET        /github/:owner/:repository              @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
-GET        /github/:owner/:repository/feedback     @controllers.ApplicationController.giveFeedbackPage(owner, repository)
-GET        /authenticate/:provider                 @controllers.SocialAuthController.authenticate(provider)
+GET        /                                          @controllers.ApplicationController.index
+GET        /github/:owner/:repository                 @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
+GET        /github/:owner/:repository/feedback        @controllers.ApplicationController.giveFeedbackPage(owner, repository)
+POST       /github/:owner/:repository/feedback        @controllers.ApplicationController.giveScorePage(owner, repository)
+GET        /authenticate/:provider                    @controllers.SocialAuthController.authenticate(provider)
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file                     controllers.Assets.at(path="/public", file)
-GET        /webjars/*file                    controllers.WebJarAssets.at(file)
+GET        /assets/*file                              controllers.Assets.at(path="/public", file)
+GET        /webjars/*file                             controllers.WebJarAssets.at(file)
