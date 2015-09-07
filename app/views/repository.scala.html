@@ -10,7 +10,7 @@
 
 @main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
-    @if(repo.karmaWeight == 0 ) {
+    @if(feedback.isEmpty) {
         <div class="ui active page dimmer">
             <div class="content">
                 <div class="center">
