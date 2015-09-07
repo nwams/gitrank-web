@@ -20,6 +20,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
+  "org.scalatest" % "scalatest_2.11" % "2.2.4" % "test",
   "com.mohiva" %% "play-silhouette" % "3.0.0-RC1",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0-RC1" % "test",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
@@ -66,7 +67,6 @@ addBuildNumber := {
     log.info("No build number found, local version running ...")
   }
 }
-
 
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 

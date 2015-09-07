@@ -2,11 +2,14 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.Contribution
+import models.{Repository, User, Contribution}
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsUndefined, Json}
+import play.api.libs.json.{JsObject, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
+import scala.collection.immutable.HashMap
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -31,6 +34,25 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName
       )
     ).map(parseNeoContribution)
+  }
+
+  /**
+   * Finds all contributions of a given user in the data store.
+   *
+   * @param username name of the contributing user
+   * @return the found Contribution if any.
+   */
+  def findAll(username: String): Future[Seq[(Repository,Contribution)]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
+        WHERE u.username={username}
+        RETURN r, c
+      """,
+      Json.obj(
+        "username" -> username
+      )
+    ).map(parseNeoContributions)
   }
 
   /**
@@ -94,6 +116,15 @@ class ContributionDAO @Inject() (neo: Neo4J){
       case _: JsUndefined => None
       case repo => repo.asOpt[Contribution]
     }
+  }
+
+  /**
+   * Parse multiple contributions and repos
+   * @param response response from neo4j
+   * @return map with each contribution from repo
+   */
+  def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
+      ((Json.parse(response.body) \\ "row")).map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
   }
 
 }
