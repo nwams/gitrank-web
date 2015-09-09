@@ -26,19 +26,19 @@
                 </div>
                 <div class="field">
                     <label><i class="icon leaf"></i>Maturity</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="matScore" data-max-rating="5"></div>
                     @helper.inputText(form("scoreMaturity"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
 
                 </div>
                 <div class="field">
                     <label><i class="icon university"></i>Design</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="desScore" data-max-rating="5"></div>
                     @helper.inputText(form("scoreDesign"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
 
                 </div>
                 <div class="field">
                     <label><i class="icon life ring"></i>Support</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="supScore" data-max-rating="5"></div>
                     @helper.inputText(form("scoreSupport"),'_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
 
                 </div>
