@@ -47,8 +47,8 @@ class ScoreDAO @Inject() (neo: Neo4J){
    */
   def findRepositoryFeedback(repoName: String, page: Int=1, itemsPerPage: Int=10): Future[Seq[Feedback]] = {
 
-    if (page == 0){
-      throw new Exception("Page 0 does not exist !")
+    if (page < 1){
+      throw new Exception("Page must be a positive non null integer")
     }
 
     neo.cypher(
@@ -62,6 +62,32 @@ class ScoreDAO @Inject() (neo: Neo4J){
         "pageSize" -> itemsPerPage
       )
     ).map(parseNeoFeedbackList)
+  }
+
+  /**
+   * Get all the scoring made for a repository corresponding to the page and items per page specified arguments.
+   *
+   * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @param page page number to get from the database. Default value to 1
+   * @param itemsPerPage number of items to display in a database page
+   * @return Seq of Scores.
+   */
+  def findRepositoryScores(repoName: String, page: Int=1, itemsPerPage: Int=10): Future[Seq[Score]] = {
+    if (page < 1){
+      throw new Exception("Page must be a positive non null integer")
+    }
+
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE r.name={repoName}
+        RETURN c ORDER BY c.timestamp DESC SKIP {scoreSkip} LIMIT {pageSize}
+      """, Json.obj(
+        "repoName" -> repoName,
+        "scoreSkip" -> (page - 1) * itemsPerPage,
+        "pageSize" -> itemsPerPage
+      )
+    ).map(parseNeoScoreList)
   }
 
   /**
@@ -82,14 +108,23 @@ class ScoreDAO @Inject() (neo: Neo4J){
   }
 
   /**
-   * Should parse a result list of scores and get it back
+   * Should parse a result list of feedback and get it back
    *
    * @param response response from neo
    * @return Seq of Scores
    */
   def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
     ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      Feedback(neo.parseSingleUser((jsValue \ "row")(0)), (jsValue \ "row")(0).as[Score]))
+      Feedback(neo.parseSingleUser((jsValue \ "row")(0)), (jsValue \ "row")(1).as[Score]))
+
+  /**
+   * Should parse a result list of scores and get it back
+   *
+   * @param response response from neo
+   * @return Seq of Scores
+   */
+  def parseNeoScoreList(response: WSResponse): Seq[Score] =
+    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
 
   /**
    * Parses a neo Score into a model
