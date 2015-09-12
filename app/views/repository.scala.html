@@ -10,6 +10,7 @@
 
 @main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
 
+    
     @if(repo.karmaWeight == 0 ) {
         <div class="ui active page dimmer">
             <div class="content">
@@ -25,6 +26,7 @@
             </div>
         </div>
     } else {
+
         <div class="ui container">
 
             <h2 class="ui repository header">
@@ -37,7 +39,7 @@
             <div class="ui middle aligned grid">
                 <div class="divided row">
                     <div class="thirteen wide column">
-                        <div class="parcoords" id="scoreChart"></div>
+                        <div id="scoreChart"></div>
                     </div>
                     <div class="three wide center aligned column">
                         <div class="ui statistic">
@@ -135,7 +137,7 @@
         </div>
     }
 
+
     <script src="@routes.Assets.at("lib/d3js/d3.min.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/d3.parcoords.js")" type="text/javascript"></script>
     <script src="@routes.Assets.at("javascripts/repository.js")" type="text/javascript"></script>
 }
