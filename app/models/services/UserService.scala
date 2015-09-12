@@ -73,7 +73,6 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
           None
         )).map(user => {
           // We load the user contributions and update his karma in the background.
-          println("Request to get the contributions to the actor")
           gitHubActor ! UpdateContributions(user, oAuth2Info)
           user
         })
@@ -98,6 +97,11 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    */
   def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] = scoreDAO.save(username, repoName, score)
 
-  def propagateKarma (user: Option[User]) = user.map(karmaService.propagateUserKarma)
-
+  /**
+   * Updates the user's karma according to its contributions
+   *
+   * @param user user to update the karma
+   * @return
+   */
+  def propagateKarma (user: User) = karmaService.propagateUserKarma(user)
 }

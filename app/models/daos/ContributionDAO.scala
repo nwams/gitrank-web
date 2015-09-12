@@ -2,16 +2,13 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.{Repository, User, Contribution}
 import models.daos.drivers.Neo4J
-import play.api.libs.json.{JsObject, JsUndefined, Json}
+import models.{Contribution, Repository}
+import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
-import scala.collection.immutable.HashMap
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ContributionDAO @Inject() (neo: Neo4J){
 
@@ -124,7 +121,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
    * @return map with each contribution from repo
    */
   def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
-      ((Json.parse(response.body) \\ "row")).map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
+      (Json.parse(response.body) \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
   }
 
 }

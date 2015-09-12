@@ -89,7 +89,7 @@ class ScoreDAO @Inject() (neo: Neo4J){
    */
   def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
     ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      Feedback(neo.parseSingleUser((jsValue \ "row")(0)).get, (jsValue \ "row")(0).as[Score]))
+      Feedback(neo.parseSingleUser((jsValue \ "row")(0)), (jsValue \ "row")(0).as[Score]))
 
   /**
    * Parses a neo Score into a model
