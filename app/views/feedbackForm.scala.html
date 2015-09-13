@@ -5,7 +5,6 @@
 @main("GitRank - "+owner+"/"+repository+ " Feedback form !", gitHubProvider, user) {
     <div class="ui container">
 
-
         <h2 class="ui repository header">
             <i class="mega-octicon octicon-repo"></i>
             <div class="content">
@@ -16,6 +15,23 @@
         <h3 class="ui dividing header ">Feedback</h3>
 
         <form class="ui form">
+
+            @if(user.isEmpty){
+                <div class="ui active dimmer">
+                    <div class="content">
+                        <div class="center">
+                            <h2 class="ui inverted header">
+                                You need to be login to add some feedback
+                            </h2>
+                            <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
+                                <span class="octicon octicon-mark-github"></span>
+                                Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div class="three fields">
                 <div class="field">
                     <label><i class="book icon"></i> Documentation</label>
