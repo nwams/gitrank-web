@@ -38,6 +38,46 @@ class ScoreDAO @Inject() (neo: Neo4J){
   }
 
   /**
+   * Find a score from a user to a repo
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @return saved score.
+   */
+  def find(username: String, repoName: String): Future[Option[Score]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        RETURN c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    ).map(parseNeoScore)
+  }
+
+  /**
+   * Find all scores for a given repo
+   *
+   * @param repoName repository which was scored
+   * @return saved scores.
+   */
+  def find( repoName: String): Future[Seq[Feedback]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE  r.name={repoName}
+        RETURN c
+      """,
+      Json.obj(
+        "repoName" -> repoName
+      )
+    ).map(parseNeoFeedbackList)
+  }
+
+  /**
    * Get all the scoring made for a repository corresponding to the page and items per page specified arguments.
    *
    * @param repoName name of the repository to get the scores from ("owner/repo")
