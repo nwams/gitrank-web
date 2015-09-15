@@ -64,8 +64,8 @@
                         Feedback
                     </div>
                     @if(permission){
-                    <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button"><i class="plus icon"></i>
-                    Add</a>
+                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button"><i class="plus icon"></i>
+                        Add</a>
                     }
                 </h3>
                 @for(f <- feedback) {

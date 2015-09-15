@@ -146,11 +146,16 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
-    jsonParser.nextFieldName() match {
+    jsonParser.getCurrentName() match {
       case "row" => {
         Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
       }
-      case _ => parseJson(jsonParser, callback)
+      case _ => {
+        Option(jsonParser.nextToken()) match {
+          case Some(_)=> parseJson(jsonParser, callback)
+          case None =>
+        }
+      }
     }}
 
   /**

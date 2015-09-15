@@ -8,7 +8,7 @@ import akka.actor.ActorRef
 import models.{Score, Repository, User}
 import models.daos.drivers.GitHubAPI
 import models.daos.{ScoreDAO, UserDAO, ContributionDAO, RepositoryDAO}
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
@@ -26,7 +26,10 @@ class ScoreService @Inject() (scoreDAO: ScoreDAO, @Named("repository-supervisor"
    */
   def createScore(user: User,  repository: Repository, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback:String) : Repository = {
     val score = createScore(user.karma, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
-    scoreDAO.save(user.username, repository.name, score)
+    scoreDAO.find(user.username, repository.name).map{
+      case Some(_) => scoreDAO.update(user.username, repository.name, score)
+      case None => scoreDAO.save(user.username, repository.name, score)
+    }
     repositorySupervisor ! ScoreRepository(repository, score)
     repository
   }

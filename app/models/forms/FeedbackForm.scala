@@ -17,8 +17,7 @@ object FeedbackForm {
       "scoreMaturity" -> number,
       "scoreDesign" -> number,
       "scoreSupport" -> number,
-      "feedback" -> nonEmptyText,
-      "permission" -> text
+      "feedback" -> nonEmptyText
     )(Data.apply)(Data.unapply)
   )
 
@@ -27,6 +26,5 @@ object FeedbackForm {
                    scoreMaturity: Int,
                    scoreDesign: Int,
                    scoreSupport: Int,
-                   feedback: String,
-                   permission: String)
+                   feedback: String)
 }

@@ -171,7 +171,7 @@ class RepositoryService @Inject()(
     user match {
       case Some(userEntity)=>
         contributionDAO.checkIfUserContributed(userEntity.username, repoName).map{
-          case x => x
+          hasContributed => !hasContributed
         }
       case None => Future(false)
     }
@@ -181,10 +181,10 @@ class RepositoryService @Inject()(
     user match{
       case Some(userEntity)=>
         scoreDAO.find(userEntity.username, repoName).map{
-          case Some(score)=> false
+          case Some(_)=> false
           case None => true
         }
-      case None => Future(false)
+      case None => Future(true)
     }
   }
 

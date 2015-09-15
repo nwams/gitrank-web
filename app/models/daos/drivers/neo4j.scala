@@ -115,8 +115,12 @@ class Neo4J @Inject() (ws: WSClient){
               outputStream.close()
               result.get
           }
+          println("TEST --------"+new String(outputStream.toByteArray))
+          new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray));
+        }else{
+          throw new Exception("Failure in getting users");
         }
-        new JsonFactory().createParser(new ByteArrayInputStream(outputStream.toByteArray));
+
     }
   }
 

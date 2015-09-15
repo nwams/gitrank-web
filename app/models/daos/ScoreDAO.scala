@@ -26,7 +26,7 @@ class ScoreDAO @Inject() (neo: Neo4J){
       """
         MATCH (u:User),(r:Repository)
         WHERE u.username={username} AND r.name={repoName}
-        CREATE (u)-[c:SCORED {props}]->(r)
+        CREATE UNIQUE (u)-[c:SCORED {props}]->(r)
         RETURN c
       """,
       Json.obj(
@@ -35,6 +35,20 @@ class ScoreDAO @Inject() (neo: Neo4J){
         "props" -> Json.toJson(score)
       )
     ).map(parseNeoScore)
+  }
+
+  /**
+   * Updates a score into the data store.
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @param score score given by the user to the repository
+   * @return saved score.
+   */
+  def update(username: String, repoName: String, score: Score): Future[Option[Score]] = {
+    delete(username, repoName).flatMap(
+      response =>save(username, repoName,score)
+    )
   }
 
   /**
@@ -57,6 +71,29 @@ class ScoreDAO @Inject() (neo: Neo4J){
       )
     ).map(parseNeoScore)
   }
+
+
+  /**
+   * Delete a score from a user to a repo
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @return
+   */
+  def delete(username: String, repoName: String): Future[WSResponse] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        DELETE c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    )
+  }
+
 
   /**
    * Find all scores for a given repo
