@@ -1,7 +1,7 @@
 package models.services
 
 import java.util.Date
-import javax.inject.{Named, Inject}
+import javax.inject.{Singleton, Named, Inject}
 
 import actors.RepositorySupervisor.ScoreRepository
 import akka.actor.ActorRef
@@ -11,8 +11,8 @@ import models.daos.{ScoreDAO, UserDAO, ContributionDAO, RepositoryDAO}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-
-class ScoreService @Inject() (scoreDAO: ScoreDAO, @Named("repository-supervisor") repositorySupervisor: ActorRef) {
+@Singleton
+class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor") repositorySupervisor: ActorRef) {
 
   /**
    * Gives a specific score to a repo.
@@ -24,9 +24,17 @@ class ScoreService @Inject() (scoreDAO: ScoreDAO, @Named("repository-supervisor"
    * @param scoreSupport score given for support
    * @param feedback feedback written by user
    */
-  def createScore(user: User,  repository: Repository, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback:String) : Repository = {
-    val score = createScore(user.karma, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
-    scoreDAO.find(user.username, repository.name).map{
+  def createScore(user: User, repository: Repository, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback: String): Repository = {
+    val score = Score(
+      new Date(),
+      scoreDesign,
+      scoreDocumentation,
+      scoreSupport,
+      scoreMaturity,
+      feedback,
+      user.karma
+    )
+    scoreDAO.find(user.username, repository.name).map {
       case Some(_) => scoreDAO.update(user.username, repository.name, score)
       case None => scoreDAO.save(user.username, repository.name, score)
     }
@@ -34,15 +42,4 @@ class ScoreService @Inject() (scoreDAO: ScoreDAO, @Named("repository-supervisor"
     repository
   }
 
-  private def createScore(karma: Int,  scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback:String): Score = {
-    Score(
-      new Date(),
-      scoreDesign,
-      scoreDocumentation,
-      scoreSupport,
-      scoreMaturity,
-      feedback,
-      karma
-    )
-  }
 }

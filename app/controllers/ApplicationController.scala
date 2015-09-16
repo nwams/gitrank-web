@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
-import models.{Permissions, Feedback, User, Repository}
+import models.{Feedback, User, Repository}
 import modules.CustomGitHubProvider
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Result, Action, Results, WrappedRequest}
@@ -52,12 +52,13 @@ class ApplicationController @Inject()(
    * @return The html page of the repository
    */
   def gitHubRepository(owner: String, repositoryName: String, page: Option[Int]) = UserAwareAction.async { implicit request =>
-    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
-      case Some(repository) => repoService.getFeedback(owner + "/" + repositoryName, page).flatMap((feedback: Seq[Feedback]) =>
-        repoService.getFeedbackPageCount(owner + "/" + repositoryName).flatMap(totalPage => {
-          repoService.getPermissionToFeedback(owner + "/" + repositoryName, request.identity).map {
-            case permission => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, permission)(owner, repositoryName, page.getOrElse(1)))
-          }
+    val repoName: String = owner + "/" + repositoryName
+    repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
+      case Some(repository) => repoService.getFeedback(repoName, page).flatMap((feedback: Seq[Feedback]) =>
+        repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
+          repoService.getPermissionToFeedback(repoName, request.identity).map (
+             permission => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, permission)(owner, repositoryName, page.getOrElse(1)))
+          )
         })
       )
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
@@ -73,10 +74,11 @@ class ApplicationController @Inject()(
    * @return the hml page with the scoring form for the given repository.
    */
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    repoService.getPermissionToFeedback(owner + "/" + repositoryName, request.identity).flatMap {
-      case true => repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
+    val repoName: String = owner + "/" + repositoryName
+    repoService.getPermissionToFeedback(repoName, request.identity).flatMap {
+      case true => repoService.getFromNeoOrGitHub(request.identity,repoName).flatMap({
         case Some(repository) =>
-          repoService.getPermissionToAddFeedback(owner + "/" + repositoryName, request.identity).map {
+          repoService.getPermissionToAddFeedback(repoName, request.identity).map {
             permission => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, permission))
           }
         case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
@@ -87,11 +89,11 @@ class ApplicationController @Inject()(
   }
 
   /**
-   * Handles the feedback page
+   * Handles the feedback score post
    *
    * @param owner Owner of the repository on the repo system (GitHub)
    * @param repositoryName repository name on the repo system (GitHub)
-   * @return the hml page with the scoring form for the given repository.
+   * @return Redirect to repo page
    */
   def giveScorePage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     FeedbackForm.form.bindFromRequest.fold(

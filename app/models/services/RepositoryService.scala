@@ -169,22 +169,25 @@ class RepositoryService @Inject()(
    */
   def getPermissionToFeedback(repoName: String, user: Option[User]): Future[Boolean] = {
     user match {
-      case Some(userEntity)=>
-        contributionDAO.checkIfUserContributed(userEntity.username, repoName).map{
+      case Some(userEntity) =>
+        contributionDAO.checkIfUserContributed(userEntity.username, repoName).map {
           hasContributed => !hasContributed
         }
       case None => Future(false)
     }
   }
 
-  def getPermissionToAddFeedback(repoName:String, user:Option[User]): Future[Boolean]={
-    user match{
-      case Some(userEntity)=>
-        scoreDAO.find(userEntity.username, repoName).map{
-          case Some(_)=> false
-          case None => true
-        }
-      case None => Future(true)
+  /**
+   * Check if the user can add or just update a score
+   * @param repoName Repo to be scored
+   * @param user User that is giving the score
+   * @return true if the user can add
+   */
+  def getPermissionToAddFeedback(repoName: String, user: Option[User]): Future[Boolean] = {
+    user match {
+      case Some(userEntity) =>
+        scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
+      case None => Future.successful(false)
     }
   }
 
@@ -235,9 +238,19 @@ class RepositoryService @Inject()(
    * @param repository repo to recalculate
    */
   def calculateScoreForRepo(repository: Repository): Future[(Int)] = {
-    scoreDAO.find(repository.name).map(_.map(
-      feedback => feedback.score.designScore + feedback.score.docScore + feedback.score.maturityScore + feedback.score.supportScore
-    ).sum)
+    val score = scoreDAO.findFeedbacks(repository.name).map {
+      _.map {
+        feedback => {
+          ((repository.karmaWeight * repository.score + feedback.user.karma * computeScore(feedback.score)) / (repository.karmaWeight + feedback.user.karma))
+        }
+      }.sum
+    }
+    score
+  }
+
+
+  private def computeScore(score: Score): Int = {
+    (score.designScore + score.docScore + score.maturityScore + score.supportScore )/4
   }
 
   /**

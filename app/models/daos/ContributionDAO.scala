@@ -45,10 +45,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "username" -> username,
         "repoName" -> repoName
       )
-    ).map(parseNeoContribution).map{
-      case Some(x) => true
-      case None => false
-    }
+    ).map(parseNeoContribution).map(_.isDefined)
   }
 
   /**

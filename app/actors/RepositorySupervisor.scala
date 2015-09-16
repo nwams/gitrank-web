@@ -24,6 +24,7 @@ class RepositorySupervisor @Inject()(userDAO: UserDAO, userService: UserService,
   override def receive: Receive = LoggingReceive {
     case s: String => log.info(s)
     case ScoreRepository(repository, score) => {
+      print("MESSAGE RECEIVED!!!")
       repositoryService.updateRepoScore(repository)
       for {
         users <- userDAO.findAllFromRepo(repository)
