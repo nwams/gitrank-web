@@ -73,14 +73,17 @@ class ApplicationController @Inject()(
    * @return the hml page with the scoring form for the given repository.
    */
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
-      case Some(repository) =>
-        repoService.getPermissionToAddFeedback(owner + "/" + repositoryName, request.identity).map {
-          permission => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, permission))
-        }
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-    })
+    repoService.getPermissionToFeedback(owner + "/" + repositoryName, request.identity).flatMap {
+      case true => repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).flatMap({
+        case Some(repository) =>
+          repoService.getPermissionToAddFeedback(owner + "/" + repositoryName, request.identity).map {
+            permission => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, permission))
+          }
+        case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+          "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+      })
+      case false => Future(Redirect("/github/"+owner+"/"+repositoryName))
+    }
   }
 
   /**
