@@ -118,7 +118,7 @@ class ContributionDAO @Inject() (neo: Neo4J){
   }
 
   /**
-   * Parses a neo4j response to get a Contribution o  ut of it.
+   * Parses a neo4j response to get a Contribution out of it.
    *
    * @param response neo4j response
    * @return parsed contribution or None

@@ -98,7 +98,7 @@ class ApplicationController @Inject()(
   def giveScorePage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
       form => println(form),
-    data=>{
+      data=>{
       request.identity.map(repoService.giveScoreToRepo(owner,
         _,
         repositoryName,
