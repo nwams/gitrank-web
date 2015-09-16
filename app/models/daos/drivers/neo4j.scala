@@ -9,7 +9,7 @@ import models.User
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
-import play.api.libs.json.{JsLookup, JsObject, Json}
+import play.api.libs.json._
 import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -130,10 +130,10 @@ class Neo4J @Inject() (ws: WSClient){
    * @param user jsLookup for single user
    * @return a single user
    */
-  def parseSingleUser(user : JsLookup): Option[User] = {
+  def parseSingleUser(user : JsLookup): User = {
     val loginInfo = (user \ "loginInfo").as[String]
     val logInfo = loginInfo.split(":")
-    Some(User(
+    User(
       LoginInfo(logInfo(0), logInfo(1)),
       (user \ "username").as[String],
       (user \ "fullName").asOpt[String],
@@ -142,6 +142,6 @@ class Neo4J @Inject() (ws: WSClient){
       (user \ "karma").as[Int],
       (user \ "publicEventsETag").asOpt[String],
       (user \ "lastPublicEventPull").asOpt[Long]
-    ))
+    )
   }
 }

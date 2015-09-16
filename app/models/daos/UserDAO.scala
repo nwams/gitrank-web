@@ -48,7 +48,7 @@ class UserDAO @Inject() (neo: Neo4J) {
    * Returns all user that contributed to a specific repo
    * @param repository Repository that has received contributions
    */
-  def findAllFromRepo(repository: Repository): Future[Seq[Option[User]]] = {
+  def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u",
         Json.obj("repoID" -> repository.repoID)
@@ -124,9 +124,8 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseNeoUser(response: WSResponse): Option[User] = {
     (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case user => {
-        neo.parseSingleUser(user)
-      }
+      case _ :JsUndefined => None
+      case user => Some(neo.parseSingleUser(user))
     }
   }
 
@@ -136,7 +135,14 @@ class UserDAO @Inject() (neo: Neo4J) {
    * @param response response object
    * @return The parsed users.
    */
-  def parseNeoUsers(response: WSResponse): Seq[Option[User]] = (Json.parse(response.body) \\ "user").map(neo.parseSingleUser(_))
+  def parseNeoUsers(response: WSResponse): Seq[User] = {
+    val users = Json.parse(response.body) \\ "user"
+
+    users.length match {
+      case 0 => Seq()
+      case _ => users.map(neo.parseSingleUser(_))
+    }
+  }
 
 
   /**
