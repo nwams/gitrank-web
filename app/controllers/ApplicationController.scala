@@ -84,7 +84,7 @@ class ApplicationController @Inject()(
         case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
           "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
       })
-      case false => Future(Redirect("/github/"+owner+"/"+repositoryName))
+      case false => Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
     }
   }
 
@@ -109,7 +109,7 @@ class ApplicationController @Inject()(
         data.feedback
       ))
     })
-    Future(Redirect("/github/"+owner+"/"+repositoryName))
+    Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
   }
 
 }
