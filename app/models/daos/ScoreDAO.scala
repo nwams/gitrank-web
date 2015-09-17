@@ -11,7 +11,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class ScoreDAO @Inject() (neo: Neo4J){
+class ScoreDAO @Inject()(neo: Neo4J) {
 
   /**
    * Saves a score into the data store.
@@ -26,7 +26,74 @@ class ScoreDAO @Inject() (neo: Neo4J){
       """
         MATCH (u:User),(r:Repository)
         WHERE u.username={username} AND r.name={repoName}
-        CREATE (u)-[c:SCORED {props}]->(r)
+        CREATE UNIQUE (u)-[c:SCORED {props}]->(r)
+        RETURN c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName,
+        "props" -> Json.toJson(score)
+      )
+    ).map(parseNeoScore)
+  }
+
+
+  /**
+   * Find a score from a user to a repo
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @return saved score.
+   */
+  def find(username: String, repoName: String): Future[Option[Score]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        RETURN c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    ).map(parseNeoScore)
+  }
+
+
+  /**
+   * Delete a score from a user to a repo
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @return
+   */
+  def delete(username: String, repoName: String): Future[WSResponse] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        DELETE c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    )
+  }
+
+  /**
+   * Update a score from a user to a repo
+   *
+   * @param username username of the user who score the repo
+   * @param repoName repository which was scored
+   * @return
+   */
+  def update(username: String, repoName: String,score: Score): Future[Option[Score]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:SCORED]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        SET c={props}
         RETURN c
       """,
       Json.obj(
@@ -45,7 +112,7 @@ class ScoreDAO @Inject() (neo: Neo4J){
    * @param itemsPerPage number of items to display in a database page
    * @return Seq of Feedback.
    */
-  def findRepositoryFeedback(repoName: String, page: Int=1, itemsPerPage: Int=10): Future[Seq[Feedback]] = {
+  def findRepositoryFeedback(repoName: String, page: Int = 1, itemsPerPage: Int = 10): Future[Seq[Feedback]] = {
 
     if (page < 1){
       throw new Exception("Page must be a positive non null integer")
@@ -98,11 +165,11 @@ class ScoreDAO @Inject() (neo: Neo4J){
    */
   def countRepositoryFeedback(repoName: String): Future[Int] = {
     neo.cypher(
-    """
+      """
       MATCH (u:User)-[c:SCORED]->(r:Repository)
       WHERE r.name={repoName}
       RETURN count(c) AS feedbackCount
-    """,
+      """,
       Json.obj("repoName" -> repoName)
     ).map(response => (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
   }
@@ -115,7 +182,7 @@ class ScoreDAO @Inject() (neo: Neo4J){
    */
   def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
     ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      Feedback(neo.parseSingleUser((jsValue \ "row")(0)), (jsValue \ "row")(1).as[Score]))
+      Feedback(neo.parseSingleUser((jsValue \ "row")(1)), (jsValue \ "row")(0).as[Score]))
 
   /**
    * Should parse a result list of scores and get it back

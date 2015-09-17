@@ -5,22 +5,25 @@
         user: Option[models.User],
         repo: Repository,
         feedback: Seq[Feedback],
-        totalPages: Int
-)(owner: String, repositoryName :String, currentPage: Int)(implicit request: RequestHeader)
+        totalPages: Int,
+        permission: Boolean
+        )(owner: String, repositoryName: String, currentPage: Int)(implicit request: RequestHeader)
 
-@main("GitRank - "+owner+"/"+repositoryName, gitHubProvider, user) {
+@main("GitRank - " + owner + "/" + repositoryName, gitHubProvider, user) {
 
-    @if(repo.karmaWeight == 0 ) {
+    @if(feedback.isEmpty) {
         <div class="ui active page dimmer">
             <div class="content">
                 <div class="center">
                     <h2 class="ui inverted header">
                         No registered feedback for this repository, yet
                     </h2>
-                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary labeled icon button">
-                        <i class="plus icon"></i>
-                        Add First feedback
-                    </a>
+                    @if(permission) {
+                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary labeled icon button">
+                            <i class="plus icon"></i>
+                            Add First feedback
+                        </a>
+                    }
                 </div>
             </div>
         </div>
@@ -31,7 +34,8 @@
             <h2 class="ui repository header">
                 <i class="mega-octicon octicon-repo"></i>
                 <div class="content">
-                    <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repositoryName">@repositoryName</a>
+                    <a href="https://github.com/@owner">@owner</a>
+                    /<a href="https://github.com/@owner/@repositoryName">@repositoryName</a>
                 </div>
             </h2>
 
@@ -60,7 +64,10 @@
                     <div class="content">
                         Feedback
                     </div>
-                    <a href="@routes.ApplicationController.giveFeedbackPage(owner,repositoryName)" class="ui primary button"><i class="plus icon"></i> Add</a>
+                    @if(permission){
+                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button"><i class="plus icon"></i>
+                        Add</a>
+                    }
                 </h3>
                 @for(f <- feedback) {
                     <div class="comment">
@@ -78,7 +85,7 @@
                                 <span data-content="Documentation" class="popup"> @f.score.docScore <i class="icon book"></i></span>
                                 <span data-content="Maturity" class="popup"> @f.score.maturityScore <i class="icon leaf"></i></span>
                                 <span data-content="Design" class="popup"> @f.score.designScore <i class="icon university"></i></span>
-                                <span data-content="Support" class="popup"> @f.score.supportScore <i  class="icon life ring"></i></span>
+                                <span data-content="Support" class="popup"> @f.score.supportScore <i class="icon life ring"></i></span>
                             </div>
                         </div>
                     </div>

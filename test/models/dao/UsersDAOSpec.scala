@@ -1,5 +1,7 @@
 package models.dao
 
+import java.io.ByteArrayInputStream
+
 import com.fasterxml.jackson.core.JsonFactory
 import models.User
 import models.daos.UserDAO
@@ -29,7 +31,7 @@ class UsersDAOSpec extends  Specification with Mockito{
   "userDAO#parseJson" should {
       "ParseJsonWithSingleUser" in {
         val mockedFunction = mock[UsersDAOSpec]
-        val goodJsonParser = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
+        val goodJsonParser = new JsonFactory().createParser(new ByteArrayInputStream("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}".getBytes()));
         val dao = new UserDAO(neo4jMock)
         dao.parseJson(goodJsonParser, mockedFunction.callback)
         there was one(mockedFunction).callback(any[Any])
