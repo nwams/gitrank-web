@@ -157,10 +157,7 @@ class UserDAO @Inject() (neo: Neo4J) {
         Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
       }
       case _ => {
-        Option(jsonParser.nextToken()) match {
-          case Some(_)=> parseJson(jsonParser, callback)
-          case None =>
-        }
+        Option(jsonParser.nextToken()).foreach(jsonToken => parseJson(jsonParser, callback))
       }
     }}
 
