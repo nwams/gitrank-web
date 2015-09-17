@@ -56,8 +56,8 @@ class RepositoryDAO @Inject() (neo: Neo4J) {
    * @return The saved repository
    */
   def update(repository: Repository): Future[Repository] = {
-    neo.cypher("MATCH (n:Repository) WHERE n.repoID = {uuid} SET n={props} RETURN n", Json.obj(
-      "uuid" -> repository.repoID.toString,
+    neo.cypher("MATCH (n:Repository) WHERE n.name = {name} SET n={props} RETURN n", Json.obj(
+      "name" -> repository.name,
       "props" -> Json.toJson(repository)
     )).map(response => repository)
   }

@@ -33,6 +33,21 @@ class ContributionDAO @Inject() (neo: Neo4J){
     ).map(parseNeoContribution)
   }
 
+
+  def checkIfUserContributed(username: String, repoName:String): Future[Boolean] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        RETURN c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    ).map(parseNeoContribution).map(_.isDefined)
+  }
+
   /**
    * Finds all contributions of a given user in the data store.
    *

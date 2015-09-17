@@ -68,7 +68,7 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
           fullName = profile.fullName,
           email = profile.email,
           avatarURL = profile.avatarURL,
-          karma = 0,
+          karma = 1,
           None,
           None
         )).map(user => {
