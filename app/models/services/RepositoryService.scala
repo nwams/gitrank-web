@@ -3,7 +3,7 @@ package models.services
 import javax.inject.Inject
 
 import models.daos.drivers.GitHubAPI
-import models.daos.{ScoreDAO, ContributionDAO, RepositoryDAO, UserDAO}
+import models.daos._
 import models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -14,6 +14,7 @@ class RepositoryService @Inject()(
                                    contributionDAO: ContributionDAO,
                                    userDAO: UserDAO,
                                    scoreDAO: ScoreDAO,
+                                   oAuth2InfoDAO: OAuth2InfoDAO,
                                    gitHub: GitHubAPI,
                                    userService: UserService,
                                    scoreService: ScoreService) {
@@ -213,15 +214,31 @@ class RepositoryService @Inject()(
    * @param feedback feedback written by user
    * @return repo scored
    */
-  def giveScoreToRepo(owner: String, user: User, repositoryName: String, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback: String): Future[Repository] = {
-    repoDAO.find(owner + "/" + repositoryName).map({
-      case Some(repo) => scoreService.createScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
-      case None => throw new Exception("Repository does not exists!")
+  def giveScoreToRepo(owner: String,
+                      user: User,
+                      repositoryName: String,
+                      scoreDocumentation: Int,
+                      scoreMaturity: Int,
+                      scoreDesign: Int,
+                      scoreSupport: Int,
+                      feedback: String): Future[Repository] = {
+
+    repoDAO.find(owner + "/" + repositoryName).flatMap({
+      case Some(repo) => Future.successful(scoreService.createScore(
+        user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback))
+      case None => oAuth2InfoDAO.find(user.loginInfo)
+        .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
+          .flatMap(repo => repoDAO.create(repo.get))
+          .flatMap(repo => Future.successful(scoreService.createScore(
+            user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
+          )))
+        )
     })
   }
 
   /**
    * Recalculate score for repo
+   *
    * @param repository repo to recalculate
    */
   def calculateScoreForRepo(repository: Repository): Future[(Int)] = {

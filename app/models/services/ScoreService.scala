@@ -23,7 +23,13 @@ class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor")
    * @param scoreSupport score given for support
    * @param feedback feedback written by user
    */
-  def createScore(user: User, repository: Repository, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback: String): Repository = {
+  def createScore(user: User,
+                  repository: Repository,
+                  scoreDocumentation: Int,
+                  scoreMaturity: Int,
+                  scoreDesign: Int,
+                  scoreSupport: Int,
+                  feedback: String): Repository = {
     val score = Score(
       new Date(),
       scoreDesign,
