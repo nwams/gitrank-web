@@ -12,6 +12,14 @@ function getMean(data, attribute){
 
 function buildParallelCoordinates(data){
 
+    data = data.map(function(score){return {
+        timestamp: score.timestamp,
+        Documentation: score.docScore,
+        Maturity: score.maturityScore,
+        Design: score.designScore,
+        Support: score.supportScore
+    }});
+
     var margin = {top: 30, right: 10, bottom: 30, left: 10},
         container = $('#scoreChart'),
         width = container.parent().width() - margin.left - margin.right,
@@ -52,7 +60,7 @@ function buildParallelCoordinates(data){
 
     // Extract the list of dimensions and create a scale for each.
     x.domain(dimensions = d3.keys(data[0]).filter(function(d) {
-        return d != "timestamp" && d != "feedback" && d != "karma" && (y[d] = d3.scale.linear()
+        return d != "timestamp" && (y[d] = d3.scale.linear()
                 .domain([0,5])
                 .range([height, 0]));
     }));
@@ -85,10 +93,10 @@ function buildParallelCoordinates(data){
         .selectAll("path")
         .data([{
             timestamp: data[data.length-1].timestamp + 10,
-            designScore: getMean(data, "designScore"),
-            docScore: getMean(data,"docScore"),
-            maturityScore: getMean(data,"maturityScore"),
-            supportScore: getMean(data,"supportScore")
+            Documentation: getMean(data, "Documentation"),
+            Maturity: getMean(data,"Maturity"),
+            Design: getMean(data,"Design"),
+            Support: getMean(data,"Support")
         }])
         .enter().append("path")
         .attr("d", path);
