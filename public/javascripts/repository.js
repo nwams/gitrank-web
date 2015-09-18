@@ -18,7 +18,7 @@ function buildParallelCoordinates(data){
         height = 250 - margin.top - margin.bottom;
 
     var opacity = d3.scale.linear()
-            .domain(d3.extent(data, function(p) { return +p.Timestamp; }))
+            .domain(d3.extent(data, function(p) { return +p.timestamp; }))
             .range([0.2,1]),
         x = d3.scale.ordinal().rangePoints([0, width], 1),
         y = {};
@@ -52,8 +52,8 @@ function buildParallelCoordinates(data){
 
     // Extract the list of dimensions and create a scale for each.
     x.domain(dimensions = d3.keys(data[0]).filter(function(d) {
-        return d != "Timestamp" && (y[d] = d3.scale.linear()
-                .domain(d3.extent(data, function(p) { return +p[d]; }))
+        return d != "timestamp" && d != "feedback" && d != "karma" && (y[d] = d3.scale.linear()
+                .domain([0,5])
                 .range([height, 0]));
     }));
 
@@ -65,7 +65,7 @@ function buildParallelCoordinates(data){
         .enter().append("path")
         .attr("d", path)
         .style("opacity", function(d){
-            return opacity(d.Timestamp);
+            return opacity(d.timestamp);
         });
 
     // Add blue foreground lines for focus.
@@ -76,7 +76,7 @@ function buildParallelCoordinates(data){
         .enter().append("path")
         .attr("d", path)
         .style("opacity", function(d){
-            return opacity(d.Timestamp);
+            return opacity(d.timestamp);
         });
 
     // Add the mean to the graph
@@ -84,11 +84,11 @@ function buildParallelCoordinates(data){
         .attr("class", "mean")
         .selectAll("path")
         .data([{
-            Timestamp: data[data.length-1].Timestamp + 10,
-            Documentation: getMean(data, "Documentation"),
-            Maturity: getMean(data,"Maturity"),
-            Design: getMean(data,"Design"),
-            Support: getMean(data,"Support")
+            timestamp: data[data.length-1].timestamp + 10,
+            designScore: getMean(data, "designScore"),
+            docScore: getMean(data,"docScore"),
+            maturityScore: getMean(data,"maturityScore"),
+            supportScore: getMean(data,"supportScore")
         }])
         .enter().append("path")
         .attr("d", path);
@@ -154,8 +154,8 @@ function buildParallelCoordinates(data){
 
 $(document)
     .ready(function() {
-        $.get({
-            url: window.location + "/lastFeedback",
+        $.ajax({
+            url: '' + window.location.href + '/lastFeedback',
             success: buildParallelCoordinates
         });
     });
