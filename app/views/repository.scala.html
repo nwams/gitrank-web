@@ -23,6 +23,10 @@
                             <i class="plus icon"></i>
                             Add First feedback
                         </a>
+                    } else {
+                        <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
+                            <span class="octicon octicon-mark-github"></span> Login
+                        </a>
                     }
                 </div>
             </div>
