@@ -243,20 +243,20 @@ class RepositoryService @Inject()(
    */
   def calculateScoreForRepo(repository: Repository): Future[Int] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
-      _.map(feedback => (repository.karmaWeight * repository.score + feedback.user.karma * computeScore(feedback.score))
-        / (repository.karmaWeight + feedback.user.karma)
-      ).sum
+      _.map {feedback: Feedback => computeTotalScore(repository, feedback)}.sum
     }
   }
 
   /**
-   * Compute the mean of the scores between all the scores
-   *
-   * @param score a score composed of 4 scores and a feedback text
-   * @return a mean
+   * Calculate the total score based on a repo/user karma
+   * @param repository repository whose score is being calculated
+   * @param feedback score and user who scored
+   * @return 1 to 5 score points
    */
-  private def computeScore(score: Score): Int = {
-    (score.designScore + score.docScore + score.maturityScore + score.supportScore )/4
+  def computeTotalScore(repository: Repository, feedback: Feedback): Int = {
+    ((repository.karmaWeight * repository.score + feedback.user.karma *
+      (feedback.score.designScore + feedback.score.docScore + feedback.score.maturityScore + feedback.score.supportScore )/4)
+      / (repository.karmaWeight + feedback.user.karma))
   }
 
   /**
