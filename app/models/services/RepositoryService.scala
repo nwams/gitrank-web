@@ -157,7 +157,7 @@ class RepositoryService @Inject()(
   }
 
   /**
-   * get all the scoring made for a repository for the given page and item per page.
+   * Get all the scoring made for a repository for the given page and item per page.
    *
    * @param repoName name of the repository to get the scores from ("owner/repo")
    * @param page page number to get from the database. Default value to 1
@@ -241,7 +241,7 @@ class RepositoryService @Inject()(
    *
    * @param repository repo to recalculate
    */
-  def calculateScoreForRepo(repository: Repository): Future[(Int)] = {
+  def calculateScoreForRepo(repository: Repository): Future[Int] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
       _.map(feedback => (repository.karmaWeight * repository.score + feedback.user.karma * computeScore(feedback.score))
         / (repository.karmaWeight + feedback.user.karma)
