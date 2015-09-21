@@ -209,12 +209,12 @@ class RepositoryService @Inject()(
                       feedback: String): Future[Repository] = {
 
     repoDAO.find(owner + "/" + repositoryName).flatMap({
-      case Some(repo) => Future.successful(scoreService.createScore(
+      case Some(repo) => Future(scoreService.createScore(
         user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback))
       case None => oAuth2InfoDAO.find(user.loginInfo)
         .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
           .flatMap(repo => repoDAO.create(repo.get))
-          .flatMap(repo => Future.successful(scoreService.createScore(
+          .flatMap(repo => Future(scoreService.createScore(
             user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
           )))
         )
