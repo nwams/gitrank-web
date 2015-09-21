@@ -34,7 +34,8 @@ function buildParallelCoordinates(data){
     var line = d3.svg.line(),
         axis = d3.svg.axis().orient("left"),
         background,
-        foreground;
+        foreground,
+        dimensions;
 
     // Returns the path for a given data point.
     function path(d) {
@@ -60,7 +61,7 @@ function buildParallelCoordinates(data){
 
     // Extract the list of dimensions and create a scale for each.
     x.domain(dimensions = d3.keys(data[0]).filter(function(d) {
-        return d != "timestamp" && (y[d] = d3.scale.linear()
+        return d !== "timestamp" && (y[d] = d3.scale.linear()
                 .domain([0,5])
                 .range([height, 0]));
     }));
