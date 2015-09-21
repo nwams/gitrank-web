@@ -51,7 +51,7 @@ class UserDAO @Inject() (neo: Neo4J) {
   def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u",
-        Json.obj("repoID" -> repository.repoID)
+        Json.obj("repoName" -> repository.name)
       ).map(parseNeoUsers)
   }
 
