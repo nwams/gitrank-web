@@ -19,7 +19,7 @@
                     <h2 class="ui inverted header">
                         No registered feedback for this repository, yet
                     </h2>
-                    @if(!user.isEmpty) {
+                    @if(user.isDefined) {
                         @if(canAddFeedback){
                             <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)"
                                 class="ui primary labeled icon button">
