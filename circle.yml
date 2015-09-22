@@ -17,6 +17,7 @@ notify:
   webhooks:
     # A list of hook hashes, containing the url field
     - url: https://webhooks.gitter.im/e/bb201391ca2a83b29080
+    - url: http://circlewebhook.gitrank.io/hook?token=circle
 
 dependencies:
   cache_directories:
