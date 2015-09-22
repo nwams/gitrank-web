@@ -1,7 +1,7 @@
 @import modules.CustomGitHubProvider
 @import _root_.forms.FeedbackForm.Data
 
-@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository: String, form: Form[Data], permission: Boolean)(implicit request: RequestHeader, messages: Messages)
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository: String, form: Form[Data], update: Boolean)(implicit request: RequestHeader, messages: Messages)
 
 @main("GitRank - " + owner + "/" + repository + " Feedback form !", gitHubProvider, user) {
     <div class="ui container">
@@ -64,11 +64,10 @@
                 @helper.textarea(form("feedback"), '_label -> "", '_showConstraints -> false)
             </div>
             <button id="submit" type="submit" value="submit" class="fluid ui positive submit labeled icon button">
-            @if(permission) {
-
-                <i class="icon plus"></i> Give Feedback
-            } else {
+            @if(update) {
                 <i class="icon plus"></i> Update Feedback
+            } else {
+                <i class="icon plus"></i> Give Feedback
             }
             </button>
         }

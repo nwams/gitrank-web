@@ -6,7 +6,8 @@
         repo: Repository,
         feedback: Seq[Feedback],
         totalPages: Int,
-        permission: Boolean
+        canAddFeedback: Boolean = false,
+        canUpdateFeedback: Boolean = false
         )(owner: String, repositoryName: String, currentPage: Int)(implicit request: RequestHeader)
 
 @main("GitRank - " + owner + "/" + repositoryName, gitHubProvider, user) {
@@ -18,11 +19,17 @@
                     <h2 class="ui inverted header">
                         No registered feedback for this repository, yet
                     </h2>
-                    @if(permission) {
-                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary labeled icon button">
-                            <i class="plus icon"></i>
-                            Add First feedback
-                        </a>
+                    @if(!user.isEmpty) {
+                        @if(canAddFeedback){
+                            <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)"
+                                class="ui primary labeled icon button">
+
+                                <i class="plus icon"></i>
+                                Add First feedback
+                            </a>
+                        } else {
+                            <p>Our records show that you have contributed to this repository, as such, you cannot add any feedback.</p>
+                        }
                     } else {
                         <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
                             <span class="octicon octicon-mark-github"></span> Login
@@ -68,9 +75,14 @@
                     <div class="content">
                         Feedback
                     </div>
-                    @if(permission){
-                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button"><i class="plus icon"></i>
-                        Add</a>
+                    @if(canAddFeedback){
+                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button">
+                            @if(canUpdateFeedback) {
+                                <i class="plus icon"></i>Udpate
+                            } else {
+                                <i class="edit icon"></i>Edit
+                            }
+                        </a>
                     }
                 </h3>
                 @for(f <- feedback) {

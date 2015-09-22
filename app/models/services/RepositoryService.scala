@@ -153,17 +153,28 @@ class RepositoryService @Inject()(
     scoreDAO.findRepositoryScores(repoName, page, itemsPerPage)
 
   /**
-   * Check if the user can add or just update a score
+   * Check if the user has already given feedback to a repository
+   *
+   * @param repoName Repo with feedback
+   * @param user User that is giving the score
+   * @return true if the user can update a given feedback
+   */
+  def canUpdateFeedback(repoName: String, user: Option[User]): Future[Boolean] = user match {
+    case Some(userEntity) => scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
+    case None => Future.successful(false)
+  }
+
+  /**
+   * Checks if a user can add a feedback
    *
    * @param repoName Repo to be scored
-   * @param user User that is giving the score
-   * @return true if the user can add
+   * @param user User that is giving the feedback
+   * @return true if the user has not contributed to the repository
    */
-  def getPermissionToAddFeedback(repoName: String, user: Option[User]): Future[Boolean] = {
-    user match {
-      case Some(userEntity) => scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
-      case None => Future.successful(false)
-    }
+  def canAddFeedback (repoName: String, user: Option[User]): Future[Boolean] = user match {
+    case Some(userEntity) =>
+      contributionDAO.checkIfUserContributed(userEntity.username, repoName).map(hasContributed => !hasContributed)
+    case None => Future(false)
   }
 
   /**
