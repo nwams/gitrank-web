@@ -2,18 +2,14 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.actor.FSM.Failure
-import akka.actor.Status.Success
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
-import models.{Feedback, User, Repository}
+import models.{Feedback, User}
 import modules.CustomGitHubProvider
 import play.api.i18n.MessagesApi
-import play.api.mvc.{Result, Action, Results, WrappedRequest}
 import forms.FeedbackForm
-import views.html.feedbackForm
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -51,14 +47,18 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system. (GitHub)
    * @return The html page of the repository
    */
-  def gitHubRepository(owner: String, repositoryName: String, page: Option[Int]) = UserAwareAction.async { implicit request =>
+  def gitHubRepository(owner: String, repositoryName: String, page: Option[Int] = None) = UserAwareAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) => repoService.getFeedback(repoName, page).flatMap((feedback: Seq[Feedback]) =>
         repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
-          repoService.getPermissionToFeedback(repoName, request.identity).map (
-             permission => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, permission)(owner, repositoryName, page.getOrElse(1)))
-          )
+          repoService.canAddFeedback(repoName, request.identity).flatMap({
+            case true => repoService.canUpdateFeedback(repoName, request.identity).map(
+              canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true , canUpdate)
+                (owner, repositoryName, page.getOrElse(1))))
+            case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
+              (owner, repositoryName, page.getOrElse(1))))
+          })
         })
       )
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
@@ -75,12 +75,12 @@ class ApplicationController @Inject()(
    */
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
-    repoService.getPermissionToFeedback(repoName, request.identity).flatMap {
+    repoService.canAddFeedback(repoName, request.identity).flatMap {
       case true => repoService.getFromNeoOrGitHub(request.identity,repoName).flatMap({
         case Some(repository) =>
-          repoService.getPermissionToAddFeedback(repoName, request.identity).map {
-            permission => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, permission))
-          }
+          repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
+            Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
+          )
         case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
           "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
       })

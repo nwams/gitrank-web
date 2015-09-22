@@ -1,15 +1,9 @@
 package models.services
 
-import java.util
-import java.util.{Date, Calendar}
-import javax.inject.{Named, Inject}
+import javax.inject.Inject
 
-import _root_.forms.FeedbackForm.Data
-import actors.RepositorySupervisor
-import actors.RepositorySupervisor.ScoreRepository
-import akka.actor.ActorRef
 import models.daos.drivers.GitHubAPI
-import models.daos.{ScoreDAO, ContributionDAO, RepositoryDAO, UserDAO}
+import models.daos._
 import models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,6 +14,7 @@ class RepositoryService @Inject()(
                                    contributionDAO: ContributionDAO,
                                    userDAO: UserDAO,
                                    scoreDAO: ScoreDAO,
+                                   oAuth2InfoDAO: OAuth2InfoDAO,
                                    gitHub: GitHubAPI,
                                    userService: UserService,
                                    scoreService: ScoreService) {
@@ -30,10 +25,17 @@ class RepositoryService @Inject()(
    * @param name name of the repo to save or update
    * @param addedLines number of added lines to the repo
    * @param removedLines number of deleted lines from the repo
+   * @param karmaWeight sum of all the karma weight
    * @param score score of the repo
    * @return the saved Repository
    */
-  def save(id: Int, name: String, addedLines: Option[Int], removedLines: Option[Int], karmaWeight: Option[Int], score: Option[Int]): Future[Repository] = {
+  def save(id: Int,
+           name: String,
+           addedLines: Option[Int],
+           removedLines: Option[Int],
+           karmaWeight: Option[Int] = None,
+           score: Option[Int] = None): Future[Repository] = {
+
     repoDAO.find(id).flatMap({
       case Some(existingRepo) =>
         repoDAO.update(existingRepo.copy(
@@ -68,8 +70,8 @@ class RepositoryService @Inject()(
       case Some(existingContribution) => {
         contributionDAO.update(userName, repoName, existingContribution.copy(
           timestamp = contribution.timestamp,
-          addedLines = existingContribution.addedLines + contribution.addedLines - parseWeekAddedLines(existingContribution.currentWeekBuffer),
-          removedLines = existingContribution.removedLines + contribution.removedLines - parseWeekDeletedLines(existingContribution.currentWeekBuffer),
+          addedLines = existingContribution.addedLines + contribution.addedLines - contributionDAO.parseWeekAddedLines(existingContribution.currentWeekBuffer),
+          removedLines = existingContribution.removedLines + contribution.removedLines - contributionDAO.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
           currentWeekBuffer = contribution.currentWeekBuffer
         ))
       }
@@ -92,28 +94,6 @@ class RepositoryService @Inject()(
    * @return
    */
   def retrieve(repoId: Int): Future[Option[Repository]] = repoDAO.find(repoId)
-
-  /**
-   * Parses a string representing the buffer of the current week contribution getting the added lines
-   *
-   * @param currentWeekBuffer String containing the added lines this week already counted for needed to be extracted.
-   * @return count of the added lines already accounted for extracted as an Int
-   */
-  private def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
-    val str = currentWeekBuffer.getOrElse("a0d0")
-    str.substring(0, str.indexOf("d")).toInt
-  }
-
-  /**
-   * Parses a string representing the buffer of the current week contribution getting the deleted lines
-   *
-   * @param currentWeekBuffer String containing the deleted lines this week already counted for needed to be extracted.
-   * @return count of the deleted lines already accounted for extracted as an Int
-   */
-  private def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
-    val str = currentWeekBuffer.getOrElse("a0d0")
-    str.substring(str.indexOf("d"), str.length).toInt
-  }
 
   /**
    * Gets all the contributors for a given repository with all their contributions
@@ -149,12 +129,12 @@ class RepositoryService @Inject()(
   }
 
   /**
-   * get all the scoring made for a repository for the given page and item per page.
+   * get all the feedback made for a repository for the given page and item per page.
    *
    * @param repoName name of the repository to get the scores from ("owner/repo")
    * @param page page number to get from the database. Default value to 1
    * @param itemsPerPage number of items to display in a database page
-   * @return Seq of Scores.
+   * @return Seq of Feedback.
    */
   def getFeedback(repoName: String, page: Option[Int], itemsPerPage: Int = 10): Future[Seq[Feedback]] = page match {
     case Some(p) => scoreDAO.findRepositoryFeedback(repoName, p, itemsPerPage)
@@ -162,33 +142,39 @@ class RepositoryService @Inject()(
   }
 
   /**
-   * Check if the user has contributed to a given repo
-   * @param repoName repository user contributed or not
-   * @param user user that is being evaluated
-   * @return true if the user contributed and false if not.
+   * Get all the scoring made for a repository for the given page and item per page.
+   *
+   * @param repoName name of the repository to get the scores from ("owner/repo")
+   * @param page page number to get from the database. Default value to 1
+   * @param itemsPerPage number of items to display in a database page
+   * @return Seq of Scores.
    */
-  def getPermissionToFeedback(repoName: String, user: Option[User]): Future[Boolean] = {
-    user match {
-      case Some(userEntity) =>
-        contributionDAO.checkIfUserContributed(userEntity.username, repoName).map {
-          hasContributed => !hasContributed
-        }
-      case None => Future(false)
-    }
+  def getScores(repoName: String, page: Int=1, itemsPerPage: Int =10): Future[Seq[Score]] =
+    scoreDAO.findRepositoryScores(repoName, page, itemsPerPage)
+
+  /**
+   * Check if the user has already given feedback to a repository
+   *
+   * @param repoName Repo with feedback
+   * @param user User that is giving the score
+   * @return true if the user can update a given feedback
+   */
+  def canUpdateFeedback(repoName: String, user: Option[User]): Future[Boolean] = user match {
+    case Some(userEntity) => scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
+    case None => Future.successful(false)
   }
 
   /**
-   * Check if the user can add or just update a score
+   * Checks if a user can add a feedback
+   *
    * @param repoName Repo to be scored
-   * @param user User that is giving the score
-   * @return true if the user can add
+   * @param user User that is giving the feedback
+   * @return true if the user has not contributed to the repository
    */
-  def getPermissionToAddFeedback(repoName: String, user: Option[User]): Future[Boolean] = {
-    user match {
-      case Some(userEntity) =>
-        scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
-      case None => Future.successful(false)
-    }
+  def canAddFeedback (repoName: String, user: Option[User]): Future[Boolean] = user match {
+    case Some(userEntity) =>
+      contributionDAO.checkIfUserContributed(userEntity.username, repoName).map(hasContributed => !hasContributed)
+    case None => Future(false)
   }
 
   /**
@@ -214,6 +200,7 @@ class RepositoryService @Inject()(
 
   /**
    * Gives a specific score to a repo.
+   *
    * @param owner User logged in
    * @param repositoryName name of the repo to be scored
    * @param scoreDocumentation score given for documentation
@@ -223,29 +210,37 @@ class RepositoryService @Inject()(
    * @param feedback feedback written by user
    * @return repo scored
    */
-  def giveScoreToRepo(owner: String, user: User, repositoryName: String, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback: String): Future[Repository] = {
-    repoDAO.find(owner + "/" + repositoryName).map({
-      case Some(repo) => {
-        scoreService.createScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
-      }
-      case None => throw new Exception("Repository does not exists!")
+  def giveScoreToRepo(owner: String,
+                      user: User,
+                      repositoryName: String,
+                      scoreDocumentation: Int,
+                      scoreMaturity: Int,
+                      scoreDesign: Int,
+                      scoreSupport: Int,
+                      feedback: String): Future[Repository] = {
+
+    repoDAO.find(owner + "/" + repositoryName).flatMap({
+      case Some(repo) => Future(scoreService.createScore(
+        user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback))
+      case None => oAuth2InfoDAO.find(user.loginInfo)
+        .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
+          .flatMap(repo => repoDAO.create(repo.get))
+          .flatMap(repo => Future(scoreService.createScore(
+            user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
+          )))
+        )
     })
   }
 
-
   /**
    * Recalculate score for repo
+   *
    * @param repository repo to recalculate
    */
-  def calculateScoreForRepo(repository: Repository): Future[(Int)] = {
-    val score = scoreDAO.findFeedbacks(repository.name).map {
-      _.map {
-        feedback => {
-          computeTotalScore(repository, feedback)
-        }
-      }.sum
+  def calculateScoreForRepo(repository: Repository): Future[Int] = {
+    scoreDAO.findRepositoryFeedback(repository.name).map {
+      _.map {feedback: Feedback => computeTotalScore(repository, feedback)}.sum
     }
-    score
   }
 
   /**
@@ -262,6 +257,7 @@ class RepositoryService @Inject()(
 
   /**
    * Update a score of a given repo
+   *
    * @param repository repo to update
    */
   def updateRepoScore(repository: Repository): Future[Future[Repository]] = {

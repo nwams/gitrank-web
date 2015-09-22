@@ -1,15 +1,14 @@
 package actors
 
-import javax.inject.{Named, Inject}
+import javax.inject.Inject
 
-import actors.GitHubActor.UpdateContributions
 import actors.RepositorySupervisor.ScoreRepository
-import akka.actor.{ActorRef, Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.event.LoggingReceive
-import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.daos.{OAuth2InfoDAO, UserDAO}
+import models.daos.UserDAO
 import models.services.{RepositoryService, UserService}
-import models.{Repository, Score, User}
+import models.{Repository, Score}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 object RepositorySupervisor {
 

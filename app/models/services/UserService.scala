@@ -2,14 +2,12 @@ package models.services
 
 import javax.inject._
 
-import actors.GitHubActor.UpdateContributions
-import akka.actor.ActorRef
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.drivers.GitHubAPI
-import models.daos.{ContributionDAO, OAuth2InfoDAO, ScoreDAO, UserDAO}
-import models.{Score, User}
+import models.daos._
+import models.{Contribution, Repository, Score, User}
 import modules.CustomSocialProfile
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,8 +24,9 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
                                  contributionDAO: ContributionDAO,
                                  scoreDAO: ScoreDAO,
                                  oAuth2InfoDAO: OAuth2InfoDAO,
-                                 karmaService: KarmaService,
-                                 @Named("github-actor") gitHubActor: ActorRef) extends IdentityService[User]{
+                                 gitHubAPI: GitHubAPI,
+                                 repoDAO: RepositoryDAO,
+                                 karmaService: KarmaService) extends IdentityService[User]{
 
   /**
    * Retrieves a user that matches the specified login info.
@@ -71,12 +70,59 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
           karma = 1,
           None,
           None
-        )).map(user => {
+        )).flatMap(user => {
           // We load the user contributions and update his karma in the background.
-          gitHubActor ! UpdateContributions(user, oAuth2Info)
-          user
+          updateContributions(user, oAuth2Info).map(s=> user)
         })
     }
+  }
+
+  /**
+   * Update the contributions from the github api server. This method does not use the other services to prevent
+   * a dependency cycle
+   *
+   * @param user User that should be gotten the contributions from
+   * @param oAuth2Info Github authentication information
+   */
+  def updateContributions(user: User, oAuth2Info: OAuth2Info): Future[Unit] = {
+    gitHubAPI.getContributedRepositories(user, oAuth2Info)
+      .map(repositoryNames => {
+      for (repositoryName <- repositoryNames){
+        gitHubAPI.getUserContribution(repositoryName, user, oAuth2Info).map({
+          case None => None
+          case Some(contribution: Contribution) => gitHubAPI.getRepository(repositoryName, Some(oAuth2Info)).map(
+            (opt: Option[Repository])=> opt match {
+              case None => None
+              case Some(repository: Repository) => repoDAO.find(repository.repoID).flatMap({
+                case Some(existingRepo) =>
+                  repoDAO.update(existingRepo.copy(
+                    name = repositoryName,
+                    addedLines = repository.addedLines,
+                    removedLines = repository.removedLines
+                  ))
+                case None =>
+                  repoDAO.create(Repository(
+                    repoID = repository.repoID,
+                    addedLines =repository.addedLines,
+                    removedLines = repository.removedLines,
+                    karmaWeight = 0,
+                    name = repositoryName,
+                    score = 0
+                  ))
+              }).map(repo => contributionDAO.find(user.username, repositoryName).flatMap({
+                case Some(existingContribution) =>
+                  contributionDAO.update(user.username, repositoryName, existingContribution.copy(
+                    timestamp = contribution.timestamp,
+                    addedLines = existingContribution.addedLines + contribution.addedLines - contributionDAO.parseWeekAddedLines(existingContribution.currentWeekBuffer),
+                    removedLines = existingContribution.removedLines + contribution.removedLines - contributionDAO.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
+                    currentWeekBuffer = contribution.currentWeekBuffer
+                  ))
+                case None => contributionDAO.add(user.username, repositoryName, contribution)
+              }))
+            })
+        })
+      }
+    })
   }
 
   /**

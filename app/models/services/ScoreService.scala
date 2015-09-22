@@ -1,15 +1,14 @@
 package models.services
 
 import java.util.Date
-import javax.inject.{Singleton, Named, Inject}
+import javax.inject.{Inject, Named, Singleton}
 
 import actors.RepositorySupervisor.ScoreRepository
 import akka.actor.ActorRef
-import models.{Score, Repository, User}
-import models.daos.drivers.GitHubAPI
-import models.daos.{ScoreDAO, UserDAO, ContributionDAO, RepositoryDAO}
+import models.daos.ScoreDAO
+import models.{Repository, Score, User}
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 @Singleton
 class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor") repositorySupervisor: ActorRef) {
@@ -24,7 +23,13 @@ class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor")
    * @param scoreSupport score given for support
    * @param feedback feedback written by user
    */
-  def createScore(user: User, repository: Repository, scoreDocumentation: Int, scoreMaturity: Int, scoreDesign: Int, scoreSupport: Int, feedback: String): Repository = {
+  def createScore(user: User,
+                  repository: Repository,
+                  scoreDocumentation: Int,
+                  scoreMaturity: Int,
+                  scoreDesign: Int,
+                  scoreSupport: Int,
+                  feedback: String): Repository = {
     val score = Score(
       new Date(),
       scoreDesign,
@@ -41,5 +46,4 @@ class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor")
     repositorySupervisor ! ScoreRepository(repository, score)
     repository
   }
-
 }

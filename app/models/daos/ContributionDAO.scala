@@ -139,4 +139,26 @@ class ContributionDAO @Inject() (neo: Neo4J){
       (Json.parse(response.body) \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
   }
 
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the deleted lines
+   *
+   * @param currentWeekBuffer String containing the deleted lines this week already counted for needed to be extracted.
+   * @return count of the deleted lines already accounted for extracted as an Int
+   */
+  def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(str.indexOf("d"), str.length).toInt
+  }
+
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the added lines
+   *
+   * @param currentWeekBuffer String containing the added lines this week already counted for needed to be extracted.
+   * @return count of the added lines already accounted for extracted as an Int
+   */
+  def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(0, str.indexOf("d")).toInt
+  }
+
 }

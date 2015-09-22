@@ -2,142 +2,169 @@
  * Created by nicolas on 8/7/15.
  */
 
-$(document)
-    .ready(function() {
+function getMean(data, attribute){
+    return _(data)
+        .pluck(attribute)
+        .reduce(function(mean, score){
+            return (mean + score) / 2
+        }, data[0][attribute])
+}
 
+function buildParallelCoordinates(data){
 
-        var data = [];
+    data = data.map(function(score){return {
+        timestamp: score.timestamp,
+        Documentation: score.docScore,
+        Maturity: score.maturityScore,
+        Design: score.designScore,
+        Support: score.supportScore
+    }});
 
+    var margin = {top: 30, right: 10, bottom: 30, left: 10},
+        container = $('#scoreChart'),
+        width = container.parent().width() - margin.left - margin.right,
+        height = 250 - margin.top - margin.bottom;
 
-        for (var i = 0; i < 100 ; i++){
-            data.push({
-                Timestamp: i*10 + 100000,
-                Documentation: Math.random() * 5,
-                Maturity: Math.random() * 5,
-                Design: Math.random() * 5,
-                Support: Math.random() * 5,
-                mean: 0
-            })
-        }
+    var opacity = d3.scale.linear()
+            .domain(d3.extent(data, function(p) { return +p.timestamp; }))
+            .range([0.2,1]),
+        x = d3.scale.ordinal().rangePoints([0, width], 1),
+        y = {};
 
-        data.push({
-            Timestamp: 2000000,
-            Documentation: _(data).pluck("Documentation").reduce(function(mean, score){return (mean + score) / 2}, data[0].Documentation),
-            Maturity: _(data).pluck("Maturity").reduce(function(mean, score){return (mean + score) / 2}, data[0].Maturity),
-            Design: _(data).pluck("Design").reduce(function(mean, score){return (mean + score) / 2}, data[0].Design),
-            Support: _(data).pluck("Support").reduce(function(mean, score){return (mean + score) / 2}, data[0].Support),
-            mean: 1
+    var line = d3.svg.line(),
+        axis = d3.svg.axis().orient("left"),
+        background,
+        foreground,
+        dimensions;
+
+    // Returns the path for a given data point.
+    function path(d) {
+        return line(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
+    }
+
+    // Handles a brush event, toggling the display of foreground lines.
+    function brush() {
+        var actives = dimensions.filter(function(p) { return !y[p].brush.empty(); }),
+            extents = actives.map(function(p) { return y[p].brush.extent(); });
+        foreground.style("display", function(d) {
+            return actives.every(function(p, i) {
+                return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+            }) ? null : "none";
+        });
+    }
+
+    var svg = d3.select("#scoreChart").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Extract the list of dimensions and create a scale for each.
+    x.domain(dimensions = d3.keys(data[0]).filter(function(d) {
+        return d !== "timestamp" && (y[d] = d3.scale.linear()
+                .domain([0,5])
+                .range([height, 0]));
+    }));
+
+    // Add grey background lines for context.
+    background = svg.append("g")
+        .attr("class", "background")
+        .selectAll("path")
+        .data(data)
+        .enter().append("path")
+        .attr("d", path)
+        .style("opacity", function(d){
+            return opacity(d.timestamp);
         });
 
-        var visu = d3.parcoords()("#scoreChart")
-            .data(data)
-            .hideAxis(["Timestamp", "mean"])
-            .color(color)
-            .alpha(0.4)
-            .composite("darken")
-            .margin({ top: 20, left: 0, bottom: 50, right: 0 })
-            .render()
-            .brushMode("1D-axes")  // enable brushing
-            .interactive();  // command line mode
+    // Add blue foreground lines for focus.
+    foreground = svg.append("g")
+        .attr("class", "foreground")
+        .selectAll("path")
+        .data(data)
+        .enter().append("path")
+        .attr("d", path)
+        .style("opacity", function(d){
+            return opacity(d.timestamp);
+        });
 
-        var explore_count = 0;
-        var exploring = {};
-        var explore_start = false;
+    // Add the mean to the graph
+    svg.append("g")
+        .attr("class", "mean")
+        .selectAll("path")
+        .data([{
+            timestamp: data[data.length-1].timestamp + 10,
+            Documentation: getMean(data, "Documentation"),
+            Maturity: getMean(data,"Maturity"),
+            Design: getMean(data,"Design"),
+            Support: getMean(data,"Support")
+        }])
+        .enter().append("path")
+        .attr("d", path);
 
-        visu.svg
-            .selectAll(".dimension")
-            .style("cursor", "pointer")
-            .on("click", function(d) {
-                exploring[d] = d in exploring ? false : true;
-                event.preventDefault();
-                if (exploring[d]) d3.timer(explore(d,explore_count));
-            });
+    // Add a group element for each dimension.
+    var g = svg.selectAll(".dimension")
+        .data(dimensions)
+        .enter().append("g")
+        .attr("class", "dimension")
+        .attr("transform", function(d) { return "translate(" + x(d) + ")"; });
 
-        var scoreChart = $('svg'),
-            width = scoreChart.width(),
-            height = scoreChart.height();
+    // Add an axis and title.
+    g.append("g")
+        .attr("class", "axis")
+        .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+        .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .text(function(d) { return d; });
 
-        // Legend for the mean
-        visu.svg
-            .append('rect')
-            .attr("x", width / 2 - 60)
-            .attr("y", height - 50)
-            .attr("rx", 2)
-            .attr("ry", 2)
-            .attr("width", 15)
-            .attr("height", 15)
-            .attr("stroke", "#1B1C1D")
-            .attr("stroke-width", 1)
-            .attr("fill", "#DB2828");
+    // Add and store a brush for each axis.
+    g.append("g")
+        .attr("class", "brush")
+        .each(function(d) { d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brush", brush)); })
+        .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
 
-        visu.svg
-            .append('text')
-            .attr("x", width / 2 - 40)
-            .attr("y", height - 36)
-            .text("Mean");
+    // Legend for the mean line
+    svg.append('rect')
+        .attr("x", width / 2 - 60)
+        .attr("y", height + 10)
+        .attr("rx", 2)
+        .attr("ry", 2)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("stroke", "#1B1C1D")
+        .attr("stroke-width", 1)
+        .attr("fill", "#DB2828");
 
-        // Legend for the casual lines
-        visu.svg
-            .append('rect')
-            .attr("x", width / 2)
-            .attr("y", height - 50)
-            .attr("rx", 2)
-            .attr("ry", 2)
-            .attr("width", 15)
-            .attr("height", 15)
-            .attr("stroke", "#1B1C1D")
-            .attr("stroke-width", 1)
-            .attr("fill", "#2185D0");
+    svg.append('text')
+        .attr("x", width / 2 - 40)
+        .attr("y", height + 21 )
+        .text("Mean");
 
-        visu.svg
-            .append('text')
-            .attr("x", width / 2 + 20)
-            .attr("y", height - 36)
-            .text("Last feedback scores");
+    // Legend for the casual lines
+    svg.append('rect')
+        .attr("x", width / 2)
+        .attr("y", height + 10)
+        .attr("rx", 2)
+        .attr("ry", 2)
+        .attr("width", 15)
+        .attr("height", 15)
+        .attr("stroke", "#1B1C1D")
+        .attr("stroke-width", 1)
+        .attr("fill", 'steelblue');
 
+    svg.append('text')
+        .attr("x", width / 2 + 20)
+        .attr("y", height + 21)
+        .text("Last feedback scores");
+}
 
-        /**
-         * Function used to select the min and max to be displayed on a given dimension
-         *
-         * @param dimension
-         * @returns {Function}
-         */
-        function explore(dimension) {
-            if (!explore_start) {
-                explore_start = true;
-                d3.timer(visu.brush);
-            }
-            var speed = (Math.round(Math.random()) ? 1 : -1) * (Math.random()+0.5);
-            return function(t) {
-                if (!exploring[dimension]) return true;
-                var domain = visu.yscale[dimension].domain();
-                var width = (domain[1] - domain[0])/4;
-
-                var center = width*1.5*(1+Math.sin(speed*t/1200)) + domain[0];
-
-                visu.yscale[dimension].brush.extent([
-                    d3.max([center-width*0.01, domain[0]-width/400]),
-                    d3.min([center+width*1.01, domain[1]+width/100])
-                ])(visu.g()
-                        .filter(function(d) {
-                            return d == dimension;
-                        })
-                );
-            };
-        }
-
-        /**
-         * From a line in the data returns the color it should be displayed with.
-         * Red for the mean
-         * Blue for the others
-         *
-         * @param {Object} d Data entry
-         * @returns {*}
-         */
-        function color(dataEntry){
-            if (dataEntry.mean == 1){
-                return "#DB2828"
-            }
-            return "#2185D0"
-        }
+$(document)
+    .ready(function() {
+        $.ajax({
+            url: '' + window.location.href + '/lastFeedback',
+            success: buildParallelCoordinates
+        });
     });
