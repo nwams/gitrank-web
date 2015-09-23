@@ -75,17 +75,14 @@ class ApplicationController @Inject()(
    */
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
-    repoService.canAddFeedback(repoName, request.identity).flatMap {
-      case true => repoService.getFromNeoOrGitHub(request.identity,repoName).flatMap({
-        case Some(repository) =>
-          repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
-            Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
-          )
-        case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-          "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-      })
-      case false => Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
-    }
+    repoService.getFromNeoOrGitHub(request.identity,repoName).flatMap({
+      case Some(repository) =>
+        repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
+          Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
+        )
+      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+    })
   }
 
   /**
