@@ -39,11 +39,10 @@ class ScoreService @Inject()(scoreDAO: ScoreDAO, @Named("repository-supervisor")
       feedback,
       user.karma
     )
-    scoreDAO.find(user.username, repository.name).map {
-      case Some(_) => scoreDAO.update(user.username, repository.name, score)
-      case None => scoreDAO.save(user.username, repository.name, score)
+    scoreDAO.find(user.username, repository.name).foreach {
+      case Some(_) => scoreDAO.update(user.username, repository.name, score).foreach(_=>repositorySupervisor ! ScoreRepository(repository, score))
+      case None => scoreDAO.save(user.username, repository.name, score).foreach(_=>repositorySupervisor ! ScoreRepository(repository, score))
     }
-    repositorySupervisor ! ScoreRepository(repository, score)
     repository
   }
 }
