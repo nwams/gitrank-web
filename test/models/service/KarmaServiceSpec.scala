@@ -58,7 +58,7 @@ class KarmaServiceSpec extends Specification with Mockito{
       repo2.addedLines returns 10
       repo2.removedLines returns 20
       val contributionList = Seq[(Repository,Contribution)]((repo,contrib),(repo2,contrib))
-      karmaService.calculateKarma(user, contributionList) shouldEqual (2*(((10.0+10)/30)*16)).toInt
+      karmaService.calculateKarma(user, contributionList) shouldEqual (2*(((10.0+10)/30)*16)).toInt/2
     }
   }
 
