@@ -1,16 +1,15 @@
 package actors
 
 
-import javax.inject.{Named, Inject}
+import javax.inject.Inject
 
-import actors.GitHubActor.UpdateContributions
 import actors.UsersSupervisor.{AskGithubForUserContributions, SchedulePulling}
 import akka.actor._
 import akka.event.LoggingReceive
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.{Contribution, User}
-import models.daos.{OAuth2InfoDAO, ContributionDAO, UserDAO}
+import models.User
+import models.daos.{ContributionDAO, OAuth2InfoDAO, UserDAO}
 import models.services.UserService
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
@@ -26,7 +25,11 @@ object UsersSupervisor {
   def props = Props[UsersSupervisor]
 }
 
-class UsersSupervisor @Inject()(userDAO: UserDAO, oAuth2InfoDAO: OAuth2InfoDAO, contributionDAO: ContributionDAO, userService: UserService, @Named("github-actor") gitHubActor: ActorRef) extends Actor with ActorLogging {
+class UsersSupervisor @Inject()(
+                                 userDAO: UserDAO,
+                                 oAuth2InfoDAO: OAuth2InfoDAO,
+                                 contributionDAO: ContributionDAO,
+                                 userService: UserService) extends Actor with ActorLogging {
 
   var cancellableUpdates: Map[LoginInfo, Cancellable] = Map.empty[LoginInfo, Cancellable]
 
@@ -43,7 +46,7 @@ class UsersSupervisor @Inject()(userDAO: UserDAO, oAuth2InfoDAO: OAuth2InfoDAO, 
       for {
         user: Option[User] <- userDAO.find(loginInfo)
         authInfo: Option[OAuth2Info] <- oAuth2InfoDAO.find(loginInfo)
-      } yield gitHubActor ! UpdateContributions(user.get, authInfo.get)
+      } yield userService.updateContributions(user.get, authInfo.get)
     case SchedulePulling(user) =>
       addCancellableWithReplacement(schedulePullingFromGithub(user))
   }

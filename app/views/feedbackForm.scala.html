@@ -1,22 +1,24 @@
 @import modules.CustomGitHubProvider
+@import _root_.forms.FeedbackForm.Data
 
-@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository:String)(implicit request: RequestHeader)
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository: String, form: Form[Data], update: Boolean)(implicit request: RequestHeader, messages: Messages)
 
-@main("GitRank - "+owner+"/"+repository+ " Feedback form !", gitHubProvider, user) {
+@main("GitRank - " + owner + "/" + repository + " Feedback form !", gitHubProvider, user) {
     <div class="ui container">
 
         <h2 class="ui repository header">
             <i class="mega-octicon octicon-repo"></i>
             <div class="content">
-                <a href="https://github.com/@owner">@owner</a>/<a href="https://github.com/@owner/@repository">@repository</a>
+                <a href="https://github.com/@owner">@owner</a>
+                /<a href="https://github.com/@owner/@repository">@repository</a>
             </div>
         </h2>
 
         <h3 class="ui dividing header ">Feedback</h3>
+        @helper.form(action = routes.ApplicationController.giveScorePage(owner, repository), 'class -> "ui form") {
+            @helper.CSRF.formField
 
-        <form class="ui form">
-
-            @if(user.isEmpty){
+            @if(user.isEmpty) {
                 <div class="ui active dimmer">
                     <div class="content">
                         <div class="center">
@@ -31,34 +33,43 @@
                     </div>
                 </div>
             }
-
             <div class="three fields">
                 <div class="field">
                     <label><i class="book icon"></i> Documentation</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="docScore" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreDocumentation"), '_label -> "", 'value -> "0", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon leaf"></i>Maturity</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="matScore" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreMaturity"), '_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon university"></i>Design</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="desScore" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreDesign"), '_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
                 <div class="field">
                     <label><i class="icon life ring"></i>Support</label>
-                    <div class="ui rating" data-max-rating="5"></div>
+                    <div class="ui rating" id="supScore" data-max-rating="5"></div>
+                    @helper.inputText(form("scoreSupport"), '_label -> "", 'hidden -> "hidden", '_showConstraints -> false)
+
                 </div>
             </div>
-
             <div class="field">
                 <label>Feedback</label>
-                <textarea></textarea>
+                @helper.textarea(form("feedback"), '_label -> "", '_showConstraints -> false)
             </div>
-
-            <div class="fluid ui positive submit labeled icon button">
+            <button id="submit" type="submit" value="submit" class="fluid ui positive submit labeled icon button">
+            @if(update) {
+                <i class="icon plus"></i> Update Feedback
+            } else {
                 <i class="icon plus"></i> Give Feedback
-            </div>
-        </form>
+            }
+            </button>
+        }
     </div>
 }

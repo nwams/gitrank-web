@@ -51,7 +51,7 @@ class UserDAO @Inject() (neo: Neo4J) {
   def findAllFromRepo(repository: Repository): Future[Seq[User]] = {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u",
-        Json.obj("repoID" -> repository.repoID)
+        Json.obj("repoName" -> repository.name)
       ).map(parseNeoUsers)
   }
 
@@ -64,6 +64,18 @@ class UserDAO @Inject() (neo: Neo4J) {
   def find(userID: Int): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE ID(n) = {userID} RETURN n", Json.obj(
       "userID" -> userID
+    )).map(parseNeoUser)
+  }
+
+  /**
+   * Finds a user by its username.
+   *
+   * @param username The username of the user to find.
+   * @return The found user or None if no user for the given ID could be found.
+   */
+  def find(username: String): Future[Option[User]] = {
+    neo.cypher("MATCH (n:User) WHERE n.username = {usernmae} RETURN n", Json.obj(
+      "username" -> username
     )).map(parseNeoUser)
   }
 
@@ -140,11 +152,13 @@ class UserDAO @Inject() (neo: Neo4J) {
    */
   def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
-    jsonParser.nextFieldName() match {
+    jsonParser.getCurrentName() match {
       case "row" => {
         Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
       }
-      case _ => parseJson(jsonParser, callback)
+      case _ => {
+        Option(jsonParser.nextToken()).foreach(jsonToken => parseJson(jsonParser, callback))
+      }
     }}
 
   /**
