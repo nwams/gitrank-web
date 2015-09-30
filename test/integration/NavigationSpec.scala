@@ -16,7 +16,7 @@ import scala.util.Properties
  */
 @RunWith(classOf[JUnitRunner])
 @Ignore
-class NavigationSpec extends Specification {
+class NavigationSpec extends Specification
   /*
   "User" should {
 
@@ -41,4 +41,4 @@ class NavigationSpec extends Specification {
 
     }
   }*/
-}
+
