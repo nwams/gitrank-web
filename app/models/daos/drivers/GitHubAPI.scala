@@ -153,7 +153,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @param linkHeader String with the links inside
    * @return Map of the keys with their links.
    */
-  private def parseGitHubLink(linkHeader: String): Map[String, String] = {
+  def parseGitHubLink(linkHeader: String): Map[String, String] = {
     if (linkHeader.isEmpty()) return Map[String,String]()
     (linkHeader.split(',') map { part: String =>
       val section = part.split(';')

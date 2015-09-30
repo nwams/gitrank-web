@@ -2,13 +2,13 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.Contribution
 import models.daos.drivers.Neo4J
+import models.{Contribution, Repository}
 import play.api.libs.json.{JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ContributionDAO @Inject() (neo: Neo4J){
 
@@ -31,6 +31,40 @@ class ContributionDAO @Inject() (neo: Neo4J){
         "repoName" -> repoName
       )
     ).map(parseNeoContribution)
+  }
+
+
+  def checkIfUserContributed(username: String, repoName:String): Future[Boolean] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
+        WHERE u.username={username} AND r.name={repoName}
+        RETURN c
+      """,
+      Json.obj(
+        "username" -> username,
+        "repoName" -> repoName
+      )
+    ).map(parseNeoContribution).map(_.isDefined)
+  }
+
+  /**
+   * Finds all contributions of a given user in the data store.
+   *
+   * @param username name of the contributing user
+   * @return the found Contribution if any.
+   */
+  def findAll(username: String): Future[Seq[(Repository,Contribution)]] = {
+    neo.cypher(
+      """
+        MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository)
+        WHERE u.username={username}
+        RETURN r, c
+      """,
+      Json.obj(
+        "username" -> username
+      )
+    ).map(parseNeoContributions)
   }
 
   /**
@@ -94,6 +128,37 @@ class ContributionDAO @Inject() (neo: Neo4J){
       case _: JsUndefined => None
       case repo => repo.asOpt[Contribution]
     }
+  }
+
+  /**
+   * Parse multiple contributions and repos
+   * @param response response from neo4j
+   * @return map with each contribution from repo
+   */
+  def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
+      (Json.parse(response.body) \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
+  }
+
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the deleted lines
+   *
+   * @param currentWeekBuffer String containing the deleted lines this week already counted for needed to be extracted.
+   * @return count of the deleted lines already accounted for extracted as an Int
+   */
+  def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(str.indexOf("d"), str.length).toInt
+  }
+
+  /**
+   * Parses a string representing the buffer of the current week contribution getting the added lines
+   *
+   * @param currentWeekBuffer String containing the added lines this week already counted for needed to be extracted.
+   * @return count of the added lines already accounted for extracted as an Int
+   */
+  def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
+    val str = currentWeekBuffer.getOrElse("a0d0")
+    str.substring(0, str.indexOf("d")).toInt
   }
 
 }

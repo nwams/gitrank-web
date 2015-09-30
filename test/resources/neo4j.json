@@ -1,0 +1,25 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "labels": ["User"],
+      "properties": {
+        "username": "User1",
+        "fullName": "Josh Newman",
+        "email": "josh@newman.com",
+        "avatarURL": "http://api.adorable.io/avatars/285/josh@newman.com.png",
+        "karma": 180
+      }
+    }
+  ],
+  "edges": [
+    {
+      "type": "test",
+      "sourceIndex": 0,
+      "targetIndex": 1,
+      "properties": {
+
+      }
+    }
+  ]
+}
