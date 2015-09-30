@@ -18,7 +18,11 @@ object TestSetup {
    */
   def clearNeo4JData = cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 
-
+  /**
+   * Populates the database with the data in the json file test/resources/neo4j.json
+   *
+   * @return void
+   */
   def populateNeo4JData() = {
 
     clearNeo4JData
@@ -26,29 +30,31 @@ object TestSetup {
     val source = scala.io.Source.fromFile("resources/neo4j.json")
     val lines = try source.mkString finally source.close()
 
+    // We use a mutable map to create an index of all the nodes indexes in the database to be able to create
+    // the relationships
     val mapping = new mutable.HashMap[Int,Int]()
 
     val neo4jData = Json.parse(lines)
 
-    (neo4jData \ "nodes").as[Seq[JsObject]].zipWithIndex.map(((node: JsObject, i: Int)) =>
+    (neo4jData \ "nodes").as[Seq[JsObject]].zipWithIndex.map{ case (node: JsObject, i: Int) =>
       cypher("CREATE (n:" + formatLabels(node) + " {props}) return id(n)",
         Json.obj("props" -> (node \ "properties").as[JsObject])
-      ).map(res => mapping.put(i, (((res.json\ "results")(0) \ "data")(0) \ "row")(0).as[Int]))
-    ).map(_ => (neo4jData \ "edges").as[Seq[JsObject]].zipWithIndex.map((edge: JsObject, i: Int) =>
+      ).map(res => mapping.put(i, (((res.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int]))
+    }.map(_ => (neo4jData \ "edges").as[Seq[JsObject]].zipWithIndex.map { case (edge: JsObject, i: Int) =>
       cypher(
         """
           MATCH (a),(b)
-          WHERE id(a)={ida} AND  id(b)={idb}
+          WHERE id(a)={ida} AND id(b)={idb}
           CREATE (a)-[c:{type} {props}]->(b)
         """, Json.obj(
           "props" -> (edge \ "properties").as[JsObject],
           "type" -> (edge \ "type").as[String],
           "ida" -> mapping.get((edge \ "sourceIndex").as[Int]).get,
           "idb" -> mapping.get((edge \ "targetIndex").as[Int]).get
-      )).map(res =>
-        mapping.put(i, (((res.json\ "results")(0) \ "data")(0) \ "row")(0).as[Int])
-      )
-    ))
+        )).map(res =>
+        mapping.put(i, (((res.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
+        )
+    })
   }
 
   /**
