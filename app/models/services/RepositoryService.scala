@@ -149,7 +149,7 @@ class RepositoryService @Inject()(
    * @param itemsPerPage number of items to display in a database page
    * @return Seq of Scores.
    */
-  def getScores(repoName: String, page: Int=1, itemsPerPage: Int =10): Future[Seq[Score]] =
+  def getScores(repoName: String, page: Int = 1, itemsPerPage: Int = 10): Future[Seq[Score]] =
     scoreDAO.findRepositoryScores(repoName, page, itemsPerPage)
 
   /**
@@ -171,7 +171,7 @@ class RepositoryService @Inject()(
    * @param user User that is giving the feedback
    * @return true if the user has not contributed to the repository
    */
-  def canAddFeedback (repoName: String, user: Option[User]): Future[Boolean] = user match {
+  def canAddFeedback(repoName: String, user: Option[User]): Future[Boolean] = user match {
     case Some(userEntity) =>
       contributionDAO.checkIfUserContributed(userEntity.username, repoName).map(hasContributed => !hasContributed)
     case None => Future(false)
@@ -218,16 +218,27 @@ class RepositoryService @Inject()(
                       scoreDesign: Int,
                       scoreSupport: Int,
                       feedback: String): Future[Repository] = {
-
-    repoDAO.find(owner + "/" + repositoryName).flatMap({
-      case Some(repo) => Future(scoreService.createScore(
-        user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback))
+    val repoName: String = owner + "/" + repositoryName
+    repoDAO.find(repoName).flatMap({
+      case Some(repo) =>
+        canAddFeedback(repoName, Option(user)).flatMap {
+          case true => Future(scoreService.createScore(
+            user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
+          ))
+          case false => Future(repo)
+        }
       case None => oAuth2InfoDAO.find(user.loginInfo)
         .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
-          .flatMap(repo => repoDAO.create(repo.get))
-          .flatMap(repo => Future(scoreService.createScore(
+        .flatMap(repo => repoDAO.create(repo.get))
+        .flatMap(repo => {
+        canAddFeedback(repoName, Option(user)).flatMap {
+          case true => Future(scoreService.createScore(
             user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
-          )))
+          ))
+          case false => Future(repo)
+        }
+      }
+        )
         )
     })
   }
@@ -239,7 +250,7 @@ class RepositoryService @Inject()(
    */
   def calculateScoreForRepo(repository: Repository): Future[Int] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
-      _.map {feedback: Feedback => computeTotalScore(repository, feedback)}.sum
+      feedback => (feedback.map { feedback: Feedback => computeTotalScore(repository, feedback) }.sum) / feedback.length
     }
   }
 
@@ -251,7 +262,7 @@ class RepositoryService @Inject()(
    */
   def computeTotalScore(repository: Repository, feedback: Feedback): Int = {
     ((repository.karmaWeight * repository.score + feedback.user.karma *
-      (feedback.score.designScore + feedback.score.docScore + feedback.score.maturityScore + feedback.score.supportScore )/4)
+      (feedback.score.designScore + feedback.score.docScore + feedback.score.maturityScore + feedback.score.supportScore) / 4)
       / (repository.karmaWeight + feedback.user.karma))
   }
 

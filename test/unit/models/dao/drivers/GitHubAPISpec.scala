@@ -1,4 +1,4 @@
-package models.dao.drivers
+package unit.models.dao.drivers
 
 import models.daos.OAuth2InfoDAO
 import models.daos.drivers.GitHubAPI
