@@ -160,7 +160,7 @@ class RepositoryService @Inject()(
    * @return true if the user can update a given feedback
    */
   def canUpdateFeedback(repoName: String, user: Option[User]): Future[Boolean] = user match {
-    case Some(userEntity) => scoreDAO.find(userEntity.username, repoName).map(_.isEmpty)
+    case Some(userEntity) => scoreDAO.find(userEntity.username, repoName).map(_.isDefined)
     case None => Future.successful(false)
   }
 
