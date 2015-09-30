@@ -1,6 +1,6 @@
 Gitrank-web
 ===========
-
+[![Stories in Ready](https://badge.waffle.io/gitlinks/gitrank-web.svg?label=ready&title=Ready)](http://waffle.io/gitlinks/gitrank-web)
 [![Circle CI](https://img.shields.io/circleci/project/gitlinks/gitrank-web.svg)](https://circleci.com/gh/gitlinks/gitrank-web)
 [![Codacy Badge](https://www.codacy.com/project/badge/e3f15c6b2d194f5a989708663ff718dc)](https://www.codacy.com/app/nikel092_2742/gitrank-web)
 
