@@ -68,9 +68,3 @@ addBuildNumber := {
 }
 
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
-
-dockerBaseImage := "colisweb/debian-oracle-java8"
-
-dockerRepository := Some("gitlinks")
-
-dockerUpdateLatest := true
