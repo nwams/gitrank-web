@@ -33,7 +33,8 @@ $(document)
             });
 
         function goToRepoInputUrl() {
-            window.location.href = window.location.protocol + '/github/' + $("#goToRepoInput")[0].value
+            window.location.href = window.location.protocol + "//" + window.location.hostname + ":"
+                + window.location.port + '/github/' + $("#goToRepoInput")[0].value
         }
     });
 
