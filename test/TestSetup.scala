@@ -4,6 +4,9 @@ import play.api.libs.ws._
 import scala.collection.mutable
 import scala.concurrent.Future
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.Play.current
+
 /**
  * Created by nicolas on 9/13/15.
  */
