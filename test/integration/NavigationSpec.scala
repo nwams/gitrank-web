@@ -17,7 +17,7 @@ import scala.util.Properties
 @RunWith(classOf[JUnitRunner])
 @Ignore
 class NavigationSpec extends Specification {
-
+  /*
   "User" should {
 
     "be redirected to github when trying to login" in new WithBrowser {
@@ -40,5 +40,5 @@ class NavigationSpec extends Specification {
 
 
     }
-  }
+  }*/
 }
