@@ -69,8 +69,7 @@ addBuildNumber := {
 
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
 
-dockerBaseImage := "colisweb/debian-oracle-java8"
+// Remove package documentation from the generated dist
+sources in (Compile, doc) := Seq.empty
 
-dockerRepository := Some("gitlinks")
-
-dockerUpdateLatest := true
+publishArtifact in (Compile, packageDoc) := false
