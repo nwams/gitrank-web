@@ -43,8 +43,8 @@ test:
 
 deployment:
   production:
-  branch: master
-      commands:
-        - "./activator universal:packageZipTarball"
-        - "scp ./target/universal/gitrank-web* gitrank@gitrank.io:~/gitrank-web.tgz"
-        - "ssh gitrank@gitrank.io ./deploy.sh"
+    branch: master
+    commands:
+      - "./activator universal:packageZipTarball"
+      - "scp ./target/universal/gitrank-web* gitrank@gitrank.io:~/gitrank-web.tgz"
+      - "ssh gitrank@gitrank.io ./deploy.sh"
