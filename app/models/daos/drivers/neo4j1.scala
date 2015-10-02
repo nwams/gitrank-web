@@ -23,8 +23,7 @@ import scala.concurrent.Future
 class Neo4J @Inject() (ws: WSClient){
 
   val NEO4J_ENDPOINT =
-    Play.configuration.getString("neo4j.server").getOrElse("http://localhost") + ":" +
-      Play.configuration.getInt("neo4j.port").getOrElse("7474") +
+    Play.configuration.getString("neo4j.server").getOrElse("http://localhost:7474") +
       Play.configuration.getString("neo4j.endpoint").getOrElse("/db/data/")
 
   val NEO4J_USER = Play.configuration.getString("neo4j.username").getOrElse("neo4j")

@@ -28,9 +28,6 @@ dependencies:
       > $HOME/bin/sbt
     - chmod u+x $HOME/bin/sbt
     - which sbt
-    - sbt sbt-version
-  override:
-    - sbt update
 
 test:
   override:
