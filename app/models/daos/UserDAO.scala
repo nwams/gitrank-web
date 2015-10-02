@@ -5,7 +5,7 @@ import javax.inject.Inject
 import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.daos.drivers.Neo4J
+import models.daos.drivers.Neo4j
 import models.{Repository, User}
 import play.api.libs.json._
 import play.api.libs.ws._
@@ -17,7 +17,7 @@ import scala.util
 /**
  * Give access to the user object.
  */
-class UserDAO @Inject() (neo: Neo4J) {
+class UserDAO @Inject() (neo: Neo4j) {
 
   /**
    * Finds a user by its login info.

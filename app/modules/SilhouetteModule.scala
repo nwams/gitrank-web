@@ -69,11 +69,11 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideAuthenticatorService(fingerprintGenerator: FingerprintGenerator): AuthenticatorService[SessionAuthenticator] = {
     new SessionAuthenticatorService(SessionAuthenticatorSettings(
-      sessionKey = Play.configuration.getString("silhouette.authenticator.sessionKey").get,
-      encryptAuthenticator = Play.configuration.getBoolean("silhouette.authenticator.encryptAuthenticator").get,
-      useFingerprinting = Play.configuration.getBoolean("silhouette.authenticator.useFingerprinting").get,
+      sessionKey = Play.configuration.getString("silhouette.authenticator.sessionKey").getOrElse("authenticator"),
+      encryptAuthenticator = Play.configuration.getBoolean("silhouette.authenticator.encryptAuthenticator").getOrElse(true),
+      useFingerprinting = Play.configuration.getBoolean("silhouette.authenticator.useFingerprinting").getOrElse(true),
       authenticatorIdleTimeout = Play.configuration.getInt("silhouette.authenticator.authenticatorIdleTimeout"),
-      authenticatorExpiry = Play.configuration.getInt("silhouette.authenticator.authenticatorExpiry").get
+      authenticatorExpiry = Play.configuration.getInt("silhouette.authenticator.authenticatorExpiry").getOrElse(43200)
     ), fingerprintGenerator, Clock())
   }
 
@@ -106,12 +106,12 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   @Provides
   def provideOAuth2StateProvider(idGenerator: IDGenerator): OAuth2StateProvider = {
     new CookieStateProvider(CookieStateSettings(
-      cookieName = Play.configuration.getString("silhouette.oauth2StateProvider.cookieName").get,
-      cookiePath = Play.configuration.getString("silhouette.oauth2StateProvider.cookiePath").get,
+      cookieName = Play.configuration.getString("silhouette.oauth2StateProvider.cookieName").getOrElse("OAuth2State"),
+      cookiePath = Play.configuration.getString("silhouette.oauth2StateProvider.cookiePath").getOrElse("/"),
       cookieDomain = Play.configuration.getString("silhouette.oauth2StateProvider.cookieDomain"),
-      secureCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.secureCookie").get,
-      httpOnlyCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.httpOnlyCookie").get,
-      expirationTime = Play.configuration.getInt("silhouette.oauth2StateProvider.expirationTime").get
+      secureCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.secureCookie").getOrElse(false),
+      httpOnlyCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.httpOnlyCookie").getOrElse(true),
+      expirationTime = Play.configuration.getInt("silhouette.oauth2StateProvider.expirationTime").getOrElse(300)
     ), idGenerator, Clock())
   }
 
@@ -126,8 +126,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideGitHubProvider(httpLayer: HTTPLayer, stateProvider: OAuth2StateProvider): CustomGitHubProvider = {
     new CustomGitHubProvider(httpLayer, stateProvider, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
-      accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").get,
-      redirectURL = Play.configuration.getString("silhouette.github.redirectURL").get,
+      accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").getOrElse("https://github.com/login/oauth/access_token"),
+      redirectURL = Play.configuration.getString("silhouette.github.redirectURL").getOrElse("http://localhost:9000/authenticate/github"),
       clientID = Play.configuration.getString("silhouette.github.clientID").getOrElse(""),
       clientSecret = Play.configuration.getString("silhouette.github.clientSecret").getOrElse(""),
       scope = Play.configuration.getString("silhouette.github.scope")))

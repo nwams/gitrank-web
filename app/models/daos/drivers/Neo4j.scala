@@ -20,17 +20,17 @@ import scala.concurrent.Future
  *
  * @param ws injected WS play service
  */
-class Neo4J @Inject() (ws: WSClient){
+class Neo4j @Inject() (ws: WSClient){
 
-  val NEO4J_ENDPOINT =
+  val neo4jEndpoint =
     Play.configuration.getString("neo4j.server").getOrElse("http://localhost:7474") +
       Play.configuration.getString("neo4j.endpoint").getOrElse("/db/data/")
 
-  val NEO4J_USER = Play.configuration.getString("neo4j.username").getOrElse("neo4j")
-  val NEO4J_PASSWORD = Play.configuration.getString("neo4j.password").getOrElse("neo4j")
+  val neo4jUser = Play.configuration.getString("neo4j.username").getOrElse("neo4j")
+  val neo4jPassword = Play.configuration.getString("neo4j.password").getOrElse("neo4j")
 
-  ws.url(NEO4J_ENDPOINT)
-    .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
+  ws.url(neo4jEndpoint)
+    .withAuth(neo4jUser, neo4jPassword, WSAuthScheme.BASIC)
     .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
     .withRequestTimeout(10000)
     .get()
@@ -53,7 +53,7 @@ class Neo4J @Inject() (ws: WSClient){
    * @return
    */
   def cypher(query: String, parameters: JsObject): Future[WSResponse] = {
-    val request: WSRequest = ws.url(NEO4J_ENDPOINT + "transaction/commit")
+    val request: WSRequest = ws.url(neo4jEndpoint + "transaction/commit")
 
     buildNeo4JRequest(request).post(Json.obj(
       "statements" -> Json.arr(
@@ -82,7 +82,7 @@ class Neo4J @Inject() (ws: WSClient){
    * @return modified request
    */
   def buildNeo4JRequest(req: WSRequest): WSRequest = req
-      .withAuth(NEO4J_USER, NEO4J_PASSWORD, WSAuthScheme.BASIC)
+      .withAuth(neo4jUser, neo4jPassword, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
       .withRequestTimeout(10000)
 
@@ -93,7 +93,7 @@ class Neo4J @Inject() (ws: WSClient){
    */
   def cypherStream(query: String): Future[JsonParser] = {
     val outputStream = new ByteArrayOutputStream()
-    buildNeo4JRequest(ws.url(NEO4J_ENDPOINT + "transaction/commit"))
+    buildNeo4JRequest(ws.url(neo4jEndpoint + "transaction/commit"))
       .withHeaders("X-Stream" -> "true")
       .withMethod("POST")
       .withBody(Json.obj(

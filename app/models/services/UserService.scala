@@ -63,7 +63,7 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
       case None => // Insert a new use
         userDAO.create(User(
           loginInfo = profile.loginInfo,
-          username = profile.username.get,
+          username = profile.username,
           fullName = profile.fullName,
           email = profile.email,
           avatarURL = profile.avatarURL,

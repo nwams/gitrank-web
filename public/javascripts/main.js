@@ -1,6 +1,11 @@
 $(document)
     .ready(function () {
 
+        function goToRepoInputUrl() {
+            window.location.href = window.location.protocol + "//" + window.location.hostname + ":"
+                + window.location.port + '/github/' + $("#goToRepoInput")[0].value
+        }
+
         $('.popup')
             .popup();
 
@@ -10,7 +15,7 @@ $(document)
         $('#goToRepoButton').click(goToRepoInputUrl);
 
         $('#goToRepoInput').keyup(function (e) {
-            if (e.keyCode == 13) {
+            if (e.keyCode === 13) {
                 goToRepoInputUrl()
             }
         });
@@ -31,10 +36,5 @@ $(document)
             .rating('setting', 'onRate', function (value) {
                 $('#scoreSupport').val(value)
             });
-
-        function goToRepoInputUrl() {
-            window.location.href = window.location.protocol + "//" + window.location.hostname + ":"
-                + window.location.port + '/github/' + $("#goToRepoInput")[0].value
-        }
     });
 

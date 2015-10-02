@@ -5,7 +5,9 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
-import models.{Repository, Contribution, User}
+import models.{Contribution, Repository, User}
+import play.api.Play
+import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
 import play.api.libs.ws._
 
@@ -14,8 +16,8 @@ import scala.concurrent.Future
 
 class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
 
-  val GITHUB_API_URL = "https://api.github.com"
-  val GITHUB_DATE_FORMATTER = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
+  val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
+  val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
 
   /**
    * Get the user contributions statistics since last year or since the past update
@@ -26,25 +28,23 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return Contribution to be used as an update.
    */
   def getUserContribution(repositoryName: String, user: User, oAuth2Info: OAuth2Info): Future[Option[Contribution]] = {
-    buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName + "/stats/contributors"), Some(oAuth2Info))
+    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), Some(oAuth2Info))
       .get()
       .map(response => {
       val userContribution = response.json.as[JsArray].value
         .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
       userContribution.length match {
         case 0 => None
-        case 1 => {
-          Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)){
-            (value: JsValue, contribution: Contribution) => {
-              Contribution(
-                (value \ "w").as[Long],
-                contribution.addedLines + (value \ "a").as[Int],
-                contribution.removedLines + (value \ "d").as[Int],
-                Some("a" + (value \ "a").as[Int] + "d" + (value \ "d").as[Int])
-              )
-            }
-          })
-        }
+        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)){
+          (value: JsValue, contribution: Contribution) => {
+            Contribution(
+              (value \ "w").as[Long],
+              contribution.addedLines + (value \ "a").as[Int],
+              contribution.removedLines + (value \ "d").as[Int],
+              Some("a" + (value \ "a").as[Int] + "d" + (value \ "d").as[Int])
+            )
+          }
+        })
       }
     })
   }
@@ -58,7 +58,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    *         to 0, returns None if the repository was not found
    */
   def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None): Future[Option[Repository]] = {
-    buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
+    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
       .get()
       .flatMap(response => {
       response.status match {
@@ -75,7 +75,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
             }
           })
 
-          buildGitHubReq(ws.url(GITHUB_API_URL + "/repos/" + repositoryName), oAuth2Info)
+          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName), oAuth2Info)
             .get()
             .map(response => {
             Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
@@ -95,7 +95,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return
    */
   def getContributedRepositories(user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
-    doContributionRequest(GITHUB_API_URL + "/users/" + user.username +"/events/public", user, oAuth2Info)
+    doContributionRequest(gitHubApiUrl + "/users/" + user.username +"/events/public", user, oAuth2Info)
 
   /**
    * Actual implementation of the request and of the recursion.
@@ -154,13 +154,15 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return Map of the keys with their links.
    */
   def parseGitHubLink(linkHeader: String): Map[String, String] = {
-    if (linkHeader.isEmpty()) return Map[String,String]()
-    (linkHeader.split(',') map { part: String =>
-      val section = part.split(';')
-      val url = section(0).replace("<", "").replace(">", "")
-      val name = section(1).replace(" rel=\"", "").replace("\"", "")
-      (name, url)
-    }).toMap
+    linkHeader match {
+      case "" => Map[String, String]()
+      case _ => (linkHeader.split(',') map { part: String =>
+        val section = part.split(';')
+        val url = section(0).replace("<", "").replace(">", "")
+        val name = section(1).replace(" rel=\"", "").replace("\"", "")
+        (name, url)
+      }).toMap
+    }
   }
 
   /**
@@ -175,12 +177,9 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
     timeLimit match {
       case None => wSResponse.json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]).toSet
       case Some(time) => wSResponse.json.as[JsArray].value
-        .filter(event => {
-          GITHUB_DATE_FORMATTER.parse((event \ "created_at").as[String]).getTime > time
-        })
+        .filter(event => gitHubDateFormatter.parse((event \ "created_at").as[String]).getTime > time)
         .map(event => (event \ "repo" \ "name").as[String])
         .toSet
     }
   }
-
 }

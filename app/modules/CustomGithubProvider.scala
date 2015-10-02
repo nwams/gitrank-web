@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 case class CustomSocialProfile(
                                 loginInfo: LoginInfo,
-                                username: Option[String] = None,
+                                username: String,
                                 fullName: Option[String] = None,
                                 email: Option[String] = None,
                                 avatarURL: Option[String] = None
@@ -39,7 +39,7 @@ class CustomGitHubProfileParser extends SocialProfileParser[JsValue, CustomSocia
 
     CustomSocialProfile(
       loginInfo = commonProfile.loginInfo,
-      username = Some(username),
+      username = username,
       fullName = commonProfile.fullName,
       avatarURL = Some(avatarUrl),
       email = commonProfile.email)

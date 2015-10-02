@@ -1,19 +1,12 @@
 package unit.models.service
 
-import java.util.Dictionary
-
-import com.fasterxml.jackson.core.JsonFactory
-import models.{Repository, Contribution, User}
 import models.daos.{ContributionDAO, RepositoryDAO, UserDAO}
-import models.daos.drivers.Neo4J
 import models.services.KarmaService
+import models.{Contribution, Repository, User}
 import org.junit.runner._
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner._
-import scala.collection.immutable.HashMap
-import scala.collection.mutable
-import scala.concurrent.Future
 
 
 
