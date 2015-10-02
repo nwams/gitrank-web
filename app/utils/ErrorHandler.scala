@@ -10,7 +10,7 @@ import play.api.i18n.Messages
 import play.api.mvc.Results._
 import play.api.mvc.{Results, Result, RequestHeader}
 import play.api.routing.Router
-import play.api.{ OptionalSourceMapper, Configuration }
+import play.api.{UsefulException, OptionalSourceMapper, Configuration}
 
 import scala.concurrent.Future
 
@@ -68,5 +68,21 @@ class ErrorHandler @Inject() (
       Future.successful(Results.Status(clientError)(views.html.defaultpages.badRequest(request.method, request.uri, message)))
     case nonClientError =>
       throw new IllegalArgumentException(s"onClientError invoked with non client error status code $statusCode: $message")
+  }
+
+  /**
+   * Invoked when an error occurs in production
+   *
+   * @param request request header of the error
+   * @param exception exception raised
+   * @return
+   */
+  override def onProdServerError(request: RequestHeader, exception: UsefulException) = {
+    Future.successful(
+      InternalServerError(views.html.error(
+        "Error", 500, "Server Error", "Looks like something is going wrong, please" +
+          " <a href=\"https://github.com/gitlinks/gitrank-web/issues\"> report </a> what happened."
+      ))
+    )
   }
 }
