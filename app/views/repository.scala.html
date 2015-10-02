@@ -112,11 +112,13 @@
                 <div class="align-center">
                     <div class="ui pagination menu">
 
-                        <a
-                        href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
-                        class="@if(currentPage == 1) {disabled} item">
-                            <
-                        </a>
+                        @if(currentPage != 1) {
+                            <a
+                            href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                            class="item">
+                                <
+                            </a>
+                        }
 
                         @if(currentPage != 1 && currentPage != 2) {
                             <a class="disabled item">
@@ -149,10 +151,12 @@
                             </a>
                         }
 
-                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
-                        class="@if(currentPage == totalPages) {disabled} item">
-                            >
-                        </a>
+                        @if(currentPage != totalPages) {
+                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                            class="item">
+                                >
+                            </a>
+                        }
                     </div>
                 </div>
             }
