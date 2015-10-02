@@ -40,3 +40,11 @@ test:
     - sbt codacyCoverage
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/target/test-reports/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;
+
+deployment:
+  production:
+  branch: master
+      commands:
+        - ./activator universal:packageZipTarball
+        - scp ./target/universal/gitrank-web* gitrank@gitrank.io:~/gitrank-web.tgz
+        - ssh gitrank@gitrank.io ./deploy.sh
