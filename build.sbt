@@ -68,3 +68,8 @@ addBuildNumber := {
 }
 
 (test in Test) <<= (test in Test).dependsOn(addBuildNumber)
+
+// Remove package documentation from the generated dist
+sources in (Compile, doc) := Seq.empty
+
+publishArtifact in (Compile, packageDoc) := false
