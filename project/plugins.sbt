@@ -14,9 +14,9 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.7")
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.0.0")
 
 // Code coverage
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.1.0")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.3.1")
 
-addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.1.0")
+addSbtPlugin("com.codacy" % "sbt-codacy-coverage" % "1.2.0")
 
 //docker packager
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.0.2")
