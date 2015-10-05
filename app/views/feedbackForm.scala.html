@@ -61,7 +61,7 @@
             </div>
             <div class="field">
                 <label>Feedback</label>
-                @helper.textarea(form("feedback"), '_label -> "", '_showConstraints -> false)
+                @helper.textarea(form("feedback"), '_label -> "", '_showConstraints -> false, 'required -> true)
             </div>
             <button id="submit" type="submit" value="submit" class="fluid ui positive submit labeled icon button">
             @if(update) {
