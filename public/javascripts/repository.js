@@ -167,4 +167,8 @@ $(document)
             url: '' + window.location.href + '/lastFeedback',
             success: buildParallelCoordinates
         });
+
+        $('#badgeButton').click(function(){
+            $('#badgeModal').modal('show')
+        })
     });
