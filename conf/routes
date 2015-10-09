@@ -4,16 +4,21 @@
 
 # Home page
 
-GET         /                                              @controllers.ApplicationController.index
-GET         /github/:owner/:repository                     @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
-GET         /github/:owner/:repository/lastFeedback        @controllers.PublicAPIController.getLast100Feedback(owner, repository)
-GET         /github/:owner/:repository/feedback            @controllers.ApplicationController.giveFeedbackPage(owner, repository)
-POST        /github/:owner/:repository/feedback            @controllers.ApplicationController.giveScorePage(owner, repository)
+GET         /                                                             @controllers.ApplicationController.index
+GET         /github/:owner/:repository                                    @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
+GET         /github/:owner/:repository/lastFeedback                       @controllers.PublicAPIController.getLast100Feedback(owner, repository)
+GET         /github/:owner/:repository/feedback                           @controllers.ApplicationController.giveFeedbackPage(owner, repository)
+POST        /github/:owner/:repository/feedback                           @controllers.ApplicationController.giveScorePage(owner, repository)
+POST        /github/:owner/:repository/quickstart                         @controllers.ApplicationController.createQuickstarterGuide(owner, repository)
+POST        /github/:owner/:repository/quickstart/:title/:voteType        @controllers.ApplicationController.upvote(owner, repository,title,voteType)
+GET         /github/:owner/:repository/quickstart                         @controllers.ApplicationController.createGuidePage(owner, repository)
+GET         /github/:owner/:repository/quickstart/guides                  @controllers.ApplicationController.getGuides(owner, repository)
 
-GET         /authenticate/:provider                        @controllers.SocialAuthController.authenticate(provider)
+
+GET         /authenticate/:provider                                       @controllers.SocialAuthController.authenticate(provider)
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                                  controllers.Assets.at(path="/public", file)
-GET         /webjars/*file                                 controllers.WebJarAssets.at(file)
+GET         /assets/*file                                                 controllers.Assets.at(path="/public", file)
+GET         /webjars/*file                                                controllers.WebJarAssets.at(file)
 

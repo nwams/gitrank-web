@@ -1,0 +1,54 @@
+@import modules.CustomGitHubProvider
+@import _root_.forms.FeedbackForm.Data
+
+@import models.forms.QuickstartForm
+@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository: String, form: Form[QuickstartForm.Data])(implicit request: RequestHeader, messages: Messages)
+
+@main("GitRank - " + owner + "/" + repository + " Feedback form !", gitHubProvider, user) {
+    <div class="ui container">
+
+        <h2 class="ui repository header">
+            <i class="mega-octicon octicon-repo"></i>
+            <div class="content">
+                <a href="https://github.com/@owner">@owner</a>
+                /<a href="https://github.com/@owner/@repository">@repository</a>
+            </div>
+        </h2>
+
+        <h3 class="ui dividing header ">Quickstart Guide</h3>
+        @helper.form(action = routes.ApplicationController.createQuickstarterGuide(owner, repository), 'class -> "ui form") {
+            @helper.CSRF.formField
+
+            @if(user.isEmpty) {
+                <div class="ui active dimmer">
+                    <div class="content">
+                        <div class="center">
+                            <h2 class="ui inverted header">
+                                You need to be login to add some guide
+                            </h2>
+                            <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
+                                <span class="octicon octicon-mark-github"></span>
+                                Login
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="field">
+                <label>Title</label>
+                @helper.inputText(form("title"), '_label -> "", '_showConstraints -> false)
+            </div>
+            <div class="field">
+                <label>Url</label>
+                @helper.inputText(form("url"), '_label -> "", '_showConstraints -> false)
+            </div>
+            <div class="field">
+                <label>Description</label>
+                @helper.textarea(form("description"), '_label -> "", '_showConstraints -> false)
+            </div>
+            <button id="submit" type="submit" value="submit" class="fluid ui positive submit labeled icon button">
+                <i class="icon plus"></i> Create Quickstart Guide
+            </button>
+        }
+    </div>
+}
