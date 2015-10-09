@@ -47,7 +47,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       guide.timestamp,
       guide.title,
       guide.description,
-      guide.url,
+      (if(guide.url.startsWith("http://")) guide.url else "http://"+guide.url )  ,
       guide.upvote + (if (upvote) 1 else 0),
       guide.downvote + (if (!upvote) 1 else 0),
       guide.listVoters :+ username
