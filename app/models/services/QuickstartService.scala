@@ -24,7 +24,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       new Date(),
       title,
       description,
-      url,
+      (if(url.startsWith("http://")) url else "http://"+url )  ,
       0,
       0,
       List()
