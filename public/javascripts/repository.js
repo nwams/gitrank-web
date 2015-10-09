@@ -68,13 +68,13 @@ function buildQuickstartGuides(data) {
         icon.className = 'ui thumbs up icon'
         icon.setAttribute("style", "cursor: pointer")
 
-        icon.setAttribute("onclick", "upvote('" + guide.title + "')")
+        icon.onclick= function(){ upvote( guide.title ); } ;
         thumbsup.appendChild(icon)
 
         icon = document.createElement('i')
         icon.id = 'thumbsdown'
         icon.className = 'ui thumbs down icon'
-        icon.setAttribute("onclick", "downvote('" + guide.title + "')")
+        icon.onclick= function(){ downvote( guide.title ); } ;
         icon.setAttribute("style", "cursor: pointer")
         thumbsdown.appendChild(icon)
 
