@@ -11,11 +11,7 @@ function getMean(data, attribute) {
 }
 
 function reload() {
-    document.getElementById("guides").innerHTML = "";
-    $.ajax({
-        url: '' + window.location.href + '/quickstart/guides',
-        success: buildQuickstartGuides
-    })
+        location.reload()
 }
 
 function upvote(title) {

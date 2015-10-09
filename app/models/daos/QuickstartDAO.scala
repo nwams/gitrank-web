@@ -3,14 +3,14 @@ package models.daos
 import javax.inject.Inject
 
 import models.{Quickstart, Score}
-import models.daos.drivers.Neo4J
+import models.daos.drivers.Neo4j
 import play.api.libs.json.{JsArray, JsUndefined, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class QuickstartDAO @Inject()(neo: Neo4J) {
+class QuickstartDAO @Inject()(neo: Neo4j) {
 
   /**
    * Saves a quickstart guide into the data store.
