@@ -71,7 +71,7 @@ function buildQuickstartGuides(data) {
         icon.setAttribute("onclick", "upvote('" + guide.title + "')")
         thumbsup.appendChild(icon)
 
-        var icon = document.createElement('i')
+        icon = document.createElement('i')
         icon.id = 'thumbsdown'
         icon.className = 'ui thumbs down icon'
         icon.setAttribute("onclick", "downvote('" + guide.title + "')")
