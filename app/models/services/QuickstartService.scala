@@ -42,7 +42,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
     quickstartDAO.findRepositoryGuides(repository.name, page)
   }
 
-  private def buildFromVote(guide: Quickstart, upvote: Boolean, username: String): Quickstart = {
+  def buildFromVote(guide: Quickstart, upvote: Boolean, username: String): Quickstart = {
     Quickstart(
       guide.timestamp,
       guide.title,
