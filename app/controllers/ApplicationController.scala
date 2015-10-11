@@ -133,7 +133,17 @@ class ApplicationController @Inject()(
           "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
       },
       data => {
-        println("is it working?")
+        repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map {
+          case Some(repo) => request.identity.map(quickstartService.createQuickstart(
+            _,
+            repo,
+            data.title,
+            data.description,
+            data.url
+          ))
+          case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+            "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+        }
 
       })
 
