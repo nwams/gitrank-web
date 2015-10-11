@@ -5,16 +5,19 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
+import models.services.StarredService
 import models.{Contribution, Repository, User}
+import org.eclipse.egit.github.core.service.RepositoryService
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
 import play.api.libs.ws._
 
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
+class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
@@ -35,7 +38,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
         .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
       userContribution.length match {
         case 0 => None
-        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)){
+        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
           (value: JsValue, contribution: Contribution) => {
             Contribution(
               (value \ "w").as[Long],
@@ -64,13 +67,13 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       response.status match {
         case 200 =>
           val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
             }
           })
 
           val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
             }
           })
@@ -86,6 +89,27 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
   }
 
   /**
+   * @param oAuth2Info authentication information to use the api
+   */
+  def getRecommendedRepositories(oAuth2Info: Option[OAuth2Info]): Future[Seq[org.eclipse.egit.github.core.Repository]] = Future {
+    oAuth2Info match {
+      case Some(oAuthInfoValue) =>
+        val service = new StarredService()
+        service.getClient.setOAuth2Token(oAuthInfoValue.accessToken)
+        service.getStarredRepositories.take(10)
+      case None =>
+        (new RepositoryService)
+          .searchRepositories(Map("stars" -> ">1000")).take(10)
+          .map({ searchRepository =>
+            // TODO : Create converter from SearchRepository to Repository
+            val repository = new org.eclipse.egit.github.core.Repository
+            repository.setName(searchRepository.getName)
+            repository.setDescription(searchRepository.getDescription)
+          })
+    }
+  }
+
+  /**
    * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
    * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
    * with a 90 days limit to the api. This is the best we can do using the direct API.
@@ -95,7 +119,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return
    */
   def getContributedRepositories(user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
-    doContributionRequest(gitHubApiUrl + "/users/" + user.username +"/events/public", user, oAuth2Info)
+    doContributionRequest(gitHubApiUrl + "/users/" + user.username + "/events/public", user, oAuth2Info)
 
   /**
    * Actual implementation of the request and of the recursion.
@@ -116,10 +140,10 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
           val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
           if (linkHeader.isDefinedAt("next")) {
             doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map((repoList: Set[String]) =>
-            repoList.size match {
-              case 0 => parseRepoNames(response, user.lastPublicEventPull)
-              case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
-            })
+              repoList.size match {
+                case 0 => parseRepoNames(response, user.lastPublicEventPull)
+                case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
+              })
           } else {
             Future(parseRepoNames(response, user.lastPublicEventPull))
           }
@@ -143,7 +167,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
 
     oauthInfo match {
       case None => req
-      case Some(oAuth) =>req.withHeaders("Authorization" -> ("token "+ oAuth.accessToken))
+      case Some(oAuth) => req.withHeaders("Authorization" -> ("token " + oAuth.accessToken))
     }
   }
 

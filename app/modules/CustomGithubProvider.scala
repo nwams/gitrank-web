@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.impl.exceptions._
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import models.Identifiable
+import org.eclipse.egit.github.core.client.GitHubClient
 import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -121,4 +122,5 @@ class CustomGitHubProvider(
     else
       getPrimaryEmail(jsonList.tail)
   }
+
 }
