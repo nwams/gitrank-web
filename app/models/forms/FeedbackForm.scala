@@ -2,6 +2,7 @@ package forms
 
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.libs.ws.WS
 
 /**
  * The form which handles the sign up process.
