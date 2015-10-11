@@ -27,5 +27,10 @@ class ApplicationSpec extends Specification {
       contentAsString(home) must contain("GitRank")
       contentType(home) must beSome.which(_ == "text/html")
     }
+
+    "get list of guides" in new WithApplication{
+      val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
+      status(guides) must equalTo(OK)
+    }
   }
 }
