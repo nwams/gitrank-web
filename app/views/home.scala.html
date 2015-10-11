@@ -1,9 +1,9 @@
 @import modules.CustomGitHubProvider
-@import org.eclipse.egit.github.core.SearchRepository
+@import org.eclipse.egit.github.core.Repository
 @(
         gitHubProvider: CustomGitHubProvider,
         user: Option[models.User],
-        recommendedRepos: Seq[SearchRepository])(implicit request: RequestHeader)
+        recommendedRepos: Seq[Repository])(implicit request: RequestHeader)
 
 @main("GitRank - Home", gitHubProvider, user) {
     <div class="masthead home">

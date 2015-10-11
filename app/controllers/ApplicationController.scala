@@ -9,6 +9,7 @@ import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
 import models.{Feedback, User}
 import modules.CustomGitHubProvider
+import org.eclipse.egit.github.core.Repository
 import play.api.i18n.MessagesApi
 import forms.FeedbackForm
 
