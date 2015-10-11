@@ -127,7 +127,7 @@ class ApplicationController @Inject()(
           repo,
           form.data.getOrElse("title", ""),
           form.data.getOrElse("description", ""),
-          form.data.getOrElse("url", "")
+          QuickstartForm.validateUrl(form.data.getOrElse("url", ""))
         ))
         case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
           "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
@@ -139,7 +139,7 @@ class ApplicationController @Inject()(
             repo,
             data.title,
             data.description,
-            data.url
+            QuickstartForm.validateUrl(data.url)
           ))
           case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
             "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
@@ -177,9 +177,9 @@ class ApplicationController @Inject()(
    * @param voteType if the vote is upvote or downvote
    * @return the guide
    */
-  def upvote(owner: String, repositoryName: String, title: String, voteType: String) = UserAwareAction.async { implicit request =>
+  def upvote(owner: String, repositoryName: String, title: String, voteType: String) = SecuredAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
-    repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
+    repoService.getFromNeoOrGitHub(Some(request.identity), repoName).flatMap({
       case Some(repository) =>
         voteType match {
           case "upvote" => quickstartService.updateVote(repository, true, title, request.identity).map(guide => Ok(Json.toJson(guide)))

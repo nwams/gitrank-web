@@ -24,7 +24,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       new Date(),
       title,
       description,
-      (if(url.startsWith("http://")) url else "http://"+url )  ,
+      (if (url.startsWith("http://")) url else "http://" + url),
       0,
       0,
       List()
@@ -47,7 +47,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       guide.timestamp,
       guide.title,
       guide.description,
-      (if(guide.url.startsWith("http://")) guide.url else "http://"+guide.url )  ,
+      (if (guide.url.startsWith("http://")) guide.url else "http://" + guide.url),
       guide.upvote + (if (upvote) 1 else 0),
       guide.downvote + (if (!upvote) 1 else 0),
       guide.listVoters :+ username
@@ -60,18 +60,13 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
    * @param upvote is it upvote?
    * @param title title of the guide
    */
-  def updateVote(repository: Repository, upvote: Boolean, title: String, user: Option[User]): Future[Option[Quickstart]] = {
+  def updateVote(repository: Repository, upvote: Boolean, title: String, user: User): Future[Option[Quickstart]] = {
     quickstartDAO.findRepositoryGuide(repository.name, title).flatMap {
       case Some(guide) => {
-        user match {
-          case Some(u) => {
-            if (!guide.listVoters.contains(u.username)) {
-              quickstartDAO.update(title, repository.name, buildFromVote(guide, upvote, u.username))
-            }
-            else Future(None)
-          }
-          case None => Future(None)
+        if (!guide.listVoters.contains(user.username)) {
+          quickstartDAO.update(title, repository.name, buildFromVote(guide, upvote, user.username))
         }
+        else Future(None)
       }
       case None => Future(None)
     }

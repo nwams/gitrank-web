@@ -1,5 +1,7 @@
 package models.forms
 
+import java.util.regex.Pattern
+
 import play.api.data.Form
 import play.api.data.Forms._
 
@@ -23,4 +25,12 @@ object QuickstartForm {
                    title: String,
                    description: String,
                    url: String)
+
+  def validateUrl(url:String): String ={
+    val regex = "^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]".r;
+    regex findFirstIn(url) match{
+      case Some(str)=> url
+      case _ => throw new Exception("Invalid URL format")
+    }
+  }
 }
