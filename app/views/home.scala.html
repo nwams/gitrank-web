@@ -1,5 +1,9 @@
 @import modules.CustomGitHubProvider
-@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(implicit request: RequestHeader)
+@import org.eclipse.egit.github.core.SearchRepository
+@(
+        gitHubProvider: CustomGitHubProvider,
+        user: Option[models.User],
+        recommendedRepos: Seq[SearchRepository])(implicit request: RequestHeader)
 
 @main("GitRank - Home", gitHubProvider, user) {
     <div class="masthead home">
@@ -8,4 +12,12 @@
             <h4 class="ui header inverted">A platform where you can easily compare and feedback GitHub open source projects.</h4>
         </div>
     </div>
+    @for(repo <- recommendedRepos) {
+        <div class="repository">
+            <div class="content">
+                <a class="name">@repo.getName</a>
+                <div class="text"> @repo.getDescription </div>
+            </div>
+        </div>
+    }
 }

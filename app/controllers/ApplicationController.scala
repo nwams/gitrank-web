@@ -37,7 +37,17 @@ class ApplicationController @Inject()(
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(gitHubProvider, request.identity)))
+    request.identity match {
+      case Some(user) =>
+        userService.getOAuthInfo(user).flatMap{ oAuth2Info =>
+        gitHub.getRecommendedRepositories(oAuth2Info).flatMap({
+          case recommendedRepos => Future.successful(Ok(views.html.home(gitHubProvider, request.identity, recommendedRepos)))
+        })
+      }
+      case None =>
+        // TODO : Can we create a oAuth2Info from our clientId and clientSecret ?
+        Future.successful(Ok(views.html.home(gitHubProvider, request.identity, Seq.empty)))
+    }
   }
 
   /**

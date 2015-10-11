@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
+  "org.eclipse.mylyn.github" % "org.eclipse.egit.github.core" % "2.1.5",
   specs2 % Test,
   cache,
   filters,
