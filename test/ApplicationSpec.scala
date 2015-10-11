@@ -28,9 +28,9 @@ class ApplicationSpec extends Specification {
       contentType(home) must beSome.which(_ == "text/html")
     }
 
-    "get list of guides" in new WithApplication{
-      val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
-      status(guides) must equalTo(OK)
-    }
+    //"get list of guides" in new WithApplication{
+    //  val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
+    //  status(guides) must equalTo(OK)
+    //}
   }
 }
