@@ -1,11 +1,12 @@
+package setup
+
+import play.api.Play.current
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws._
 
 import scala.collection.mutable
-import scala.concurrent.Future
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.Play.current
+import scala.concurrent.Future
 
 /**
  * Created by nicolas on 9/13/15.
@@ -30,7 +31,7 @@ object TestSetup {
 
     clearNeo4JData
 
-    val source = scala.io.Source.fromFile("resources/neo4j.json")
+    val source = scala.io.Source.fromFile("../resources/neo4j.json")
     val lines = try source.mkString finally source.close()
 
     // We use a mutable map to create an index of all the nodes indexes in the database to be able to create

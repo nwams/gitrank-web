@@ -1,7 +1,6 @@
 {
   "nodes": [
     {
-      "id": 1,
       "labels": ["User"],
       "properties": {
         "username": "User1",
@@ -10,15 +9,28 @@
         "avatarURL": "http://api.adorable.io/avatars/285/josh@newman.com.png",
         "karma": 180
       }
+    }, {
+      "labels": ["Repository"],
+      "properties": {
+        "name": "test/test",
+        "repoID": 0,
+        "addedLines": 150,
+        "removedLines": 10,
+        "karmaWeight": 1,
+        "score": 3.4
+      }
     }
   ],
   "edges": [
     {
-      "type": "test",
+      "type": "CONTRIBUTED_TO",
       "sourceIndex": 0,
       "targetIndex": 1,
       "properties": {
-
+        "addedLines": 40,
+        "removedLines": 10,
+        "currentWeekBuffer": 0,
+        "timestamp": 1444426459006
       }
     }
   ]
