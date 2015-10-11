@@ -180,14 +180,14 @@
                 <img src="@routes.Assets.at("images/giveFeedbackBadge.svg")">
             </a>
             <div class="ui fluid action input">
-                <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("silhouette.cookieDomain").getOrElse("localhost:9000")@routes.Assets.at("images/giveFeedbackBadge.svg"))](http://@Play.configuration.getString("silhouette.cookieDomain").getOrElse("localhost:9000")@routes.ApplicationController.giveFeedbackPage(owner, repositoryName))">
+                <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.Assets.at("images/giveFeedbackBadge.svg"))](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.ApplicationController.giveFeedbackPage(owner, repositoryName))">
             </div>
             <br>
             <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, None)">
                 <img src="@routes.PublicAPIController.getScoreBadge(owner, repositoryName)">
             </a>
             <div class="ui fluid action input">
-                <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("silhouette.cookieDomain").getOrElse("localhost:9000")@routes.PublicAPIController.getScoreBadge(owner, repositoryName))](http://@Play.configuration.getString("silhouette.cookieDomain").getOrElse("localhost:9000")@routes.ApplicationController.gitHubRepository(owner, repositoryName, None))">
+                <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.PublicAPIController.getScoreBadge(owner, repositoryName))](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.ApplicationController.gitHubRepository(owner, repositoryName, None))">
             </div>
         </div>
     </div>

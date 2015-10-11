@@ -1,24 +1,26 @@
 package modules
 
-import com.google.inject.{ AbstractModule, Provides }
+import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
-import com.mohiva.play.silhouette.api.{ Environment, EventBus }
+import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
-import com.mohiva.play.silhouette.impl.providers.oauth2.state.{ CookieStateProvider, CookieStateSettings }
+import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import models.User
 import models.daos._
 import models.services.UserService
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
-import play.api.Play
-import play.api.Play.current
+import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.ws.WSClient
 
 /**
  * The Guice module which wires all Silhouette dependencies.
@@ -31,12 +33,21 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def configure() {
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
     bind[CacheLayer].to[PlayCacheLayer]
-    bind[HTTPLayer].toInstance(new PlayHTTPLayer)
     bind[IDGenerator].toInstance(new SecureRandomIDGenerator())
     bind[PasswordHasher].toInstance(new BCryptPasswordHasher)
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[EventBus].toInstance(EventBus())
+    bind[Clock].toInstance(Clock())
   }
+
+  /**
+   * Provides the HTTP layer implementation.
+   *
+   * @param client Play's WS client.
+   * @return The HTTP layer implementation.
+   */
+  @Provides
+  def provideHTTPLayer(client: WSClient): HTTPLayer = new PlayHTTPLayer(client)
 
   /**
    * Provides the Silhouette environment.
@@ -61,20 +72,33 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   }
 
   /**
+   * Provides the social provider registry.
+   *
+   * @param gitHubProvider The Github provider implementation.
+   * @return The Silhouette environment.
+   */
+  @Provides
+  def provideSocialProviderRegistry(
+                                     gitHubProvider: CustomGitHubProvider): SocialProviderRegistry = {
+
+    SocialProviderRegistry(Seq(gitHubProvider))
+  }
+
+  /**
    * Provides the authenticator service.
    *
    * @param fingerprintGenerator The fingerprint generator implementation.
    * @return The authenticator service.
    */
   @Provides
-  def provideAuthenticatorService(fingerprintGenerator: FingerprintGenerator): AuthenticatorService[SessionAuthenticator] = {
-    new SessionAuthenticatorService(SessionAuthenticatorSettings(
-      sessionKey = Play.configuration.getString("silhouette.authenticator.sessionKey").getOrElse("authenticator"),
-      encryptAuthenticator = Play.configuration.getBoolean("silhouette.authenticator.encryptAuthenticator").getOrElse(true),
-      useFingerprinting = Play.configuration.getBoolean("silhouette.authenticator.useFingerprinting").getOrElse(true),
-      authenticatorIdleTimeout = Play.configuration.getInt("silhouette.authenticator.authenticatorIdleTimeout"),
-      authenticatorExpiry = Play.configuration.getInt("silhouette.authenticator.authenticatorExpiry").getOrElse(43200)
-    ), fingerprintGenerator, Clock())
+  def provideAuthenticatorService(
+                                   fingerprintGenerator: FingerprintGenerator,
+                                   idGenerator: IDGenerator,
+                                   configuration: Configuration,
+                                   clock: Clock): AuthenticatorService[SessionAuthenticator] = {
+
+    val config = configuration.underlying.as[SessionAuthenticatorSettings]("silhouette.authenticator")
+    new SessionAuthenticatorService(config, fingerprintGenerator, clock)
   }
 
   /**
@@ -101,18 +125,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Provides the OAuth2 state provider.
    *
    * @param idGenerator The ID generator implementation.
+   * @param configuration The Play configuration.
+   * @param clock The clock instance.
    * @return The OAuth2 state provider implementation.
    */
   @Provides
-  def provideOAuth2StateProvider(idGenerator: IDGenerator): OAuth2StateProvider = {
-    new CookieStateProvider(CookieStateSettings(
-      cookieName = Play.configuration.getString("silhouette.oauth2StateProvider.cookieName").getOrElse("OAuth2State"),
-      cookiePath = Play.configuration.getString("silhouette.oauth2StateProvider.cookiePath").getOrElse("/"),
-      cookieDomain = Play.configuration.getString("silhouette.oauth2StateProvider.cookieDomain"),
-      secureCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.secureCookie").getOrElse(false),
-      httpOnlyCookie = Play.configuration.getBoolean("silhouette.oauth2StateProvider.httpOnlyCookie").getOrElse(true),
-      expirationTime = Play.configuration.getInt("silhouette.oauth2StateProvider.expirationTime").getOrElse(300)
-    ), idGenerator, Clock())
+  def provideOAuth2StateProvider(idGenerator: IDGenerator, configuration: Configuration, clock: Clock): OAuth2StateProvider = {
+    val settings = configuration.underlying.as[CookieStateSettings]("silhouette.oauth2StateProvider")
+    new CookieStateProvider(settings, idGenerator, clock)
   }
 
   /**
@@ -123,13 +143,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Facebook provider.
    */
   @Provides
-  def provideGitHubProvider(httpLayer: HTTPLayer, stateProvider: OAuth2StateProvider): CustomGitHubProvider = {
-    new CustomGitHubProvider(httpLayer, stateProvider, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
-      accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").getOrElse("https://github.com/login/oauth/access_token"),
-      redirectURL = Play.configuration.getString("silhouette.github.redirectURL").getOrElse("http://localhost:9000/authenticate/github"),
-      clientID = Play.configuration.getString("silhouette.github.clientID").getOrElse(""),
-      clientSecret = Play.configuration.getString("silhouette.github.clientSecret").getOrElse(""),
-      scope = Play.configuration.getString("silhouette.github.scope")))
+  def provideGitHubProvider(httpLayer: HTTPLayer, stateProvider: OAuth2StateProvider, configuration: Configuration): CustomGitHubProvider = {
+    new CustomGitHubProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.github"))
   }
 }
