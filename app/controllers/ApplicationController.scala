@@ -167,24 +167,6 @@ class ApplicationController @Inject()(
     })
   }
 
-  /**
-   * Service for getting the quickstart guides of a repo
-   *
-   * @param owner Owner of the repository on the repo system (GitHub)
-   * @param repositoryName repository name on the repo system (GitHub)
-   * @return the list of guides for the given repo
-   */
-  def getGuides(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    val repoName: String = owner + "/" + repositoryName
-    repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
-      case Some(repository) =>
-        quickstartService.getQuickstartGuidesForRepo(repository).map(guides =>
-          Ok(Json.toJson(guides))
-        )
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-    })
-  }
 
   /**
    * Service for upvoting a guide
