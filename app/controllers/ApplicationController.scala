@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
+import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.drivers.GitHubAPI
 import models.services.{RepositoryService, UserService}
 import models.{Feedback, User}
@@ -37,17 +38,10 @@ class ApplicationController @Inject()(
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
-    request.identity match {
-      case Some(user) =>
-        userService.getOAuthInfo(user).flatMap{ oAuth2Info =>
-        gitHub.getRecommendedRepositories(oAuth2Info).flatMap({
-          case recommendedRepos => Future.successful(Ok(views.html.home(gitHubProvider, request.identity, recommendedRepos)))
-        })
-      }
-      case None =>
-        // TODO : Can we create a oAuth2Info from our clientId and clientSecret ?
-        Future.successful(Ok(views.html.home(gitHubProvider, request.identity, Seq.empty)))
-    }
+    val futureUserOAuth2Info: Future[Option[OAuth2Info]] = request.identity.map(user => userService.getOAuthInfo(user)).getOrElse(Future{None})
+    futureUserOAuth2Info
+      .flatMap(oAuth2Info => gitHub.getRecommendedRepositories(oAuth2Info))
+      .flatMap(recommendedRepos => Future.successful(Ok(views.html.home(gitHubProvider, request.identity, recommendedRepos))))
   }
 
   /**
@@ -64,10 +58,10 @@ class ApplicationController @Inject()(
         repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
           repoService.canAddFeedback(repoName, request.identity).flatMap({
             case true => repoService.canUpdateFeedback(repoName, request.identity).map(
-              canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true , canUpdate)
-                (owner, repositoryName, page.getOrElse(1))))
-            case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
+              canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
               (owner, repositoryName, page.getOrElse(1))))
+            case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
+            (owner, repositoryName, page.getOrElse(1))))
           })
         })
       )
@@ -85,7 +79,7 @@ class ApplicationController @Inject()(
    */
   def giveFeedbackPage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
-    repoService.getFromNeoOrGitHub(request.identity,repoName).flatMap({
+    repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) =>
         repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
           Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
@@ -105,17 +99,17 @@ class ApplicationController @Inject()(
   def giveScorePage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
       form => println(form),
-      data=>{
-      request.identity.map(repoService.giveScoreToRepo(owner,
-        _,
-        repositoryName,
-        data.scoreDocumentation,
-        data.scoreMaturity,
-        data.scoreDesign,
-        data.scoreSupport,
-        data.feedback
-      ))
-    })
+      data => {
+        request.identity.map(repoService.giveScoreToRepo(owner,
+          _,
+          repositoryName,
+          data.scoreDocumentation,
+          data.scoreMaturity,
+          data.scoreDesign,
+          data.scoreSupport,
+          data.feedback
+        ))
+      })
     Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
   }
 

@@ -5,7 +5,6 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
-import models.services.UserService
 import models.{Contribution, Repository, User}
 import org.eclipse.egit.github.core.SearchRepository
 import org.eclipse.egit.github.core.service.RepositoryService
@@ -13,6 +12,7 @@ import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
 import play.api.libs.ws._
+import scala.collection.JavaConversions._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -93,12 +93,8 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    */
   def getRecommendedRepositories(oAuth2Info: Option[OAuth2Info]): Future[Seq[SearchRepository]] = Future {
     val service: RepositoryService = new RepositoryService()
-
-    oAuth2Info.map { oAuthInfoValue =>
-      service.getClient.setOAuth2Token(oAuthInfoValue.accessToken)
-      import scala.collection.JavaConversions._
-      service.searchRepositories(Map("stars" -> ">1000")).iterator().toSeq
-    }.getOrElse(Seq.empty)
+    oAuth2Info.map(oAuthInfoValue => service.getClient.setOAuth2Token(oAuthInfoValue.accessToken))
+    service.searchRepositories(Map("stars" -> ">1000")).iterator().toSeq
   }
 
   /**
