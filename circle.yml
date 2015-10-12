@@ -4,7 +4,7 @@ machine:
     SBT_OPTS: "-Xms512M -Xmx1536M"
   pre:
     - sudo apt-get update
-    - sudo sed -i "s|#wrapper.java.maxmemory=512|wrapper.java.maxmemory=2048|g" /etc/neo4j/neo4j-wrapper.conf
+    - sudo sed -i "s|#wrapper.java.maxmemory=512|wrapper.java.maxmemory=1536|g" /etc/neo4j/neo4j-wrapper.conf
     - sudo sed -i "s|dbms.security.auth_enabled=true|dbms.security.auth_enabled=false|g" /etc/neo4j/neo4j-server.properties
   java:
     version: oraclejdk8
