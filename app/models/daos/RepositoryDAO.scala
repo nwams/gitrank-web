@@ -78,7 +78,7 @@ class RepositoryDAO @Inject() (neo: Neo4j) {
           (repo \ "removedLines").as[Int],
           (repo \ "karmaWeight").as[Int],
           (repo \ "name").as[String],
-          (repo \ "score").as[Int]
+          (repo \ "score").as[Float]
         ))
       }
     }

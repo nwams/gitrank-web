@@ -12,12 +12,52 @@
     }, {
       "labels": ["Repository"],
       "properties": {
-        "name": "test/test",
+        "name": "test/test0",
         "repoID": 0,
         "addedLines": 150,
         "removedLines": 10,
-        "karmaWeight": 1,
+        "karmaWeight": 0,
+        "score": 0.5
+      }
+    }, {
+      "labels": ["Repository"],
+      "properties": {
+        "name": "test/test1",
+        "repoID": 1,
+        "addedLines": 4000,
+        "removedLines": 400,
+        "karmaWeight": 10,
+        "score": 1.5
+      }
+    }, {
+      "labels": ["Repository"],
+      "properties": {
+        "name": "test/test2",
+        "repoID": 2,
+        "addedLines": 2030,
+        "removedLines": 64,
+        "karmaWeight": 2,
+        "score": 2.5
+      }
+    }, {
+      "labels": ["Repository"],
+      "properties": {
+        "name": "test/test3",
+        "repoID": 3,
+        "addedLines": 150,
+        "removedLines": 10,
+        "karmaWeight": 4,
         "score": 3.4
+      }
+    }, {
+      "labels": ["Repository"],
+      "properties": {
+        "name": "test/test4",
+        "repoID": 4,
+        "addedLines": 150,
+        "removedLines": 10,
+        "karmaWeight": 54,
+        "score": 4.5
       }
     }
   ],

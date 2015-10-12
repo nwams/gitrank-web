@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "com.mohiva" %% "play-silhouette" % "3.0.4",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",
+  "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
   "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "Semantic-UI" % "2.0.7",
@@ -30,6 +31,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
   specs2 % Test,
+  "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,
   filters,
   ws
