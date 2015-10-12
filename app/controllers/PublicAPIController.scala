@@ -48,6 +48,7 @@ class PublicAPIController @Inject()(
           case score if score >= 2 => "#dfb317"
           case score if score >= 1 => "#fe7d37"
           case score if score >= 0 => "#e05d44"
+          case _ => "#555"
         }
 
         // Taken from shield.io template

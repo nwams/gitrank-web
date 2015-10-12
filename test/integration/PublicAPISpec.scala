@@ -16,7 +16,6 @@ class PublicAPISpec extends PlaySpecification with BeforeAfterEach with XmlMatch
 
       status(svg) must equalTo(OK)
       contentType(svg) must beSome.which(_ == "image/svg+xml")
-
     }
 
     "be red if the score is below 1" in new WithApplication {
