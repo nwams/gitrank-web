@@ -2,23 +2,102 @@
  * Created by nicolas on 8/7/15.
  */
 
-function getMean(data, attribute){
+function getMean(data, attribute) {
     return _(data)
         .pluck(attribute)
-        .reduce(function(mean, score){
+        .reduce(function (mean, score) {
             return (mean + score) / 2
         }, data[0][attribute])
 }
 
-function buildParallelCoordinates(data){
+function reload() {
+        location.reload()
+}
 
-    data = data.map(function(score){return {
-        timestamp: score.timestamp,
-        Documentation: score.docScore,
-        Maturity: score.maturityScore,
-        Design: score.designScore,
-        Support: score.supportScore
-    }});
+function upvote(title) {
+    $.ajax({
+        url: '' + window.location.href + '/quickstart/' + title + '/upvote',
+        method: "POST",
+        success: reload()
+    })
+}
+
+
+function downvote(title) {
+    $.ajax({
+        url: '' + window.location.href + '/quickstart/' + title + '/downvote',
+        method: "POST",
+        success: reload()
+    })
+
+}
+
+function buildQuickstartGuides(data) {
+
+    data = data.map(function (guide) {
+        return {
+            title: guide.title,
+            description: guide.description,
+            url: guide.url,
+            thumbsup: guide.upvote,
+            thumbsdown: guide.downvote
+        }
+    })
+
+    data.forEach(function (guide) {
+
+        var div = document.createElement('div');
+        div.className = 'comment';
+
+        var a = document.createElement('a');
+        a.className = 'author';
+        a.setAttribute('href', guide.url);
+        a.textContent = guide.title;
+
+        var description = document.createElement('div');
+        description.className = 'text';
+        description.textContent = guide.description;
+
+        var thumbsup = document.createElement('span')
+        thumbsup.innerText = guide.thumbsup
+
+        var thumbsdown = document.createElement('span')
+        thumbsdown.innerText = guide.thumbsdown
+
+        var icon = document.createElement('i')
+        icon.className = 'ui thumbs up icon'
+        icon.setAttribute("style", "cursor: pointer")
+
+        icon.onclick= function(){ upvote( guide.title ); } ;
+        thumbsup.appendChild(icon)
+
+        icon = document.createElement('i')
+        icon.id = 'thumbsdown'
+        icon.className = 'ui thumbs down icon'
+        icon.onclick= function(){ downvote( guide.title ); } ;
+        icon.setAttribute("style", "cursor: pointer")
+        thumbsdown.appendChild(icon)
+
+
+        div.appendChild(a);
+        div.appendChild(description);
+        div.appendChild(thumbsup);
+        div.appendChild(thumbsdown);
+        document.getElementById("guides").appendChild(div);
+    });
+}
+
+function buildParallelCoordinates(data) {
+
+    data = data.map(function (score) {
+        return {
+            timestamp: score.timestamp,
+            Documentation: score.docScore,
+            Maturity: score.maturityScore,
+            Design: score.designScore,
+            Support: score.supportScore
+        }
+    });
 
     var margin = {top: 30, right: 10, bottom: 30, left: 10},
         container = $('#scoreChart'),
@@ -26,8 +105,10 @@ function buildParallelCoordinates(data){
         height = 250 - margin.top - margin.bottom;
 
     var opacity = d3.scale.linear()
-            .domain(d3.extent(data, function(p) { return +p.timestamp; }))
-            .range([0.2,1]),
+            .domain(d3.extent(data, function (p) {
+                return +p.timestamp;
+            }))
+            .range([0.2, 1]),
         x = d3.scale.ordinal().rangePoints([0, width], 1),
         y = {};
 
@@ -39,15 +120,21 @@ function buildParallelCoordinates(data){
 
     // Returns the path for a given data point.
     function path(d) {
-        return line(dimensions.map(function(p) { return [x(p), y[p](d[p])]; }));
+        return line(dimensions.map(function (p) {
+            return [x(p), y[p](d[p])];
+        }));
     }
 
     // Handles a brush event, toggling the display of foreground lines.
     function brush() {
-        var actives = dimensions.filter(function(p) { return !y[p].brush.empty(); }),
-            extents = actives.map(function(p) { return y[p].brush.extent(); });
-        foreground.style("display", function(d) {
-            return actives.every(function(p, i) {
+        var actives = dimensions.filter(function (p) {
+                return !y[p].brush.empty();
+            }),
+            extents = actives.map(function (p) {
+                return y[p].brush.extent();
+            });
+        foreground.style("display", function (d) {
+            return actives.every(function (p, i) {
                 return extents[i][0] <= d[p] && d[p] <= extents[i][1];
             }) ? null : "none";
         });
@@ -60,9 +147,9 @@ function buildParallelCoordinates(data){
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
     // Extract the list of dimensions and create a scale for each.
-    x.domain(dimensions = d3.keys(data[0]).filter(function(d) {
+    x.domain(dimensions = d3.keys(data[0]).filter(function (d) {
         return d !== "timestamp" && (y[d] = d3.scale.linear()
-                .domain([0,5])
+                .domain([0, 5])
                 .range([height, 0]));
     }));
 
@@ -73,7 +160,7 @@ function buildParallelCoordinates(data){
         .data(data)
         .enter().append("path")
         .attr("d", path)
-        .style("opacity", function(d){
+        .style("opacity", function (d) {
             return opacity(d.timestamp);
         });
 
@@ -84,7 +171,7 @@ function buildParallelCoordinates(data){
         .data(data)
         .enter().append("path")
         .attr("d", path)
-        .style("opacity", function(d){
+        .style("opacity", function (d) {
             return opacity(d.timestamp);
         });
 
@@ -93,11 +180,11 @@ function buildParallelCoordinates(data){
         .attr("class", "mean")
         .selectAll("path")
         .data([{
-            timestamp: data[data.length-1].timestamp + 10,
+            timestamp: data[data.length - 1].timestamp + 10,
             Documentation: getMean(data, "Documentation"),
-            Maturity: getMean(data,"Maturity"),
-            Design: getMean(data,"Design"),
-            Support: getMean(data,"Support")
+            Maturity: getMean(data, "Maturity"),
+            Design: getMean(data, "Design"),
+            Support: getMean(data, "Support")
         }])
         .enter().append("path")
         .attr("d", path);
@@ -107,21 +194,29 @@ function buildParallelCoordinates(data){
         .data(dimensions)
         .enter().append("g")
         .attr("class", "dimension")
-        .attr("transform", function(d) { return "translate(" + x(d) + ")"; });
+        .attr("transform", function (d) {
+            return "translate(" + x(d) + ")";
+        });
 
     // Add an axis and title.
     g.append("g")
         .attr("class", "axis")
-        .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+        .each(function (d) {
+            d3.select(this).call(axis.scale(y[d]));
+        })
         .append("text")
         .style("text-anchor", "middle")
         .attr("y", -9)
-        .text(function(d) { return d; });
+        .text(function (d) {
+            return d;
+        });
 
     // Add and store a brush for each axis.
     g.append("g")
         .attr("class", "brush")
-        .each(function(d) { d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brush", brush)); })
+        .each(function (d) {
+            d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brush", brush));
+        })
         .selectAll("rect")
         .attr("x", -8)
         .attr("width", 16);
@@ -140,7 +235,7 @@ function buildParallelCoordinates(data){
 
     svg.append('text')
         .attr("x", width / 2 - 40)
-        .attr("y", height + 21 )
+        .attr("y", height + 21)
         .text("Mean");
 
     // Legend for the casual lines
@@ -162,13 +257,18 @@ function buildParallelCoordinates(data){
 }
 
 $(document)
-    .ready(function() {
+    .ready(function () {
         $.ajax({
             url: '' + window.location.href + '/lastFeedback',
             success: buildParallelCoordinates
         });
 
+        $.ajax({
+            url: '' + window.location.href + '/quickstart/guides',
+            success: buildQuickstartGuides
+        });
+
         $('#badgeButton').click(function(){
             $('#badgeModal').modal('show')
-        })
+        });
     });

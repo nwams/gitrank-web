@@ -22,9 +22,10 @@
                         No registered feedback for this repository, yet
                     </h2>
                     @if(user.isDefined) {
-                        @if(canAddFeedback){
+                        @if(canAddFeedback) {
                             <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)"
                                 class="ui primary labeled icon button">
+
                                 <i class="plus icon"></i>
                                 Add First feedback
                             </a>
@@ -77,89 +78,141 @@
                 </div>
             </div>
 
-
-            <div class="ui comments feedback">
-                <h3 class="ui dividing header">
-                    <i class="bullhorn icon"></i>
-                    <div class="content">
-                        Feedback
-                    </div>
-                    @if(canAddFeedback){
-                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button">
-                            @if(canUpdateFeedback) {
-                                <i class="plus icon"></i>Udpate
-                            } else {
-                                <i class="edit icon"></i>Edit
-                            }
-                        </a>
-                    }
-                </h3>
-                @for(f <- feedback) {
-                    <div class="comment">
-                        <a class="avatar">
-                            <img src="@f.user.avatarURL">
-                        </a>
-                        <div class="content">
-                            <a class="author">@f.user.fullName</a>
-                            <div class="metadata">
-                                <span data-content="Karma" class="popup"> @f.score.karma <i class="fire icon"></i></span>
-                                <span class="date">on @f.score.timestamp.format("dd MMM yyyy") </span>
+            <div class="ui grid ">
+                <div class="ui eight wide column">
+                    <div class="ui comments feedback">
+                        <h3 class="ui dividing header">
+                            <i class="bullhorn icon"></i>
+                            <div class="content">
+                                Feedback
                             </div>
-                            <div class="text"> @f.score.feedback </div>
-                            <div class="actions">
-                                <span data-content="Documentation" class="popup"> @f.score.docScore <i class="icon book"></i></span>
-                                <span data-content="Maturity" class="popup"> @f.score.maturityScore <i class="icon leaf"></i></span>
-                                <span data-content="Design" class="popup"> @f.score.designScore <i class="icon university"></i></span>
-                                <span data-content="Support" class="popup"> @f.score.supportScore <i class="icon life ring"></i></span>
+                            @if(canAddFeedback) {
+                                <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button">
+                                @if(canUpdateFeedback) {
+                                    <i class="plus icon"></i>Udpate
+                                } else {
+                                    <i class="edit icon"></i>Edit
+                                }
+                                </a>
+                            }
+                        </h3>
+                        @for(f <- feedback) {
+                            <div class="comment">
+                                <a class="avatar">
+                                    <img src="@f.user.avatarURL">
+                                </a>
+                                <div class="content">
+                                    <a class="author">@f.user.fullName</a>
+                                    <div class="metadata">
+                                        <span data-content="Karma" class="popup"> @f.score.karma <i class="fire icon"></i></span>
+                                        <span class="date">on @f.score.timestamp.format("dd MMM yyyy") </span>
+                                    </div>
+                                    <div class="text"> @f.score.feedback </div>
+                                    <div class="actions">
+                                        <span data-content="Documentation" class="popup"> @f.score.docScore <i class="icon book"></i></span>
+                                        <span data-content="Maturity" class="popup"> @f.score.maturityScore <i class="icon leaf"></i></span>
+                                        <span data-content="Design" class="popup"> @f.score.designScore <i class="icon university"></i></span>
+                                        <span data-content="Support" class="popup"> @f.score.supportScore <i class="icon life ring"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    @if(totalPages != 0) {
+                        <div class="align-center">
+                            <div class="ui pagination menu">
+
+                                @if(currentPage != 1) {
+                                    <a
+                                    href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                                    class="item">
+                                        <
+                                    </a>
+                                }
+
+                                @if(currentPage != 1 && currentPage != 2) {
+                                    <a class="disabled item">
+                                        ...
+                                    </a>
+                                }
+
+                                @if(currentPage - 1 > 0) {
+                                    <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                                    class="item">
+                                    @(currentPage - 1)
+                                    </a>
+                                }
+
+                                @if(totalPages != 0) {
+                                    <div class="align-left">
+                                        <div class="ui pagination menu">
+
+                                            <a
+                                            href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                                            class="@if(currentPage == 1) {disabled} item">
+                                                <
+                                            </a>
+
+                                            @if(currentPage != 1 && currentPage != 2) {
+                                                <a class="disabled item">
+                                                    ...
+                                                </a>
+                                            }
+
+                                            @if(currentPage - 1 > 0) {
+                                                <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
+                                                class="item">
+                                                @(currentPage - 1)
+                                                </a>
+                                            }
+
+                                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage))"
+                                            class="item">
+                                            @currentPage
+                                            </a>
+
+                                            @if(currentPage + 1 < totalPages) {
+                                                <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                                                class="item">
+                                                @(currentPage + 1)
+                                                </a>
+                                            }
+
+                                            @if(currentPage != totalPages && currentPage != totalPages - 1) {
+                                                <a class="disabled item">
+                                                    ...
+                                                </a>
+                                            }
+
+                                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
+                                            class="@if(currentPage == totalPages) {disabled} item">
+                                                >
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
-                }
-            </div>
 
-            @if(totalPages != 0) {
-                <div class="align-center">
-                    <div class="ui pagination menu">
+                    }
 
-                        @if(currentPage != 1) {
-                            <a
-                            href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
-                            class="item">
-                                <
-                            </a>
-                        }
-
-                        @if(currentPage != 1 && currentPage != 2) {
-                            <a class="disabled item">
-                                ...
-                            </a>
-                        }
-
-                        @if(currentPage - 1 > 0) {
-                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage - 1))"
-                            class="item">
-                            @(currentPage - 1)
-                            </a>
-                        }
-
-                        <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage))"
-                        class="item">
-                        @currentPage
-                        </a>
-
-                        @if(currentPage + 1 < totalPages) {
-                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
-                            class="item">
-                            @(currentPage + 1)
-                            </a>
-                        }
-
-                        @if(currentPage != totalPages && currentPage != totalPages - 1) {
-                            <a class="disabled item">
-                                ...
-                            </a>
-                        }
-
+                    <div class="ui eight wide column">
+                        <div class="ui comments feedback">
+                            <h3 class="ui dividing header">
+                                <i class="lab icon"></i>
+                                <div class="content">
+                                    Quickstart Guides
+                                </div>
+                                <a href="@routes.ApplicationController.createQuickstarterGuide(owner, repositoryName)" class="ui primary button">
+                                    <i class="edit icon"></i>Add
+                                </a>
+                            </h3>
+                            <div id="guides">
+                                <div class="comment">
+                                </div>
+                            </div>
+                        </div>
                         @if(currentPage != totalPages) {
                             <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
                             class="item">
@@ -169,8 +222,7 @@
                     </div>
                 </div>
             }
-        </div>
-    }
+    </div>
 
 
     <div id="badgeModal" class="ui modal">

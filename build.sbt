@@ -30,6 +30,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
+  "org.webjars" % "jquery-validation" % "1.11.1",
+
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,

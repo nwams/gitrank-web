@@ -36,5 +36,6 @@ $(document)
             .rating('setting', 'onRate', function (value) {
                 $('#scoreSupport').val(value)
             });
+
     });
 

@@ -15,17 +15,26 @@ class ApplicationSpec extends Specification {
 
   "Application" should {
 
-    "send 404 on a bad request" in new WithApplication{
-      val result = route(FakeRequest(GET, "/Boom")).get
-      status(result) must equalTo(404)
+    "send 404 on a bad request" in new WithApplication {
+      route(FakeRequest(GET, "/Boom")).map {
+        res => status(res) must equalTo(404)
+      }
     }
 
-    "render the main page" in new WithApplication{
-      val home = route(FakeRequest(GET, "/")).get
+    "render the main page" in new WithApplication {
+      route(FakeRequest(GET, "/")).map{
+        home =>{
+          status(home) must equalTo(OK)
+          contentAsString(home) must contain("GitRank")
+          contentType(home) must beSome.which(_ == "text/html")
+        }
+      }
 
-      status(home) must equalTo(OK)
-      contentAsString(home) must contain("GitRank")
-      contentType(home) must beSome.which(_ == "text/html")
     }
+
+    //"get list of guides" in new WithApplication{
+    //  val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
+    //  status(guides) must equalTo(OK)
+    //}
   }
 }
