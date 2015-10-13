@@ -45,14 +45,7 @@ class PublicAPISpec extends PlaySpecification with BeforeAfterEach with XmlMatch
     }
 
   }
-
-
-  "The quickstart guide API" should{
-    "get list of guides" in new WithApplication{
-      val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
-      status(guides) must equalTo(OK)
-    }
-  }
+  
 
   def after = TestSetup.clearNeo4JData
 }
