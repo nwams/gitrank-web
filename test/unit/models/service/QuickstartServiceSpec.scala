@@ -78,6 +78,7 @@ class QuickstartServiceSpec extends Specification with Mockito {
       quickstartService.updateVote(repo, true, "title", user)
       quickstartService.updateVote(repo, true, "title", user)
       there was no(quickstartDAOMock).update(anyString, anyString, any[Quickstart])
+      //should work
     }
 
   }
