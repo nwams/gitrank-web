@@ -19,7 +19,7 @@ case class Repository(
                  removedLines: Int,
                  karmaWeight: Int,
                  name: String,
-                 score: Int)
+                 score: Float)
 
 object Repository {
   implicit val repoWrites: Writes[Repository] = (
@@ -28,7 +28,7 @@ object Repository {
       (JsPath \ "removedLines").write[Int] and
       (JsPath \ "karmaWeight").write[Int] and
       (JsPath \ "name").write[String] and
-      (JsPath \ "score").write[Int]
+      (JsPath \ "score").write[Float]
     )(unlift(Repository.unapply))
   implicit val repoReads: Reads[Repository] = (
       (JsPath \ "repoID").read[Int] and
@@ -36,7 +36,7 @@ object Repository {
       (JsPath \ "removedLines").read[Int] and
       (JsPath \ "karmaWeight").read[Int] and
       (JsPath \ "name").read[String] and
-      (JsPath \ "score").read[Int]
+      (JsPath \ "score").read[Float]
     )(Repository.apply _)
 }
 

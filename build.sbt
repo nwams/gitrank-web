@@ -20,8 +20,10 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "net.codingwell" %% "scala-guice" % "4.0.0",
-  "com.mohiva" %% "play-silhouette" % "3.0.0-RC1",
-  "com.mohiva" %% "play-silhouette-testkit" % "3.0.0-RC1" % "test",
+  "com.mohiva" %% "play-silhouette" % "3.0.4",
+  "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",
+  "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
+  "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "Semantic-UI" % "2.0.7",
   "org.webjars.bower" % "lodash" % "3.10.1",
@@ -31,6 +33,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "jquery-validation" % "1.11.1",
 
   specs2 % Test,
+  "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,
   filters,
   ws

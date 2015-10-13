@@ -262,8 +262,13 @@ $(document)
             url: '' + window.location.href + '/lastFeedback',
             success: buildParallelCoordinates
         });
+
         $.ajax({
             url: '' + window.location.href + '/quickstart/guides',
             success: buildQuickstartGuides
-        })
+        });
+
+        $('#badgeButton').click(function(){
+            $('#badgeModal').modal('show')
+        });
     });

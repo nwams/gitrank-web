@@ -34,7 +34,7 @@ class RepositoryService @Inject()(
            addedLines: Option[Int],
            removedLines: Option[Int],
            karmaWeight: Option[Int] = None,
-           score: Option[Int] = None): Future[Repository] = {
+           score: Option[Float] = None): Future[Repository] = {
 
     repoDAO.find(id).flatMap({
       case Some(existingRepo) =>
@@ -248,9 +248,9 @@ class RepositoryService @Inject()(
    *
    * @param repository repo to recalculate
    */
-  def calculateScoreForRepo(repository: Repository): Future[Int] = {
+  def calculateScoreForRepo(repository: Repository): Future[Float] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
-      feedback => (feedback.map { feedback: Feedback => computeTotalScore(repository, feedback) }.sum) / feedback.length
+      feedback => feedback.map { feedback: Feedback => computeTotalScore(repository, feedback) }.sum / feedback.length
     }
   }
 
@@ -260,7 +260,7 @@ class RepositoryService @Inject()(
    * @param feedback score and user who scored
    * @return 1 to 5 score points
    */
-  def computeTotalScore(repository: Repository, feedback: Feedback): Int = {
+  def computeTotalScore(repository: Repository, feedback: Feedback): Float = {
     ((repository.karmaWeight * repository.score + feedback.user.karma *
       (feedback.score.designScore + feedback.score.docScore + feedback.score.maturityScore + feedback.score.supportScore) / 4)
       / (repository.karmaWeight + feedback.user.karma))
