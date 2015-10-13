@@ -2,6 +2,7 @@ package integration
 
 import org.specs2.matcher._
 import org.specs2.specification._
+import play.api.test.Helpers._
 import play.api.test._
 import setup.TestSetup
 
@@ -43,6 +44,14 @@ class PublicAPISpec extends PlaySpecification with BeforeAfterEach with XmlMatch
       contentAsString(svg) must contain("#4c1")
     }
 
+  }
+
+
+  "The quickstart guide API" should{
+    "get list of guides" in new WithApplication{
+      val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
+      status(guides) must equalTo(OK)
+    }
   }
 
   def after = TestSetup.clearNeo4JData
