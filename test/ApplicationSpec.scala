@@ -31,7 +31,5 @@ class ApplicationSpec extends Specification {
       }
 
     }
-
-
   }
 }
