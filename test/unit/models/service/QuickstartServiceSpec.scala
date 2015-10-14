@@ -67,8 +67,11 @@ class QuickstartServiceSpec extends Specification with Mockito {
       val quickstartService = new QuickstartService(quickstartDAOMock)
       quickstartDAOMock.findRepositoryGuide(anyString, anyString) returns Future(Option(quickstartService.createQuickstart(mock[User], mock[Repository], "title", "description", "www.google.com")))
       quickstartService.updateVote(repo, true, "username1239u139", mock[User])
-      there was one(quickstartDAOMock).update(anyString, anyString, any[Quickstart])
+      quickstartService.updateVote(repo, true, "username1239u1449", mock[User])
+      quickstartService.updateVote(repo, true, "username1239", mock[User])
+      there was atLeastOne(quickstartDAOMock).update(anyString, anyString, any[Quickstart])
     }
+
     "not update is user is on list" in {
       val user = mock[User]
       user.username returns "username"
