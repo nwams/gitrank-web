@@ -32,9 +32,6 @@ class ApplicationSpec extends Specification {
 
     }
 
-    "get list of guides" in new WithApplication{
-      val guides = route(FakeRequest(GET, "/github/angular/angular/quickstart/guides")).get
-      status(guides) must equalTo(OK)
-    }
+
   }
 }
