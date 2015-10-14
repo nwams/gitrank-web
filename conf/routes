@@ -17,6 +17,7 @@ GET         /github/:owner/:repository/quickstart/guides                  @contr
 
 GET         /authenticate/:provider                                       @controllers.SocialAuthController.authenticate(provider)
 
+GET         /api/badges/github/:owner/:repo.svg                @controllers.PublicAPIController.getScoreBadge(owner, repo)
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                                                 controllers.Assets.at(path="/public", file)
