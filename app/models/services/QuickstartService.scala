@@ -24,7 +24,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       new Date(),
       title,
       description,
-      url,
+      (if (url.startsWith("http")) url else "http://" + url),
       0,
       0,
       List()
@@ -47,7 +47,7 @@ class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
       guide.timestamp,
       guide.title,
       guide.description,
-      guide.url,
+      (if (guide.url.startsWith("http")) guide.url else "http://" + guide.url),
       guide.upvote + (if (upvote) 1 else 0),
       guide.downvote + (if (!upvote) 1 else 0),
       guide.listVoters :+ username
