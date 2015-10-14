@@ -2,6 +2,7 @@ package integration
 
 import org.specs2.matcher._
 import org.specs2.specification._
+import play.api.test.Helpers._
 import play.api.test._
 import setup.TestSetup
 
@@ -44,6 +45,7 @@ class PublicAPISpec extends PlaySpecification with BeforeAfterEach with XmlMatch
     }
 
   }
+  
 
   def after = TestSetup.clearNeo4JData
 }
