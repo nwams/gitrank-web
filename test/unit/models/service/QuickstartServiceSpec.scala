@@ -20,23 +20,7 @@ class QuickstartServiceSpec extends Specification with Mockito {
 
 
 
-  "quickstartService#createQuickstart" should {
-    "format correctly the begining of the url" in {
-      val quickstartDAO = mock[QuickstartDAO]
-      val quickstartService = new QuickstartService(quickstartDAO)
-      val quickstart = quickstartService.createQuickstart(mock[User], mock[Repository], "title", "description", "www.google.com")
-      quickstart.url shouldEqual "http://www.google.com"
-    }
-    "properly initialize values" in {
-      val quickstartDAO = mock[QuickstartDAO]
-      val quickstartService = new QuickstartService(quickstartDAO)
-      val quickstart = quickstartService.createQuickstart(mock[User], mock[Repository], "title", "description", "http://www.google.com")
-      quickstart.url shouldEqual "http://www.google.com"
-      quickstart.upvote shouldEqual 0
-      quickstart.downvote shouldEqual 0
-    }
 
-  }
   "quickstartService#buildFromVote" should {
     "update the upvote correctly and put user in list" in {
       val quickstartDAO = mock[QuickstartDAO]
