@@ -49,7 +49,7 @@ class UserBasedSpec extends PlaySpecification  {
       status(result) must equalTo(OK)
 
       val body = new String(contentAsBytes(result))
-      body should contain("elasticsearch")
+      body must contain("elasticsearch")
 
     }
   }
