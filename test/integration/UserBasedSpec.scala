@@ -23,7 +23,7 @@ class UserBasedSpec extends PlaySpecification  {
 
 
   "The main Controller" should {
-    "return status 200 if authenticator and identity was found" in new WithApplication {
+    "should find the proper repo" in new WithApplication {
       val identity = User(LoginInfo("github", "test@test.com"),
         "user",
         Option("userFullName"),
@@ -46,9 +46,11 @@ class UserBasedSpec extends PlaySpecification  {
         app.injector.instanceOf[QuickstartService])
 
       val result = controller.gitHubRepository("elastic","elasticsearch",None).apply(request)
-      print(new String(contentAsBytes(result)))
-
       status(result) must equalTo(OK)
+
+      val body = new String(contentAsBytes(result))
+      body should contain("elasticsearch")
+
     }
   }
 }
