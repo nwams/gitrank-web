@@ -95,21 +95,20 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system (GitHub)
    * @return Redirect to repo page
    */
-  def giveScorePage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
+  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async {implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
-      form => println(form),
-      data => {
-        request.identity.map(repoService.giveScoreToRepo(owner,
-          _,
-          repositoryName,
-          data.scoreDocumentation,
-          data.scoreMaturity,
-          data.scoreDesign,
-          data.scoreSupport,
-          data.feedback
-        ))
-      })
-    Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+      formWithErrors => Future.successful(BadRequest(views.html.feedbackForm(gitHubProvider, Some(request.identity))
+        (owner, repositoryName, formWithErrors, update.getOrElse(false)))),
+      data => repoService.giveScoreToRepo(owner,
+        request.identity,
+        repositoryName,
+        data.scoreDocumentation,
+        data.scoreMaturity,
+        data.scoreDesign,
+        data.scoreSupport,
+        data.feedback
+      ).map(repo => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+    )
   }
 
   /**
