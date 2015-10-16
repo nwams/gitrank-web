@@ -33,7 +33,7 @@ class UserBasedSpec extends PlaySpecification {
         Option("test@test.com"),
         None,
         1,
-        None, // An ETag is used to know if the data has been modified since the last poll
+        None, 
         None
       )
       val userDAO = app.injector.instanceOf[UserDAO]
