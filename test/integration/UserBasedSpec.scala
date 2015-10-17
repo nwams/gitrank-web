@@ -21,8 +21,9 @@ import setup.TestSetup
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class UserBasedSpec extends PlaySpecification {
+class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
 
+  def before = TestSetup.populateNeo4JData()
   "User Logged In " should {
 
     "be able to see the button to submit feedback to repo" in new WithApplication {
@@ -152,6 +153,7 @@ class UserBasedSpec extends PlaySpecification {
     body must contain("You need to be login to add some feedback")
   }
 
+  def after = TestSetup.clearNeo4JData
 
 }
 
