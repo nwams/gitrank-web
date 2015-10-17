@@ -6,9 +6,9 @@ import com.mohiva.play.silhouette.impl.authenticators.{SessionAuthenticator, Coo
 import com.mohiva.play.silhouette.test.{FakeEnvironment, _}
 import controllers.ApplicationController
 import models.User
-import models.daos.UserDAO
+import models.daos.{RepositoryDAO, ScoreDAO, UserDAO}
 import models.daos.drivers.GitHubAPI
-import models.services.{QuickstartService, RepositoryService, UserService}
+import models.services.{ScoreService, QuickstartService, RepositoryService, UserService}
 import modules.CustomGitHubProvider
 import org.specs2.matcher._
 import org.specs2.mock.mockito.MockitoStubs
@@ -23,47 +23,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class UserBasedSpec extends PlaySpecification {
 
-
   "User Logged In " should {
 
-    "be able to submit feedbakc" in new WithApplication {
-      val identity = User(LoginInfo("github", "test@test.com"),
-        "user",
-        Option("userFullName"),
-        Option("test@test.com"),
-        None,
-        1,
-        None, 
-        None
-      )
-      val userDAO = app.injector.instanceOf[UserDAO]
-      userDAO.find(identity.username).map(userOption => {
-        userOption.toLeft( userDAO.create(identity))
-      })
-
-      // Used to filter the already retrieved events)
-      val messagesApi = app.injector.instanceOf[MessagesApi]
-      implicit val env = FakeEnvironment[User, SessionAuthenticator](Seq(
-        identity.loginInfo -> identity
-      ))
-      val request = FakeRequest().withAuthenticator(identity.loginInfo).withSession("csrfToken" -> CSRF.SignedTokenProvider.generateToken).withFormUrlEncodedBody(("scoreDocumentation","2"),("scoreMaturity","3"),("scoreDesign","4"), ("scoreSupport", "4"), ("feedback","testOfFeedback"))
-      val controller = new ApplicationController(messagesApi, env,
-        app.injector.instanceOf[CustomGitHubProvider],
-        app.injector.instanceOf[RepositoryService],
-        app.injector.instanceOf[UserService],
-        app.injector.instanceOf[GitHubAPI],
-        app.injector.instanceOf[QuickstartService])
-
-      val firstVisit = controller.gitHubRepository("elastic", "elasticsearch", None).apply(request)
-      status(firstVisit) must equalTo(200)
-
-      val result = controller.giveScorePage("elastic", "elasticsearch").apply(request)
-      status(result) must equalTo(303)
-
-    }
     "be able to see the button to submit feedback to repo" in new WithApplication {
       val identity = User(LoginInfo("github", "test@test.com"),
-        "user",
+        "User1",
         Option("userFullName"),
         Option("test@test.com"),
         None,
@@ -89,14 +53,12 @@ class UserBasedSpec extends PlaySpecification {
 
       val body = new String(contentAsBytes(result))
       body must contain("elasticsearch")
-      body must contain("href=\"/github/elastic/elasticsearch/feedback\" class=\"ui primary button\"")
-      body must contain("/github/elastic/elasticsearch/quickstart")
 
     }
 
     "be able to see the Add feedbakck page" in new WithApplication {
       val identity = User(LoginInfo("github", "test@test.com"),
-        "user",
+        "User1",
         Option("userFullName"),
         Option("test@test.com"),
         None,
@@ -127,7 +89,38 @@ class UserBasedSpec extends PlaySpecification {
     }
 
 
+    "be able to submit feedback" in new WithApplication {
+      val identity = User(LoginInfo("github", "test@test.com"),
+        "User1",
+        Option("userFullName"),
+        Option("test@test.com"),
+        None,
+        1,
+        None,
+        None
+      )
 
+
+      // Used to filter the already retrieved events)
+      val messagesApi = app.injector.instanceOf[MessagesApi]
+      implicit val env = FakeEnvironment[User, SessionAuthenticator](Seq(
+        identity.loginInfo -> identity
+      ))
+      val request = FakeRequest().withAuthenticator(identity.loginInfo).withSession("csrfToken" -> CSRF.SignedTokenProvider.generateToken).withFormUrlEncodedBody(("scoreDocumentation", "2"), ("scoreMaturity", "3"), ("scoreDesign", "4"), ("scoreSupport", "4"), ("feedback", "testOfFeedback"))
+      val controller = new ApplicationController(messagesApi, env,
+        app.injector.instanceOf[CustomGitHubProvider],
+        app.injector.instanceOf[RepositoryService],
+        app.injector.instanceOf[UserService],
+        app.injector.instanceOf[GitHubAPI],
+        app.injector.instanceOf[QuickstartService])
+
+      val firstVisit = controller.gitHubRepository("elastic", "elasticsearch", None).apply(request)
+      status(firstVisit) must equalTo(200)
+
+      val result = controller.giveScorePage("elastic", "elasticsearch").apply(request)
+      status(result) must equalTo(303)
+
+    }
 
   }
 
@@ -143,7 +136,6 @@ class UserBasedSpec extends PlaySpecification {
       val body = new String(contentAsBytes(result))
       body must contain("elasticsearch")
       body must not contain ("href=\"/github/elastic/elasticsearch/feedback\" class=\"ui primary button\"")
-      body must contain("/github/elastic/elasticsearch/quickstart")
     }
   }
 
@@ -157,7 +149,7 @@ class UserBasedSpec extends PlaySpecification {
 
     val body = new String(contentAsBytes(result))
     body must contain("elasticsearch")
-    body must contain ("You need to be login to add some feedback")
+    body must contain("You need to be login to add some feedback")
   }
 
 

@@ -18,6 +18,9 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
+  val githubClientId = Play.configuration.getString("silhouette.github.clientID").getOrElse("")
+  val githubClientSecret = Play.configuration.getString("silhouette.github.clientSecret").getOrElse("")
+
 
   /**
    * Get the user contributions statistics since last year or since the past update
@@ -58,7 +61,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    *         to 0, returns None if the repository was not found
    */
   def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None): Future[Option[Repository]] = {
-    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
+    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors").withQueryString(("client_id",githubClientId),("client_secret",githubClientSecret)), oAuth2Info)
       .get()
       .flatMap(response => {
       response.status match {
@@ -75,7 +78,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
             }
           })
 
-          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName), oAuth2Info)
+          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id",githubClientId),("client_secret",githubClientSecret)), oAuth2Info)
             .get()
             .map(response => {
             Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
