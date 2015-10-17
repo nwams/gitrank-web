@@ -59,8 +59,7 @@ class PublicAPIController @Inject()(
         quickstartService.getQuickstartGuidesForRepo(repository).map(guides =>
           Ok(Json.toJson(guides))
         )
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+      case None => Future(NotFound("No Quickstart guide found"))
     })
   }
 

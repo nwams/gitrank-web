@@ -3,6 +3,7 @@
     {
       "labels": ["User"],
       "properties": {
+        "loginInfo": "github:User1",
         "username": "User1",
         "fullName": "Josh Newman",
         "email": "josh@newman.com",
@@ -70,6 +71,32 @@
         "addedLines": 40,
         "removedLines": 10,
         "currentWeekBuffer": 0,
+        "timestamp": 1444426459006
+      }
+    },{
+      "type": "SCORED",
+      "sourceIndex": 0,
+      "targetIndex": 2,
+      "properties": {
+        "designScore": 3,
+        "docScore": 4,
+        "supportScore":2,
+        "maturityScore": 1,
+        "feedback": "This is an outstanding repo",
+        "karma": 1,
+        "timestamp": 1444426459006
+      }
+    },{
+      "type": "QUICKSTARTED",
+      "sourceIndex": 0,
+      "targetIndex": 2,
+      "properties": {
+        "title": "Top 10 of the test quickstart",
+        "description": "A comprehensive overview of all the testing techniques",
+        "url": "http://www.nikelodeon.com",
+        "upvote": 3,
+        "downvote": 1,
+        "listVoters": ["User1"],
         "timestamp": 1444426459006
       }
     }

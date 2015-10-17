@@ -252,8 +252,7 @@ class RepositoryService @Inject()(
   def calculateScoreForRepo(repository: Repository): Future[Float] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
       feedbackList => feedbackList.map {
-        feedback: Feedback => computeTotalScore(repository, feedback)
-      }.sum / feedbackList.length
+        feedback: Feedback => computeTotalScore(repository, feedback) }.sum / feedbackList.length
     }
   }
 
