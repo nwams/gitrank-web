@@ -2,8 +2,16 @@ $(document)
     .ready(function () {
 
         function goToRepoInputUrl() {
-            window.location.href = window.location.protocol + "//" + window.location.hostname + ":"
-                + window.location.port + '/github/' + $("#goToRepoInput")[0].value
+
+            var repoName = $("#goToRepoInput")[0].value,
+                baseUrl = window.location.protocol + "//" + window.location.hostname + ":"
+                    + window.location.port;
+
+            if (repoName === ''){
+                window.location.href = baseUrl;
+            } else {
+                window.location.href = baseUrl + '/github/' + repoName;
+            }
         }
 
         $('.popup')
