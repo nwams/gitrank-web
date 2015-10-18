@@ -54,6 +54,7 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
 
       val body = new String(contentAsBytes(result))
       body must contain("test1")
+      body must contain("href=\"/github/test/test1/feedback\"")
 
     }
 
