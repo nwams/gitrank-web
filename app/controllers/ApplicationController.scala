@@ -95,59 +95,42 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system (GitHub)
    * @return Redirect to repo page
    */
-  def giveScorePage(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
+  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async {implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
-      form => println(form),
-      data => {
-        request.identity.map(repoService.giveScoreToRepo(owner,
-          _,
-          repositoryName,
-          data.scoreDocumentation,
-          data.scoreMaturity,
-          data.scoreDesign,
-          data.scoreSupport,
-          data.feedback
-        ))
-      })
-    Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+      formWithErrors => Future.successful(BadRequest(views.html.feedbackForm(gitHubProvider, Some(request.identity))
+        (owner, repositoryName, formWithErrors, update.getOrElse(false)))),
+      data => repoService.giveScoreToRepo(owner,
+        request.identity,
+        repositoryName,
+        data.scoreDocumentation,
+        data.scoreMaturity,
+        data.scoreDesign,
+        data.scoreSupport,
+        data.feedback
+      ).map(repo => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+    )
   }
 
   /**
-   * Handles the quickstarter guide post
+   * Handles the quickstart guide post
    *
    * @param owner Owner of the repository on the repo system (GitHub)
    * @param repositoryName repository name on the repo system (GitHub)
    * @return Redirect to repo page
    */
-  def createQuickstarterGuide(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
+  def postQuickstartGuide(owner: String, repositoryName: String) = SecuredAction.async { implicit request =>
     QuickstartForm.form.bindFromRequest.fold(
-      form => repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map {
-        case Some(repo) => request.identity.map(quickstartService.createQuickstart(
-          _,
-          repo,
-          form.data.getOrElse("title", ""),
-          form.data.getOrElse("description", ""),
-          QuickstartForm.validateUrl(form.data.getOrElse("url", ""))
-        ))
-        case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-          "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-      },
-      data => {
-        repoService.getFromNeoOrGitHub(request.identity, owner + "/" + repositoryName).map {
-          case Some(repo) => request.identity.map(quickstartService.createQuickstart(
-            _,
-            repo,
-            data.title,
-            data.description,
-            QuickstartForm.validateUrl(data.url)
-          ))
-          case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-            "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-        }
-
-      })
-
-    Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+      formWithErrors => Future.successful(BadRequest(views.html.quickstartGuide(gitHubProvider, Some(request.identity))
+        (owner, repositoryName, formWithErrors)))
+      ,
+      data => quickstartService.createQuickstart(
+        request.identity,
+        owner + "/" + repositoryName,
+        data.title,
+        data.description,
+        QuickstartForm.validateUrl(data.url)
+      ).map(q => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+    )
   }
 
   /**
@@ -177,7 +160,7 @@ class ApplicationController @Inject()(
    * @param voteType if the vote is upvote or downvote
    * @return the guide
    */
-  def upvote(owner: String, repositoryName: String, title: String, voteType: String) = SecuredAction.async { implicit request =>
+  def upVote(owner: String, repositoryName: String, title: String, voteType: String) = SecuredAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(Some(request.identity), repoName).flatMap({
       case Some(repository) =>
@@ -188,6 +171,5 @@ class ApplicationController @Inject()(
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
     })
-
   }
 }

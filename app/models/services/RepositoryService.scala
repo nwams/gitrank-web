@@ -1,7 +1,10 @@
 package models.services
 
-import javax.inject.Inject
+import java.util.Date
+import javax.inject.{Named, Inject}
 
+import actors.RepositorySupervisor.PropagateRepositoryScore
+import akka.actor.ActorRef
 import models.daos.drivers.GitHubAPI
 import models.daos._
 import models._
@@ -17,7 +20,7 @@ class RepositoryService @Inject()(
                                    oAuth2InfoDAO: OAuth2InfoDAO,
                                    gitHub: GitHubAPI,
                                    userService: UserService,
-                                   scoreService: ScoreService) {
+                                   @Named("repository-supervisor") repositorySupervisor: ActorRef) {
 
   /**
    * Saves or create a repository to the database according to the current needs
@@ -218,28 +221,31 @@ class RepositoryService @Inject()(
                       scoreDesign: Int,
                       scoreSupport: Int,
                       feedback: String): Future[Repository] = {
+
     val repoName: String = owner + "/" + repositoryName
+
+    findOrCreate(user, repoName).flatMap(repo =>
+      canAddFeedback(repoName, Some(user)).flatMap({
+        case true => saveScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
+          .flatMap(s => updateRepoScore(repo))
+        case false => Future(repo) // TODO this is weird, we should throw an error or something
+      })
+    )
+  }
+
+  /**
+   * Look for a repo in the database, if the repository is not found, it looks at GitHub and creates it in the
+   * database
+   *
+   * @param user user requesting the creation
+   * @param repoName name of the repository to be created
+   * @return Future of created repository
+   */
+  def findOrCreate(user: User, repoName: String): Future[Repository] = {
     repoDAO.find(repoName).flatMap({
-      case Some(repo) =>
-        canAddFeedback(repoName, Option(user)).flatMap {
-          case true => Future(scoreService.createScore(
-            user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
-          ))
-          case false => Future(repo)
-        }
-      case None => oAuth2InfoDAO.find(user.loginInfo)
-        .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
-        .flatMap(repo => repoDAO.create(repo.get))
-        .flatMap(repo => {
-        canAddFeedback(repoName, Option(user)).flatMap {
-          case true => Future(scoreService.createScore(
-            user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
-          ))
-          case false => Future(repo)
-        }
-      }
-        )
-        )
+      case Some(repo) => Future.successful(repo)
+      case None => oAuth2InfoDAO.find(user.loginInfo).flatMap(
+        gitHub.getRepository(repoName, _).flatMap(repo => repoDAO.create(repo.get)))
     })
   }
 
@@ -250,12 +256,14 @@ class RepositoryService @Inject()(
    */
   def calculateScoreForRepo(repository: Repository): Future[Float] = {
     scoreDAO.findRepositoryFeedback(repository.name).map {
-      feedback => feedback.map { feedback: Feedback => computeTotalScore(repository, feedback) }.sum / feedback.length
+      feedbackList => feedbackList.map {
+        feedback: Feedback => computeTotalScore(repository, feedback) }.sum / feedbackList.length
     }
   }
 
   /**
    * Calculate the total score based on a repo/user karma
+   *
    * @param repository repository whose score is being calculated
    * @param feedback score and user who scored
    * @return 1 to 5 score points
@@ -271,15 +279,57 @@ class RepositoryService @Inject()(
    *
    * @param repository repo to update
    */
-  def updateRepoScore(repository: Repository): Future[Future[Repository]] = {
-    calculateScoreForRepo(repository).map(
-      score => Repository(
-        repoID = repository.repoID,
-        addedLines = repository.addedLines,
-        removedLines = repository.removedLines,
-        karmaWeight = repository.karmaWeight,
-        name = repository.name,
-        score = score)
-    ).map(repoDAO.update)
+  def updateRepoScore(repository: Repository): Future[Repository] = {
+    calculateScoreForRepo(repository).flatMap(score => repoDAO.update(repository.copy(score = score)))
+  }
+
+  /**
+   * Add a Score/Feedback to the database
+   *
+   * @param user user that gave the feedback
+   * @param repository repository on which the feedback is made
+   * @param scoreDocumentation Documentation score
+   * @param scoreMaturity maturity score
+   * @param scoreDesign design score
+   * @param scoreSupport support score
+   * @param feedback Feedback text
+   * @return saved score
+   */
+  private def saveScore(user: User,
+                        repository: Repository,
+                        scoreDocumentation: Int,
+                        scoreMaturity: Int,
+                        scoreDesign: Int,
+                        scoreSupport: Int,
+                        feedback: String): Future[Score] = {
+    val score = Score(
+      new Date(),
+      scoreDesign,
+      scoreDocumentation,
+      scoreSupport,
+      scoreMaturity,
+      feedback,
+      user.karma
+    )
+    scoreDAO.find(user.username, repository.name).flatMap {
+      case Some(_) => scoreDAO.update(user.username, repository.name, score).map(propagateScoreChange(_, repository))
+      case None => scoreDAO.save(user.username, repository.name, score).map(propagateScoreChange(_, repository))
+    }
+  }
+
+  /**
+   * Sends the propagation order to the Repository actor if the score has been saved properly.
+   *
+   * @param scoreOpt Option containing the saved score Score saved
+   * @param repository repository scored.
+   * @return score that should be propagated.
+   */
+  private def propagateScoreChange(scoreOpt: Option[Score], repository: Repository): Score = {
+    scoreOpt match {
+      case Some(score) =>
+        repositorySupervisor ! PropagateRepositoryScore(repository, score)
+        score
+      case None => throw new Exception("Cannot propagate unsaved score, check score DAO or DB")
+    }
   }
 }

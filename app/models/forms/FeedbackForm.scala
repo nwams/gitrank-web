@@ -2,7 +2,6 @@ package forms
 
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.libs.ws.WS
 
 /**
  * The form which handles the sign up process.
@@ -14,10 +13,10 @@ object FeedbackForm {
    */
   val form = Form(
     mapping(
-      "scoreDocumentation" -> number,
-      "scoreMaturity" -> number,
-      "scoreDesign" -> number,
-      "scoreSupport" -> number,
+      "scoreDocumentation" -> number(min = 0, max = 5),
+      "scoreMaturity" -> number(min = 0, max = 5),
+      "scoreDesign" -> number(min = 0, max = 5),
+      "scoreSupport" -> number(min = 0, max = 5),
       "feedback" -> nonEmptyText
     )(Data.apply)(Data.unapply)
   )
