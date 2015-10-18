@@ -42,7 +42,7 @@ function buildQuickstartGuides(data) {
             thumbsup: guide.upvote,
             thumbsdown: guide.downvote
         }
-    })
+    });
 
     data.forEach(function (guide) {
 
@@ -58,25 +58,25 @@ function buildQuickstartGuides(data) {
         description.className = 'text';
         description.textContent = guide.description;
 
-        var thumbsup = document.createElement('span')
-        thumbsup.innerText = guide.thumbsup
+        var thumbsup = document.createElement('span');
+        thumbsup.innerText = guide.thumbsup;
 
-        var thumbsdown = document.createElement('span')
-        thumbsdown.innerText = guide.thumbsdown
+        var thumbsdown = document.createElement('span');
+        thumbsdown.innerText = guide.thumbsdown;
 
-        var icon = document.createElement('i')
-        icon.className = 'ui thumbs up icon'
-        icon.setAttribute("style", "cursor: pointer")
+        var icon = document.createElement('i');
+        icon.className = 'ui thumbs up icon';
+        icon.setAttribute("style", "cursor: pointer");
 
         icon.onclick= function(){ upvote( guide.title ); } ;
-        thumbsup.appendChild(icon)
+        thumbsup.appendChild(icon);
 
-        icon = document.createElement('i')
-        icon.id = 'thumbsdown'
-        icon.className = 'ui thumbs down icon'
+        icon = document.createElement('i');
+        icon.id = 'thumbsdown';
+        icon.className = 'ui thumbs down icon';
         icon.onclick= function(){ downvote( guide.title ); } ;
-        icon.setAttribute("style", "cursor: pointer")
-        thumbsdown.appendChild(icon)
+        icon.setAttribute("style", "cursor: pointer");
+        thumbsdown.appendChild(icon);
 
 
         div.appendChild(a);
@@ -88,6 +88,10 @@ function buildQuickstartGuides(data) {
 }
 
 function buildParallelCoordinates(data) {
+
+    if (_.isEmpty(data)){
+        return;
+    }
 
     data = data.map(function (score) {
         return {

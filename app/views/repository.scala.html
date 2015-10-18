@@ -14,36 +14,9 @@
 
 @main("GitRank - " + owner + "/" + repositoryName, gitHubProvider, user) {
 
-    @if(feedback.isEmpty) {
-        <div class="ui active page dimmer">
-            <div class="content">
-                <div class="center">
-                    <h2 class="ui inverted header">
-                        No registered feedback for this repository, yet
-                    </h2>
-                    @if(user.isDefined) {
-                        @if(canAddFeedback) {
-                            <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)"
-                                class="ui primary labeled icon button">
 
-                                <i class="plus icon"></i>
-                                Add First feedback
-                            </a>
-                        } else {
-                            <p>Our records show that you have contributed to this repository, as such, you cannot add any feedback.</p>
-                        }
-                    } else {
-                        <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
-                            <span class="octicon octicon-mark-github"></span> Login
-                        </a>
-                    }
-                </div>
-            </div>
-        </div>
-    } else {
 
         <div class="ui container">
-
 
             <div class="ui clearing">
                 <h2 class="ui left floated repository header">
@@ -61,7 +34,35 @@
             </div>
 
             <div class="ui middle aligned grid" style="display: block">
-                <div class="divided row">
+                <div class="divided row" style="min-height: 250px">
+                @if(feedback.isEmpty) {
+                    <div class="ui active dimmer">
+                        <div class="content">
+                            <div class="center">
+                                <h2 class="ui inverted header">
+                                    No registered feedback for this repository, yet
+                                </h2>
+                                @if(user.isDefined) {
+                                    @if(canAddFeedback) {
+                                        <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)"
+                                        class="ui primary labeled icon button">
+
+                                            <i class="plus icon"></i>
+                                            Add First feedback
+                                        </a>
+                                    } else {
+                                        <p>Our records show that you have contributed to this repository, as such, you cannot add any feedback.</p>
+                                    }
+                                } else {
+                                    <a href="@routes.SocialAuthController.authenticate(gitHubProvider.id)" class="ui primary button">
+                                        <span class="octicon octicon-mark-github"></span> Login
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                } else {
+
                     <div class="thirteen wide column">
                         <div id="scoreChart"></div>
                     </div>
@@ -75,6 +76,7 @@
                             </div>
                         </div>
                     </div>
+                }
                 </div>
             </div>
 
@@ -89,9 +91,9 @@
                             @if(canAddFeedback) {
                                 <a href="@routes.ApplicationController.giveFeedbackPage(owner, repositoryName)" class="ui primary button">
                                 @if(canUpdateFeedback) {
-                                    <i class="plus icon"></i>Udpate
+                                    <i class="plus icon"></i>Update
                                 } else {
-                                    <i class="edit icon"></i>Edit
+                                    <i class="edit icon"></i>Add
                                 }
                                 </a>
                             }
@@ -193,9 +195,8 @@
                                 }
                             </div>
                         </div>
-                    </div>
-
                     }
+                    </div>
 
                     <div class="ui eight wide column">
                         <div class="ui comments feedback">
@@ -213,12 +214,6 @@
                                 </div>
                             </div>
                         </div>
-                        @if(currentPage != totalPages) {
-                            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, Some(currentPage + 1))"
-                            class="item">
-                                >
-                            </a>
-                        }
                     </div>
                 </div>
             }
@@ -235,15 +230,17 @@
                 <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.Assets.at("images/giveFeedbackBadge.svg"))](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.ApplicationController.giveFeedbackPage(owner, repositoryName))">
             </div>
             <br>
-            <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, None)">
-                <img src="@routes.PublicAPIController.getScoreBadge(owner, repositoryName)">
-            </a>
-            <div class="ui fluid action input">
-                <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.PublicAPIController.getScoreBadge(owner, repositoryName))](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.ApplicationController.gitHubRepository(owner, repositoryName, None))">
-            </div>
+            @if(feedback.nonEmpty) {
+                <a href="@routes.ApplicationController.gitHubRepository(owner, repositoryName, None)">
+                    <img src="@routes.PublicAPIController.getScoreBadge(owner, repositoryName)">
+                </a>
+                <div class="ui fluid action input">
+                    <input type="text" value="[![Give Feedback Badge](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.PublicAPIController.getScoreBadge(owner, repositoryName))](http://@Play.configuration.getString("gitrank.domain").getOrElse("localhost:9000")@routes.ApplicationController.gitHubRepository(owner, repositoryName, None))">
+                </div>
+            }
         </div>
     </div>
 
-    <script src="@routes.Assets.at("lib/d3js/d3.min.js")" type="text/javascript"></script>
-    <script src="@routes.Assets.at("javascripts/repository.js")" type="text/javascript"></script>
-}
+
+<script src="@routes.Assets.at("lib/d3js/d3.min.js")" type="text/javascript"></script>
+<script src="@routes.Assets.at("javascripts/repository.js")" type="text/javascript"></script>
