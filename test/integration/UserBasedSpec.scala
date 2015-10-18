@@ -49,11 +49,11 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
         app.injector.instanceOf[GitHubAPI],
         app.injector.instanceOf[QuickstartService])
 
-      val result = controller.gitHubRepository("elastic", "elasticsearch", None).apply(request)
+      val result = controller.gitHubRepository("test", "test1", None).apply(request)
       status(result) must equalTo(OK)
 
       val body = new String(contentAsBytes(result))
-      body must contain("elasticsearch")
+      body must contain("test1")
 
     }
 
@@ -80,11 +80,11 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
         app.injector.instanceOf[GitHubAPI],
         app.injector.instanceOf[QuickstartService])
 
-      val result = controller.giveFeedbackPage("elastic", "elasticsearch").apply(request)
+      val result = controller.giveFeedbackPage("test", "test1").apply(request)
       status(result) must equalTo(OK)
 
       val body = new String(contentAsBytes(result))
-      body must contain("elasticsearch")
+      body must contain("test1")
       body must contain("<button id=\"submit\" type=\"submit\"")
 
     }
@@ -115,10 +115,10 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
         app.injector.instanceOf[GitHubAPI],
         app.injector.instanceOf[QuickstartService])
 
-      val firstVisit = controller.gitHubRepository("elastic", "elasticsearch", None).apply(request)
+      val firstVisit = controller.gitHubRepository("test", "test1", None).apply(request)
       status(firstVisit) must equalTo(200)
 
-      val result = controller.giveScorePage("elastic", "elasticsearch").apply(request)
+      val result = controller.giveScorePage("test", "test1").apply(request)
       status(result) must equalTo(303)
 
     }
@@ -131,12 +131,12 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
 
       val controller = app.injector.instanceOf[ApplicationController]
 
-      val result = controller.gitHubRepository("elastic", "elasticsearch", None).apply(request)
+      val result = controller.gitHubRepository("test", "test1", None).apply(request)
       status(result) must equalTo(OK)
 
       val body = new String(contentAsBytes(result))
-      body must contain("elasticsearch")
-      body must not contain ("href=\"/github/elastic/elasticsearch/feedback\" class=\"ui primary button\"")
+      body must contain("test1")
+      body must not contain ("href=\"/github/test/test1/feedback\" class=\"ui primary button\"")
     }
   }
 
@@ -145,11 +145,11 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
 
     val controller = app.injector.instanceOf[ApplicationController]
 
-    val result = controller.giveFeedbackPage("elastic", "elasticsearch").apply(request)
+    val result = controller.giveFeedbackPage("test", "test1").apply(request)
     status(result) must equalTo(OK)
 
     val body = new String(contentAsBytes(result))
-    body must contain("elasticsearch")
+    body must contain("test1")
     body must contain("You need to be login to add some feedback")
   }
 
