@@ -223,24 +223,29 @@ class RepositoryService @Inject()(
                       feedback: String): Future[Repository] = {
 
     val repoName: String = owner + "/" + repositoryName
+
+    findOrCreate(user, repoName).flatMap(repo =>
+      canAddFeedback(repoName, Some(user)).flatMap({
+        case true => saveScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
+          .flatMap(s => updateRepoScore(repo))
+        case false => Future(repo) // TODO this is weird, we should throw an error or something
+      })
+    )
+  }
+
+  /**
+   * Look for a repo in the database, if the repository is not found, it looks at GitHub and creates it in the
+   * database
+   *
+   * @param user user requesting the creation
+   * @param repoName name of the repository to be created
+   * @return Future of created repository
+   */
+  def findOrCreate(user: User, repoName: String): Future[Repository] = {
     repoDAO.find(repoName).flatMap({
-      case Some(repo) =>
-        canAddFeedback(repoName, Option(user)).flatMap {
-          case true =>
-            saveScore(user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback)
-              .flatMap(s => updateRepoScore(repo))
-          case false => Future(repo)
-        }
-      case None => oAuth2InfoDAO.find(user.loginInfo)
-        .flatMap(gitHub.getRepository(owner + "/" + repositoryName, _)
-          .flatMap(repo => repoDAO.create(repo.get))
-          .flatMap(repo => canAddFeedback(repoName, Option(user)).flatMap {
-            case true => saveScore(
-              user, repo, scoreDocumentation, scoreMaturity, scoreDesign, scoreSupport, feedback
-            ).flatMap(s => updateRepoScore(repo))
-            case false => Future(repo)
-          })
-        )
+      case Some(repo) => Future.successful(repo)
+      case None => oAuth2InfoDAO.find(user.loginInfo).flatMap(
+        gitHub.getRepository(repoName, _).flatMap(repo => repoDAO.create(repo.get)))
     })
   }
 

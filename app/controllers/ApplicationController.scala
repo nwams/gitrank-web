@@ -123,19 +123,14 @@ class ApplicationController @Inject()(
       formWithErrors => Future.successful(BadRequest(views.html.quickstartGuide(gitHubProvider, Some(request.identity))
         (owner, repositoryName, formWithErrors)))
       ,
-      data => {
-        repoService.getFromNeoOrGitHub(Some(request.identity), owner + "/" + repositoryName).flatMap {
-          case Some(repo) => quickstartService.createQuickstart(
-            request.identity,
-            repo,
-            data.title,
-            data.description,
-            QuickstartForm.validateUrl(data.url)
-          ).map(q => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
-          case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-            "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
-        }
-      })
+      data => quickstartService.createQuickstart(
+        request.identity,
+        owner + "/" + repositoryName,
+        data.title,
+        data.description,
+        QuickstartForm.validateUrl(data.url)
+      ).map(q => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+    )
   }
 
   /**

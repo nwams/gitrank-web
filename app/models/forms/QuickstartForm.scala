@@ -1,7 +1,5 @@
 package models.forms
 
-import java.util.regex.Pattern
-
 import play.api.data.Form
 import play.api.data.Forms._
 
@@ -16,7 +14,7 @@ object QuickstartForm {
   val form = Form(
     mapping(
       "title" -> nonEmptyText,
-      "descritpion" -> nonEmptyText,
+      "description" -> nonEmptyText,
       "url" -> nonEmptyText
     )(Data.apply)(Data.unapply)
   )

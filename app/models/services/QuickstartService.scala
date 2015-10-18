@@ -9,30 +9,36 @@ import models.{Quickstart, Repository, User}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class QuickstartService @Inject()(quickstartDAO: QuickstartDAO) {
+class QuickstartService @Inject()(
+                                   quickstartDAO: QuickstartDAO,
+                                   repositoryService: RepositoryService) {
 
   /**
    * Create a quickstart guide
    * @param user user who made the guide
-   * @param repository repo for whom the guide is intended
+   * @param repoName repo name for whom the guide is intended
    * @param title title of the quick starter
    * @param description descritption of the quick starter
    * @param url url
    * @return guide created
    */
-  def createQuickstart(user: User, repository: Repository, title: String, description: String, url: String): Future[Quickstart] = {
-    val quickstart = Quickstart(
-      new Date(),
-      title,
-      description,
-      if (url.startsWith("http")) url else "http://" + url,
-      0,
-      0,
-      List()
-    )
-    quickstartDAO.save(user.username, repository.name, quickstart).map({
-      case Some(quick) => quick
-      case None =>  throw new Exception("Quickstart not created properly")
+  def createQuickstart(user: User, repoName: String, title: String, description: String, url: String): Future[Quickstart] = {
+    repositoryService.findOrCreate(user, repoName).flatMap(repo => {
+
+      val quickstart = Quickstart(
+        new Date(),
+        title,
+        description,
+        if (url.startsWith("http")) url else "http://" + url,
+        0,
+        0,
+        List()
+      )
+
+      quickstartDAO.save(user.username, repo.name, quickstart).map({
+        case Some(quick) => quick
+        case None => throw new Exception("Quickstart not created properly")
+      })
     })
   }
 
