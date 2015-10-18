@@ -8,7 +8,7 @@ import controllers.ApplicationController
 import models.User
 import models.daos.{RepositoryDAO, ScoreDAO, UserDAO}
 import models.daos.drivers.GitHubAPI
-import models.services.{ScoreService, QuickstartService, RepositoryService, UserService}
+import models.services.{QuickstartService, RepositoryService, UserService}
 import modules.CustomGitHubProvider
 import org.specs2.matcher._
 import org.specs2.mock.mockito.MockitoStubs
@@ -24,6 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
 
   def before = TestSetup.populateNeo4JData()
+
   "User Logged In " should {
 
     "be able to see the button to submit feedback to repo" in new WithApplication {
@@ -89,41 +90,6 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
       body must contain("<button id=\"submit\" type=\"submit\"")
 
     }
-
-
-    "be able to submit feedback" in new WithApplication {
-      val identity = User(LoginInfo("github", "test@test.com"),
-        "User1",
-        Option("userFullName"),
-        Option("test@test.com"),
-        None,
-        1,
-        None,
-        None
-      )
-
-
-      // Used to filter the already retrieved events)
-      val messagesApi = app.injector.instanceOf[MessagesApi]
-      implicit val env = FakeEnvironment[User, SessionAuthenticator](Seq(
-        identity.loginInfo -> identity
-      ))
-      val request = FakeRequest().withAuthenticator(identity.loginInfo).withSession("csrfToken" -> CSRF.SignedTokenProvider.generateToken).withFormUrlEncodedBody(("scoreDocumentation", "2"), ("scoreMaturity", "3"), ("scoreDesign", "4"), ("scoreSupport", "4"), ("feedback", "testOfFeedback"))
-      val controller = new ApplicationController(messagesApi, env,
-        app.injector.instanceOf[CustomGitHubProvider],
-        app.injector.instanceOf[RepositoryService],
-        app.injector.instanceOf[UserService],
-        app.injector.instanceOf[GitHubAPI],
-        app.injector.instanceOf[QuickstartService])
-
-      val firstVisit = controller.gitHubRepository("test", "test1", None).apply(request)
-      status(firstVisit) must equalTo(200)
-
-      val result = controller.giveScorePage("test", "test1").apply(request)
-      status(result) must equalTo(303)
-
-    }
-
   }
 
   "User Logged Off " should {
