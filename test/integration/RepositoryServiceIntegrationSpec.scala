@@ -43,7 +43,7 @@ class RepositoryServiceIntegrationSpec extends PlaySpecification with BeforeAfte
         Option("test@test.com"),
         None,
         1,
-        None,
+        None, // An ETag is used to know if the data has been modified since the last poll
         None
       )
       app.injector.instanceOf[RepositoryService].canAddFeedback("test/test0", Option(identity)) map {
@@ -85,15 +85,15 @@ class RepositoryServiceIntegrationSpec extends PlaySpecification with BeforeAfte
         None
       )
       app.injector.instanceOf[RepositoryService].findOrCreate(identity, "elastic/elasticsearch").map {
-        optionRepo =>  app.injector.instanceOf[RepositoryDAO].find(optionRepo.name).map(
-          r => r must not be(None)
+        optionRepo => app.injector.instanceOf[RepositoryDAO].find(optionRepo.name).map(
+          r => r must not be (None)
         )
       }
     }
 
-
-    def after = TestSetup.clearNeo4JData
-
   }
+
+  def after = TestSetup.clearNeo4JData
+
 }
 
