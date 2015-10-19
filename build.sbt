@@ -32,7 +32,6 @@ libraryDependencies ++= Seq(
   "org.webjars" % "d3js" % "3.5.5-1",
   specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
-  "com.mohiva" %% "play-silhouette-testkit" % "version" % "test",
   cache,
   filters,
   ws
