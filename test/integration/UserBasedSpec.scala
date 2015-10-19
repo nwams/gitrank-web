@@ -34,7 +34,7 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
         Option("test@test.com"),
         None,
         1,
-        None, // An ETag is used to know if the data has been modified since the last poll
+        None,
         None
       )
       // Used to filter the already retrieved events)
@@ -66,7 +66,7 @@ class UserBasedSpec extends PlaySpecification with BeforeAfterEach {
         Option("test@test.com"),
         None,
         1,
-        None, // An ETag is used to know if the data has been modified since the last poll
+        None,
         None
       )
       // Used to filter the already retrieved events)
