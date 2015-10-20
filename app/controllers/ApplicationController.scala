@@ -62,7 +62,7 @@ class ApplicationController @Inject()(
         case Some(repository) => repoService.getFeedback(repoName, page).flatMap((feedback: Seq[Feedback]) =>
           repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
 
-            if (page.getOrElse(1) <= totalPage) {
+            if (totalPage == 0 || page.getOrElse(1) <= totalPage) {
               repoService.canAddFeedback(repoName, request.identity).flatMap({
                 case true => repoService.canUpdateFeedback(repoName, request.identity).map(
                   canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
