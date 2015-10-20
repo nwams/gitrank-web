@@ -8,9 +8,9 @@ GET         /                                                             @contr
 GET         /github/:owner/:repository                                    @controllers.ApplicationController.gitHubRepository(owner, repository, page: Option[Int])
 GET         /github/:owner/:repository/lastFeedback                       @controllers.PublicAPIController.getLast100Feedback(owner, repository)
 GET         /github/:owner/:repository/feedback                           @controllers.ApplicationController.giveFeedbackPage(owner, repository)
-POST        /github/:owner/:repository/feedback                           @controllers.ApplicationController.giveScorePage(owner, repository)
-POST        /github/:owner/:repository/quickstart                         @controllers.ApplicationController.createQuickstarterGuide(owner, repository)
-POST        /github/:owner/:repository/quickstart/:title/:voteType        @controllers.ApplicationController.upvote(owner, repository,title,voteType)
+POST        /github/:owner/:repository/feedback                           @controllers.ApplicationController.postScore(owner, repository, update: Option[Boolean])
+POST        /github/:owner/:repository/quickstart                         @controllers.ApplicationController.postQuickstartGuide(owner, repository)
+POST        /github/:owner/:repository/quickstart/:title/:voteType        @controllers.ApplicationController.upVote(owner, repository,title,voteType)
 GET         /github/:owner/:repository/quickstart                         @controllers.ApplicationController.createGuidePage(owner, repository)
 GET         /github/:owner/:repository/quickstart/guides                  @controllers.PublicAPIController.getGuides(owner, repository)
 

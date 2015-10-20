@@ -92,7 +92,7 @@ class UserDAO @Inject() (neo: Neo4j) {
 
     neo.cypher("CREATE (n:User {props}) RETURN n", Json.obj(
       "props" -> jsonToSend
-    )).map(response => user)
+    )).map(response =>user)
   }
 
   /**

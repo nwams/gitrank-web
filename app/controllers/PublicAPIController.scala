@@ -59,8 +59,7 @@ class PublicAPIController @Inject()(
         quickstartService.getQuickstartGuidesForRepo(repository).map(guides =>
           Ok(Json.toJson(guides))
         )
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+      case None => Future(NotFound("No Quickstart guide found"))
     })
   }
 
@@ -82,24 +81,24 @@ class PublicAPIController @Inject()(
     }
 
     // Taken from shield.io template
-    <svg xmlns="http://www.w3.org/2000/svg" width="118" height="20">
+    <svg xmlns="http://www.w3.org/2000/svg" width="117" height="20">
       <linearGradient id="b" x2="0" y2="100%">
         <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
         <stop offset="1" stop-opacity=".1"/>
       </linearGradient>
       <mask id="a">
-        <rect width="118" height="20" rx="3" fill="#fff"/>
+        <rect width="117" height="20" rx="3" fill="#fff"/>
       </mask>
       <g mask="url(#a)">
         <path fill="#555" d="M0 0h89v20H0z"/>
-        <path fill={color} d="M89 0h29v20H89z"/>
-        <path fill="url(#b)" d="M0 0h118v20H0z"/>
+        <path fill={color} d="M89 0h28v20H89z"/>
+        <path fill="url(#b)" d="M0 0h117v20H0z"/>
       </g>
       <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
         <text x="44.5" y="15" fill="#010101" fill-opacity=".3">Gitrank Score</text>
         <text x="44.5" y="14">Gitrank Score</text>
-        <text x="102.5" y="15" fill="#010101" fill-opacity=".3">{repoScore}/5</text>
-        <text x="102.5" y="14">4/5</text>
+        <text x="102" y="15" fill="#010101" fill-opacity=".3">{repoScore}</text>
+        <text x="102" y="14">{repoScore}</text>
       </g>
     </svg>
   }

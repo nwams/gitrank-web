@@ -4,11 +4,15 @@
 @()
 <footer>
     <div>
-        @if(Play.configuration.getString("buildNumber").isEmpty) {
-            <p><a href="https://github.com/gitlinks/gitrank-web">Contribute on Github</a> - Dev build</p>
-        } else {
-            <p><a href="https://github.com/gitlinks/gitrank-web">Contribute on Github</a> - Build #@Play.configuration.getString("buildNumber")</p>
-        }
+        <p>
+            <a href="https://github.com/gitlinks/gitrank-web">Contribute on Github</a> -
+            @if(Play.configuration.getString("buildNumber").isEmpty) {
+                Dev build
+            } else {
+                Build #@Play.configuration.getString("buildNumber")
+            }
+            - <a href="https://github.com/gitlinks/gitrank-web/issues">Report issue</a>
+        </p>
     </div>
 </footer>
 <script src="@routes.Assets.at("javascripts/ga.js")" type="text/javascript"></script>

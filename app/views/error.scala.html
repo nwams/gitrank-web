@@ -4,7 +4,7 @@
 
 <html>
     <head>
-        <title>404 - Not Found</title>
+        <title>@status - @statusMessage</title>
         <link rel="stylesheet" href="@routes.Assets.at("lib/octicons/octicons/octicons.css")">
         <link rel="stylesheet" href="@routes.Assets.at("lib/Semantic-UI/semantic.min.css")">
         <link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
@@ -43,7 +43,7 @@
                                     <i class="bug icon"></i>
                                     <div class="content">
                                         Ooooops !
-                                        <div class="sub header">@message</div>
+                                        <div class="sub header">@Html(message)</div>
                                     </div>
                                 </h2>
                             </div>
