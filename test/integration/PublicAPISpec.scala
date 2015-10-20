@@ -72,5 +72,6 @@ class PublicAPISpec extends PlaySpecification with BeforeAfterEach {
     }
   }
 
+
   def after = TestSetup.clearNeo4JData
 }
