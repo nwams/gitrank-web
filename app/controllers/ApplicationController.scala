@@ -61,16 +61,22 @@ class ApplicationController @Inject()(
       repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
         case Some(repository) => repoService.getFeedback(repoName, page).flatMap((feedback: Seq[Feedback]) =>
           repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
-            repoService.canAddFeedback(repoName, request.identity).flatMap({
-              case true => repoService.canUpdateFeedback(repoName, request.identity).map(
-                canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
+
+            if (page.getOrElse(1) <= totalPage) {
+              repoService.canAddFeedback(repoName, request.identity).flatMap({
+                case true => repoService.canUpdateFeedback(repoName, request.identity).map(
+                  canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
+                  (owner, repositoryName, page.getOrElse(1))))
+                case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
                 (owner, repositoryName, page.getOrElse(1))))
-              case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
-              (owner, repositoryName, page.getOrElse(1))))
-            })
+              })
+            } else {
+              Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
+                "The requested page does not exist")))
+            }
           })
         )
-        case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+        case None => Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
           "We cannot find the repository page, it is likely that you misspelled it, try something else !")))
       })
     }
