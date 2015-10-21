@@ -70,7 +70,7 @@ addBuildNumber := {
   }
 }
 
-(test in Test) <<= (test in Test).dependsOn(addBuildNumber)
+(packageZipTarball in Universal) <<= (packageZipTarball in Universal).dependsOn(addBuildNumber)
 
 // Remove package documentation from the generated dist
 sources in (Compile, doc) := Seq.empty
