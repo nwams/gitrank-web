@@ -1,13 +1,13 @@
 $(document)
     .ready(function () {
-        $(".form").validate({
-            errorClass: "input-error",
-            rules: {
-                url: {
-                    required: true,
-                    url: true
-                }
-            }
-        });
-    });
 
+        $('.ui.form')
+            .form({
+                fields: {
+                    title: ['empty'],
+                    url: ['url', 'empty'],
+                    description: ['empty']
+                }
+            })
+        ;
+    });

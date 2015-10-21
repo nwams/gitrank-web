@@ -25,7 +25,7 @@ libraryDependencies ++= Seq(
   "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
   "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
-  "org.webjars" % "Semantic-UI" % "2.0.7",
+  "org.webjars" % "Semantic-UI" % "2.1.4",
   "org.webjars.bower" % "lodash" % "3.10.1",
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
@@ -70,7 +70,7 @@ addBuildNumber := {
   }
 }
 
-(test in Test) <<= (test in Test).dependsOn(addBuildNumber)
+(packageZipTarball in Universal) <<= (packageZipTarball in Universal).dependsOn(addBuildNumber)
 
 // Remove package documentation from the generated dist
 sources in (Compile, doc) := Seq.empty
