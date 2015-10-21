@@ -4,15 +4,9 @@ $(document)
         $('.ui.form')
             .form({
                 fields: {
-                    url: {
-                        identifier  : 'url',
-                        rules: [
-                            {
-                                type   : 'url',
-                                prompt : 'Please enter a valid url'
-                            }
-                        ]
-                    }
+                    title: ['empty'],
+                    url: ['url', 'empty'],
+                    description: ['empty']
                 }
             })
         ;
