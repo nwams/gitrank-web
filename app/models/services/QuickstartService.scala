@@ -83,7 +83,7 @@ class QuickstartService @Inject()(
         if (!guide.listVoters.contains(user.username)) {
           quickstartDAO.update(title, repository.name, buildFromVote(guide, upVote, user.username))
         } else {
-          Future(None)
+          Future(Some(guide))
         }
       }
       case None => Future(None)

@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import models.daos.drivers.GitHubAPI
 import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
-import models.{Feedback, User}
+import models.{Quickstart, Feedback, User}
 import modules.CustomGitHubProvider
 import play.api.i18n.MessagesApi
 import forms.FeedbackForm
@@ -178,8 +178,18 @@ class ApplicationController @Inject()(
     repoService.getFromNeoOrGitHub(Some(request.identity), repoName).flatMap({
       case Some(repository) =>
         voteType match {
-          case "upvote" => quickstartService.updateVote(repository, true, title, request.identity).map(guide => Ok(Json.toJson(guide)))
-          case _ => quickstartService.updateVote(repository, false, title,request.identity).map(guide => Ok(Json.toJson(guide)))
+          case "upvote" => quickstartService.updateVote(repository, true, title, request.identity)
+            .map({
+              case Some(guide) => Ok(Json.toJson(guide))
+              case None => NotFound(views.html.error("notFound", 404, "Not Found",
+                "We cannot find the guide, it is likely that you misspelled it, try something else !"))
+            })
+          case _ => quickstartService.updateVote(repository, false, title,request.identity)
+            .map({
+              case Some(guide) => Ok(Json.toJson(guide))
+              case None => NotFound(views.html.error("notFound", 404, "Not Found",
+                "We cannot find the guide, it is likely that you misspelled it, try something else !"))
+            })
         }
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))

@@ -10,81 +10,71 @@ function getMean(data, attribute) {
         }, data[0][attribute])
 }
 
-function reload() {
-        location.reload()
+function updateVotes(data){
+    $("#" + data.title).remove();
+    createGuideElement(data)
 }
 
 function upvote(title) {
     $.ajax({
         url: '' + window.location.href + '/quickstart/' + title + '/upvote',
         method: "POST",
-        success: reload()
+        success: updateVotes
     })
 }
-
 
 function downvote(title) {
     $.ajax({
         url: '' + window.location.href + '/quickstart/' + title + '/downvote',
         method: "POST",
-        success: reload()
+        success: updateVotes
     })
-
 }
 
 function buildQuickstartGuides(data) {
+    data.forEach(createGuideElement);
+}
 
-    data = data.map(function (guide) {
-        return {
-            title: guide.title,
-            description: guide.description,
-            url: guide.url,
-            thumbsup: guide.upvote,
-            thumbsdown: guide.downvote
-        }
-    });
+function createGuideElement (guide){
+    var div = document.createElement('div');
+    div.className = 'comment';
+    div.id = guide.title;
 
-    data.forEach(function (guide) {
+    var a = document.createElement('a');
+    a.className = 'author';
+    a.setAttribute('href', guide.url);
+    a.textContent = guide.title;
 
-        var div = document.createElement('div');
-        div.className = 'comment';
+    var description = document.createElement('div');
+    description.className = 'text';
+    description.textContent = guide.description;
 
-        var a = document.createElement('a');
-        a.className = 'author';
-        a.setAttribute('href', guide.url);
-        a.textContent = guide.title;
+    var thumbsup = document.createElement('span');
+    thumbsup.innerText = guide.upvote;
 
-        var description = document.createElement('div');
-        description.className = 'text';
-        description.textContent = guide.description;
+    var thumbsdown = document.createElement('span');
+    thumbsdown.innerText = guide.downvote;
 
-        var thumbsup = document.createElement('span');
-        thumbsup.innerText = guide.thumbsup;
+    var icon = document.createElement('i');
+    icon.className = 'ui thumbs up icon';
+    icon.setAttribute("style", "cursor: pointer");
 
-        var thumbsdown = document.createElement('span');
-        thumbsdown.innerText = guide.thumbsdown;
+    icon.onclick= function(){ upvote( guide.title ); } ;
+    thumbsup.appendChild(icon);
 
-        var icon = document.createElement('i');
-        icon.className = 'ui thumbs up icon';
-        icon.setAttribute("style", "cursor: pointer");
-
-        icon.onclick= function(){ upvote( guide.title ); } ;
-        thumbsup.appendChild(icon);
-
-        icon = document.createElement('i');
-        icon.id = 'thumbsdown';
-        icon.className = 'ui thumbs down icon';
-        icon.onclick= function(){ downvote( guide.title ); } ;
-        icon.setAttribute("style", "cursor: pointer");
-        thumbsdown.appendChild(icon);
+    icon = document.createElement('i');
+    icon.id = 'thumbsdown';
+    icon.className = 'ui thumbs down icon';
+    icon.onclick= function(){ downvote( guide.title ); } ;
+    icon.setAttribute("style", "cursor: pointer");
+    thumbsdown.appendChild(icon);
 
 
-        div.appendChild(a);
-        div.appendChild(description);
-        div.appendChild(thumbsup);
-        div.appendChild(thumbsdown);
-        document.getElementById("guides").appendChild(div);
-    });
+    div.appendChild(a);
+    div.appendChild(description);
+    div.appendChild(thumbsup);
+    div.appendChild(thumbsdown);
+    document.getElementById("guides").appendChild(div);
 }
 
 function buildParallelCoordinates(data) {
