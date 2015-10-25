@@ -7,6 +7,8 @@ import scalaj.http.Http
 /**
  * Checks if the database is connected during creation of the injector. The application will fail to start
  * if the configuration is wrong
+ *
+ * This is not in the neo4j driver since the driver needs play to run and cannot be eagerly instantiated.
  */
 class ConnectionChecker (){
 
