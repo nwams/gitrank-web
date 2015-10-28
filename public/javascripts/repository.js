@@ -11,21 +11,21 @@ function getMean(data, attribute) {
 }
 
 function updateVotes(data){
-    $("#" + data.title).remove();
+    $("#" + data.id).remove();
     createGuideElement(data)
 }
 
-function upvote(title) {
+function upvote(id) {
     $.ajax({
-        url: '' + window.location.href + '/quickstart/' + title + '/upvote',
+        url: '' + window.location.href + '/quickstart/' + id + '/upvote',
         method: "POST",
         success: updateVotes
     })
 }
 
-function downvote(title) {
+function downvote(id) {
     $.ajax({
-        url: '' + window.location.href + '/quickstart/' + title + '/downvote',
+        url: '' + window.location.href + '/quickstart/' + id + '/downvote',
         method: "POST",
         success: updateVotes
     })
@@ -38,7 +38,7 @@ function buildQuickstartGuides(data) {
 function createGuideElement (guide){
     var div = document.createElement('div');
     div.className = 'comment';
-    div.id = guide.title;
+    div.id = guide.id;
 
     var a = document.createElement('a');
     a.className = 'author';
@@ -59,13 +59,13 @@ function createGuideElement (guide){
     icon.className = 'ui thumbs up icon';
     icon.setAttribute("style", "cursor: pointer");
 
-    icon.onclick= function(){ upvote( guide.title ); } ;
+    icon.onclick= function(){ upvote( guide.id ); } ;
     thumbsup.appendChild(icon);
 
     icon = document.createElement('i');
     icon.id = 'thumbsdown';
     icon.className = 'ui thumbs down icon';
-    icon.onclick= function(){ downvote( guide.title ); } ;
+    icon.onclick= function(){ downvote( guide.id ); } ;
     icon.setAttribute("style", "cursor: pointer");
     thumbsdown.appendChild(icon);
 

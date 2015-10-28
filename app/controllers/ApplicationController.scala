@@ -163,31 +163,30 @@ class ApplicationController @Inject()(
     })
   }
 
-
   /**
    * Service for upvoting a guide
    *
    * @param owner Owner of the repository on the repo system (GitHub)
    * @param repositoryName repository name on the repo system (GitHub)
-   * @param title title of the guide
+   * @param id id of the guide
    * @param voteType if the vote is upvote or downvote
    * @return the guide
    */
-  def upVote(owner: String, repositoryName: String, title: String, voteType: String) = SecuredAction.async { implicit request =>
+  def upVote(owner: String, repositoryName: String, id: Int, voteType: String) = SecuredAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(Some(request.identity), repoName).flatMap({
       case Some(repository) =>
         voteType match {
-          case "upvote" => quickstartService.updateVote(repository, true, title, request.identity)
+          case "upvote" => quickstartService.updateVote(repository, true, id, request.identity)
             .map({
               case Some(guide) => Ok(Json.toJson(guide))
               case None => NotFound(views.html.error("notFound", 404, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else !"))
             })
-          case _ => quickstartService.updateVote(repository, false, title,request.identity)
+          case _ => quickstartService.updateVote(repository, false, id,request.identity)
             .map({
               case Some(guide) => Ok(Json.toJson(guide))
-              case None => NotFound(views.html.error("notFound", 404, "Not Found",
+              case None => println("===>test2");NotFound(views.html.error("notFound", 404, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else !"))
             })
         }

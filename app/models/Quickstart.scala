@@ -6,6 +6,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads, Writes}
 
 case class Quickstart(
+                       id: Option[Int], // Present when the quickstart was retrived from the database
                        timestamp: Date, // This represents the week timestamp of the last contribution
                        title: String,
                        description: String,
@@ -17,7 +18,8 @@ case class Quickstart(
 
 object Quickstart {
   implicit val quickstartWrites: Writes[Quickstart] = (
-    (JsPath \ "timestamp").write[Date] and
+    (JsPath \ "id").writeNullable[Int] and
+      (JsPath \ "timestamp").write[Date] and
       (JsPath \ "title").write[String] and
       (JsPath \ "description").write[String] and
       (JsPath \ "url").write[String] and
@@ -27,7 +29,8 @@ object Quickstart {
     )(unlift(Quickstart.unapply))
 
   implicit val quickstartReads: Reads[Quickstart] = (
-    (JsPath \ "timestamp").read[Date] and
+    (JsPath \ "id").readNullable[Int] and
+      (JsPath \ "timestamp").read[Date] and
       (JsPath \ "title").read[String] and
       (JsPath \ "description").read[String] and
       (JsPath \ "url").read[String] and
