@@ -143,12 +143,15 @@ class ApplicationControllerSpec extends PlaySpecification with BeforeAfterEach w
 
   "up vote post endpoint" should {
     "prevent posting if the user is not connected" in new WithApplication {
-      val response = route(FakeRequest(POST, "/github/test/test2/quickstart/test/upvote")).get
+      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
+      val quickstart = contentAsJson(json).as[JsArray].value.head
+
+      val response = route(FakeRequest(POST, "/github/test/test2/quickstart/" + (quickstart \ "id").as[Int] +"/upvote")).get
       // TODO this should be changed to 401
       status(response) must equalTo(303)
     }
 
-    "be able to post an up vote if the user is connected" in new WithApplication {
+    "should not be able to post an up vote if the user is has already voted" in new WithApplication {
 
       val identity = User(LoginInfo("github", "User1"), "User1" ,Some("Josh Newman"), Some("josh@newman.com"),
         Some("http://api.adorable.io/avatars/285/josh@newman.com.png"), 180, None, None)
@@ -164,7 +167,44 @@ class ApplicationControllerSpec extends PlaySpecification with BeforeAfterEach w
         identity.loginInfo -> identity
       ))
 
-      val request = FakeRequest(POST, "/github/test/test1/quickstart/" +  + "/upvote")
+      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
+      val quickstart = contentAsJson(json).as[JsArray].value.head
+
+      val request = FakeRequest(POST, "/github/test/test1/quickstart/" + (quickstart \ "id").as[Int] + "/upvote")
+        .withAuthenticator(identity.loginInfo)
+
+      val controller = new ApplicationController(messagesApi, env, gitHubProvider, repoService, userService, gitHub, quickstartService)
+      val result = route(request).get
+      status(result) must equalTo(OK)
+
+      val content = contentAsJson(result).as[JsObject]
+      (content \ "title").as[String] must equalTo("Top 10 of the test quickstart")
+      (content \ "description").as[String] must equalTo("A comprehensive overview of all the testing techniques")
+      (content \ "url").as[String] must equalTo("http://www.nikelodeon.com")
+      (content \ "upvote").as[Int] must equalTo(3)
+      (content \ "downvote").as[Int] must equalTo(1)
+    }
+
+    "should be able to post an up vote if the user did not already voted" in new WithApplication {
+
+      val identity = User(LoginInfo("github", "User2"), "User2" ,Some("Samuel Adams"), Some("sam@adams.com"),
+        Some("http://api.adorable.io/avatars/285/josh@newman.com.png"), 180, None, None)
+
+      val messagesApi = app.injector.instanceOf[MessagesApi]
+      val gitHubProvider = app.injector.instanceOf[CustomGitHubProvider]
+      val repoService = app.injector.instanceOf[RepositoryService]
+      val userService = app.injector.instanceOf[UserService]
+      val gitHub = app.injector.instanceOf[GitHubAPI]
+      val quickstartService = app.injector.instanceOf[QuickstartService]
+
+      implicit val env = FakeEnvironment[User, SessionAuthenticator](Seq(
+        identity.loginInfo -> identity
+      ))
+
+      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
+      val quickstart = contentAsJson(json).as[JsArray].value.head
+
+      val request = FakeRequest(POST, "/github/test/test1/quickstart/" + (quickstart \ "id").as[Int] + "/upvote")
         .withAuthenticator(identity.loginInfo)
 
       val controller = new ApplicationController(messagesApi, env, gitHubProvider, repoService, userService, gitHub, quickstartService)
