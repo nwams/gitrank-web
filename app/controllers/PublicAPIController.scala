@@ -2,7 +2,8 @@ package controllers
 
 import javax.inject.Inject
 
-import models.services.{QuickstartService, RepositoryService}
+import models.daos.drivers.ElasticsearchAPI
+import models.services.{ElasticSearchService, QuickstartService, RepositoryService}
 import play.api.libs.json._
 import play.api.mvc.{Action, Controller}
 
@@ -16,7 +17,8 @@ import scala.concurrent.Future
  */
 class PublicAPIController @Inject()(
                                      repoService: RepositoryService,
-                                     quickstartService: QuickstartService
+                                     quickstartService: QuickstartService,
+                                     elasticSearchService: ElasticSearchService
                                      )
   extends Controller {
 
@@ -38,8 +40,8 @@ class PublicAPIController @Inject()(
    * @param repoName name of the repository
    * @return svg file with the score embeded and the right color
    */
-  def getScoreBadge(owner: String, repoName:String) = Action.async { implicit request =>
-    repoService.retrieve(owner+"/"+repoName).map({
+  def getScoreBadge(owner: String, repoName: String) = Action.async { implicit request =>
+    repoService.retrieve(owner + "/" + repoName).map({
       case Some(repo) => Ok(buildScoreBadge(repo.score)).as("image/svg+xml")
       case None => NotFound("Badge Not Found")
     })
@@ -61,6 +63,21 @@ class PublicAPIController @Inject()(
         )
       case None => Future(NotFound("No Quickstart guide found"))
     })
+  }
+
+  /**
+   * Service for searching repo names
+   *
+   * @param query query to search for repo
+   * @return the json list of repo names
+   */
+  def searchRepos(query: String) = Action.async { implicit request =>
+    elasticSearchService.searchForRepos(query).map(
+      repoNames => repoNames.isEmpty match {
+        case true => (NotFound("No repos found"))
+        case false => Ok(Json.toJson(repoNames))
+      }
+    )
   }
 
   /**
@@ -97,8 +114,12 @@ class PublicAPIController @Inject()(
       <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
         <text x="44.5" y="15" fill="#010101" fill-opacity=".3">Gitrank Score</text>
         <text x="44.5" y="14">Gitrank Score</text>
-        <text x="102" y="15" fill="#010101" fill-opacity=".3">{repoScore}</text>
-        <text x="102" y="14">{repoScore}</text>
+        <text x="102" y="15" fill="#010101" fill-opacity=".3">
+          {repoScore}
+        </text>
+        <text x="102" y="14">
+          {repoScore}
+        </text>
       </g>
     </svg>
   }
