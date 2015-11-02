@@ -56,11 +56,12 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
       Map(
         "query" ->
           Map(
-            "match" -> Map(
-              "repo.name" -> Json.toJson(queryString)
+            "wildcard" -> Map(
+              "repo.name" -> Map(
+                "value" -> Json.toJson("*"+queryString+"*")
+              )
             )
           )
-
       )
     ).toString()
   }
