@@ -4,13 +4,13 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
+import forms.FeedbackForm
 import models.daos.drivers.GitHubAPI
 import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
-import models.{Quickstart, Feedback, User}
+import models.{Feedback, User}
 import modules.CustomGitHubProvider
 import play.api.i18n.MessagesApi
-import forms.FeedbackForm
 import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -77,7 +77,7 @@ class ApplicationController @Inject()(
           })
         )
         case None => Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
-          "We cannot find the repository page, it is likely that you misspelled it, try something else !")))
+          "We cannot find the repository page, it is likely that you misspelled it, try something else!")))
       })
     }
   }
@@ -97,7 +97,7 @@ class ApplicationController @Inject()(
           Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
         )
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
 
@@ -159,7 +159,7 @@ class ApplicationController @Inject()(
       case Some(repository) =>
         Ok(views.html.quickstartGuide(gitHubProvider, request.identity)(owner, repositoryName, QuickstartForm.form))
       case None => NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !"))
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!"))
     })
   }
 
@@ -187,11 +187,11 @@ class ApplicationController @Inject()(
             .map({
               case Some(guide) => Ok(Json.toJson(guide))
               case None => println("===>test2");NotFound(views.html.error("notFound", 404, "Not Found",
-                "We cannot find the guide, it is likely that you misspelled it, try something else !"))
+                "We cannot find the guide, it is likely that you misspelled it, try something else!"))
             })
         }
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else !")))
+        "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
 }
