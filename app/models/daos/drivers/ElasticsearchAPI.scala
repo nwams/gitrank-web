@@ -31,15 +31,19 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
         response => {
           response.status match {
             case 200 => {
-              ((response.json \ "hits") \ "total").as[Int] match {
-                case 0 => Seq()
-                case _ => ((response.json \ "hits") \ "hits").as[JsArray].value.map(jsValue => (jsValue \\ "name")(0).as[String])
-              }
+              parseResponse(response)
             }
             case _ => Seq()
           }
         }
       )
+  }
+
+  def parseResponse(response: WSResponse): Seq[String] = {
+    ((response.json \ "hits") \ "total").as[Int] match {
+      case 0 => Seq()
+      case _ => ((response.json \ "hits") \ "hits").as[JsArray].value.map(jsValue => (jsValue \\ "name")(0).as[String])
+    }
   }
 
   /**
