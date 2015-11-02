@@ -26,6 +26,7 @@ class QuickstartService @Inject()(
     repositoryService.findOrCreate(user, repoName).flatMap(repo => {
 
       val quickstart = Quickstart(
+        None,
         new Date(),
         title,
         description,
@@ -60,14 +61,11 @@ class QuickstartService @Inject()(
    * @return
    */
   def buildFromVote(guide: Quickstart, upVote: Boolean, username: String): Quickstart = {
-    Quickstart(
-      guide.timestamp,
-      guide.title,
-      guide.description,
-      if (guide.url.startsWith("http")) guide.url else "http://" + guide.url,
-      guide.upvote + (if (upVote) 1 else 0),
-      guide.downvote + (if (!upVote) 1 else 0),
-      guide.listVoters :+ username
+    guide.copy(
+      url=if (guide.url.startsWith("http")) guide.url else "http://" + guide.url,
+      upvote = guide.upvote + (if (upVote) 1 else 0),
+      downvote = guide.downvote + (if (!upVote) 1 else 0),
+      listVoters = guide.listVoters :+ username
     )
   }
 
@@ -75,15 +73,15 @@ class QuickstartService @Inject()(
    * Update downvote and upVote of a guide on given repo
    * @param repository repo on which the guide is
    * @param upVote is it upVote?
-   * @param title title of the guide
+   * @param id id of the guide
    */
-  def updateVote(repository: Repository, upVote: Boolean, title: String, user: User): Future[Option[Quickstart]] = {
-    quickstartDAO.findRepositoryGuide(repository.name, title).flatMap {
+  def updateVote(repository: Repository, upVote: Boolean, id: Int, user: User): Future[Option[Quickstart]] = {
+    quickstartDAO.findRepositoryGuide(repository.name, id).flatMap {
       case Some(guide) => {
         if (!guide.listVoters.contains(user.username)) {
-          quickstartDAO.update(title, repository.name, buildFromVote(guide, upVote, user.username))
+          quickstartDAO.update(id, repository.name, buildFromVote(guide, upVote, user.username))
         } else {
-          Future(None)
+          Future(Some(guide))
         }
       }
       case None => Future(None)

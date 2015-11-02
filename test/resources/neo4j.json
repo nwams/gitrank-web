@@ -60,6 +60,16 @@
         "karmaWeight": 54,
         "score": 4.5
       }
+    }, {
+      "labels": ["User"],
+      "properties": {
+        "loginInfo": "github:User2",
+        "username": "User2",
+        "fullName": "Samuel Adams",
+        "email": "sam@adams.com",
+        "avatarURL": "http://api.adorable.io/avatars/285/josh@newman.com.png",
+        "karma": 1
+      }
     }
   ],
   "edges": [

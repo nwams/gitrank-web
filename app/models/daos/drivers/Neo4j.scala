@@ -29,22 +29,6 @@ class Neo4j @Inject() (ws: WSClient){
   val neo4jUser = Play.configuration.getString("neo4j.username").getOrElse("neo4j")
   val neo4jPassword = Play.configuration.getString("neo4j.password").getOrElse("neo4j")
 
-  ws.url(neo4jEndpoint)
-    .withAuth(neo4jUser, neo4jPassword, WSAuthScheme.BASIC)
-    .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
-    .withRequestTimeout(10000)
-    .get()
-    .map(res => {
-    res.status match {
-      case 200 =>
-        val json = Json.parse(res.body)
-        if ((json \ "errors").as[Seq[JsObject]].nonEmpty) {
-          throw new Exception(res.body)
-        }
-      case _ => throw new Exception("Could not Connect to the Neo4j Database")
-    }
-  })
-
   /**
    * Sends a Cypher query to the neo4j server
    *
