@@ -54,7 +54,7 @@ class ApplicationController @Inject()(
 
     if (page.getOrElse(1) <= 0){
       Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the feedback page, unfortunately negative pages have not been invented !"))
+        "We cannot find the feedback page, unfortunately negative pages have not been invented!"))
       )
     } else {
       val repoName: String = owner + "/" + repositoryName
@@ -181,7 +181,7 @@ class ApplicationController @Inject()(
             .map({
               case Some(guide) => Ok(Json.toJson(guide))
               case None => NotFound(views.html.error("notFound", 404, "Not Found",
-                "We cannot find the guide, it is likely that you misspelled it, try something else !"))
+                "We cannot find the guide, it is likely that you misspelled it, try something else!"))
             })
           case _ => quickstartService.updateVote(repository, false, id,request.identity)
             .map({
