@@ -7,17 +7,17 @@
         <div class="link item">
             <a href="@routes.ApplicationController.index()"><b>Git</b>Rank</a>
         </div>
+        <div class="ui category search item">
+
+            <div class="ui icon input">
+                <input id="goToRepoInput" class="prompt" type="text" placeholder="Search project ...">
+                <i id="goToRepoButton" class="search icon"></i>
+            </div>
+            <div class="results"></div>
+
+        </div>
 
         <div class="right menu">
-            <div class="ui category search item">
-
-                <div class="ui icon input">
-                    <input id="goToRepoInput" class="prompt" type="text" placeholder="Search project ...">
-                    <i id="goToRepoButton" class="search icon"></i>
-                </div>
-                <div class="results"></div>
-
-            </div>
             <div class="link item">
                 @user.map { u =>
                 <a href="https://github.com/@u.username">
