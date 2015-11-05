@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "Semantic-UI" % "2.1.4",
   "org.webjars.bower" % "lodash" % "3.10.1",
+  "org.webjars.npm" % "emojify.js" % "1.1.0",
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",

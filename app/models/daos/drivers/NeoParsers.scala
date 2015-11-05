@@ -1,6 +1,6 @@
 package models.daos.drivers
 
-import com.fasterxml.jackson.core.{JsonToken, JsonParser}
+import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
@@ -44,7 +44,7 @@ class NeoParsers {
     * @return The parsed user.
     */
   def parseNeoUser(response: WSResponse): Option[User] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _ :JsUndefined => None
       case user => Some(parseSingleUser(user))
     }
@@ -118,7 +118,7 @@ class NeoParsers {
     * @return A Sequence of contributors
     */
   def parseNeoRepo(response: WSResponse): Option[Repository] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => Some(repo.as[Repository])
     }
@@ -131,8 +131,9 @@ class NeoParsers {
     * @return a list of repositories
     */
   def parseNeoRepos(response: WSResponse): Seq[Repository] = {
-    ((Json.parse(response.body) \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      jsValue.as[Repository])
+    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+      (jsValue \ "row")(0).as[Repository]
+    )
   }
 
   /**
@@ -197,7 +198,7 @@ class NeoParsers {
     * @return The parsed OAuth2Info.
     */
   def parseNeoOAuth2Info(response: WSResponse) = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => Some(OAuth2Info(
         (repo \ "accessToken").as[String],
@@ -240,7 +241,7 @@ class NeoParsers {
     * @return parsed contribution or None
     */
   def parseNeoContribution(response: WSResponse): Option[Contribution] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => repo.asOpt[Contribution]
     }
@@ -252,7 +253,7 @@ class NeoParsers {
     * @return map with each contribution from repo
     */
   def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
-    (Json.parse(response.body) \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
+    (response.json \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
   }
 
   /**

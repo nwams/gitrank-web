@@ -1,6 +1,8 @@
 @import modules.CustomGitHubProvider
 @import models.GitHubRepo
 
+@import java.time.format.DateTimeFormatter
+@import java.time.format.FormatStyle
 @(gitHubProvider: CustomGitHubProvider, user: Option[models.User], repositories: Seq[GitHubRepo])(implicit request: RequestHeader)
 
 @main("GitRank - Home", gitHubProvider, user) {
@@ -8,24 +10,25 @@
         <div class="ui container">
             <h1 class="ui header inverted">Welcome to <b>Git</b>Rank</h1>
             <h3 class="ui header inverted">A platform where you can easily feedback and discover open source projects</h3>
-            <h4 class="ui header inverted">Click on a project to see its ratings</h4>
-
             <div class="ui four cards">
                 @for(repository <- repositories) {
                     <div class="card">
                         <div class="content">
-                            <i class="right floated star icon">@repository.stars</i>
-                            <div class="header"><a href="#"> @repository.name</a></div>
+                            <span class="right floated"><i class="star icon"></i>@repository.stars</span>
+                            <div class="header"><a href="@{
+                                val repoData = repository.name.split("/")
+                                routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None)
+                            }"> @repository.name</a></div>
                             <div class="meta">
-                                Last Updated:
-                                <span class="date">@repository.updatedAt.format("MMM DD YY")</span>
+                                <a href="https://github.com/@repository.name" class="octicon octicon-mark-github"></a> Last Updated on
+                                <span class="date">@repository.updatedAt.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))</span>
                             </div>
                             <div class="description">@repository.description</div>
                         </div>
                         <a href="@{
-                            val repoData = repository.name.split("/")
-                            routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None)
-                        }" class="ui bottom attached button">
+                        val repoData = repository.name.split("/")
+                        routes.ApplicationController.giveFeedbackPage(repoData(0), repoData(1))
+                    }" class="ui bottom attached button">
                             <i class="add icon"></i>
                             Give Feedback
                         </a>

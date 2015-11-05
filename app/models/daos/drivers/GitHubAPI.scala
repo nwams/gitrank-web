@@ -156,10 +156,9 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .flatMap(response =>
         response.status match {
           case 200 =>
-
             val linkHeader = parseGitHubLink(response.header("link").getOrElse(""))
             val repoList = response.json.as[Seq[GitHubRepo]]
-              .filter(repo => filter.contains(repo.name))
+              .filter(repo => !filter.contains(repo.name))
               .take(size)
 
             if (repoList.length < size && !linkHeader.isDefinedAt("next")){

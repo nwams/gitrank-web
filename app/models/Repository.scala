@@ -1,9 +1,9 @@
 package models
 
-import java.util.Date
+import java.time.LocalDateTime
 
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{Reads, JsPath, Writes}
+import play.api.libs.json.{JsPath, Reads, Writes}
 
 /**
  * The user object.
@@ -45,7 +45,7 @@ object Repository {
 case class GitHubRepo(
                        id: Int,
                        name: String,
-                       updatedAt: Date,
+                       updatedAt: LocalDateTime,
                        stars: Int,
                        description: String
                      )
@@ -54,7 +54,7 @@ object GitHubRepo {
   implicit val repoWrites: Writes[GitHubRepo] = (
     (JsPath \ "id").write[Int] and
       (JsPath \ "full_name").write[String] and
-      (JsPath \ "updated_at").write[Date] and
+      (JsPath \ "updated_at").write[LocalDateTime] and
       (JsPath \ "stargazers_count").write[Int] and
       (JsPath \ "description").write[String]
     )(unlift(GitHubRepo.unapply))
@@ -62,7 +62,7 @@ object GitHubRepo {
   implicit val repoReads: Reads[GitHubRepo] = (
     (JsPath \ "id").read[Int] and
       (JsPath \ "full_name").read[String] and
-      (JsPath \ "updated_at").read[Date] and
+      (JsPath \ "updated_at").read[LocalDateTime] and
       (JsPath \ "stargazers_count").read[Int] and
       (JsPath \ "description").read[String]
     )(GitHubRepo.apply _)

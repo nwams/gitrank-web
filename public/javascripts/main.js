@@ -45,5 +45,8 @@ $(document)
                 $('#scoreSupport').val(value)
             });
 
+        emojify.setConfig({img_dir : 'assets/lib/emojify.js/dist/images/basic'});
+        emojify.run()
+
     });
 
