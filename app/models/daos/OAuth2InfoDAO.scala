@@ -5,27 +5,17 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.daos.drivers.Neo4j
-
+import models.daos.drivers.{Neo4j, NeoParsers}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 
 /**
  * The DAO to store the OAuth2 information.
  */
-class OAuth2InfoDAO @Inject() (neo: Neo4j) extends DelegableAuthInfoDAO[OAuth2Info] {
-
-  implicit val OAuth2InfoWrites: Writes[OAuth2Info] = (
-    (JsPath \ "accessToken").write[String] and
-      (JsPath \ "tokenType").writeNullable[String] and
-      (JsPath \ "expiresIn").writeNullable[Int] and
-      (JsPath \ "refreshToken").writeNullable[String] and
-      (JsPath \ "params").writeNullable[Map[String, String]]
-    )(unlift(OAuth2Info.unapply))
+class OAuth2InfoDAO @Inject() (neo: Neo4j,
+                              parser: NeoParsers) extends DelegableAuthInfoDAO[OAuth2Info] {
 
   /**
    * Finds the auth info which is linked with the specified login info.
@@ -36,7 +26,7 @@ class OAuth2InfoDAO @Inject() (neo: Neo4j) extends DelegableAuthInfoDAO[OAuth2In
   def find(loginInfo: LoginInfo): Future[Option[OAuth2Info]] = {
     neo.cypher("MATCH (n:User)-[:HAS_OAUTH2_INFO]->(o) WHERE n.loginInfo = {loginInfo} RETURN o", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
-    )).map(parseNeoOAuth2Info)
+    )).map(parser.parseNeoOAuth2Info)
   }
 
   /**
@@ -54,7 +44,7 @@ class OAuth2InfoDAO @Inject() (neo: Neo4j) extends DelegableAuthInfoDAO[OAuth2In
       """,
       Json.obj(
         "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey),
-        "props" -> writeNeoOAuth2Info(authInfo)
+        "props" -> parser.writeNeoOAuth2Info(authInfo)
       )
     ).map(res => authInfo)
   }
@@ -74,7 +64,7 @@ class OAuth2InfoDAO @Inject() (neo: Neo4j) extends DelegableAuthInfoDAO[OAuth2In
       """,
       Json.obj(
         "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey),
-        "props" -> writeNeoOAuth2Info(authInfo)
+        "props" -> parser.writeNeoOAuth2Info(authInfo)
       )
     ).map(res => authInfo)
   }
@@ -112,40 +102,5 @@ class OAuth2InfoDAO @Inject() (neo: Neo4j) extends DelegableAuthInfoDAO[OAuth2In
         "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
       )
     ).map(res => Unit)
-  }
-
-  /**
-   * Parses a WsResponse to get a unique OAuth2Info out of it.
-   *
-   * @param response response object
-   * @return The parsed OAuth2Info.
-   */
-  def parseNeoOAuth2Info(response: WSResponse) = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case repo => Some(OAuth2Info(
-        (repo \ "accessToken").as[String],
-        (repo \ "tokenType").asOpt[String],
-        (repo \ "expiresIn").asOpt[Int],
-        (repo \ "refreshToken").asOpt[String],
-        (repo \ "params").asOpt[Map[String, String]]
-      ))
-    }
-  }
-
-  /**
-   * Writer to get the Oauth Info to Json
-   *
-   * @param authInfo token information
-   * @return Json to write to the Database
-   */
-  def writeNeoOAuth2Info(authInfo: OAuth2Info) = {
-    val jsonAuth = Json.toJson(authInfo)
-    val params = (jsonAuth \ "params").asOpt[JsValue]
-
-    params match {
-      case None => jsonAuth
-      case Some(p) => (jsonAuth.as[JsObject] - "params") ++ Json.obj("params" -> Json.stringify(p))
-    }
   }
 }

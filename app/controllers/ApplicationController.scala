@@ -40,7 +40,19 @@ class ApplicationController @Inject()(
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(gitHubProvider, request.identity)))
+    request.identity match {
+      case Some(user) => userService.getOAuthInfo(user).flatMap({
+        case Some(oauthInfo) => userService.getScoredRepositoriesNames(user).flatMap(filter =>
+          gitHub.getUserStaredRepositories(8, user, oauthInfo, filter).map(gitHubRepos =>
+            Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
+          )
+        )
+        case None => throw new Error("User spotted without OAuth Credentials: " + user.username)
+      })
+      case None => gitHub.getMostStaredRepositories(8).map(gitHubRepos =>
+        Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
+      )
+    }
   }
 
   /**

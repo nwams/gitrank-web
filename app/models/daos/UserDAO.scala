@@ -2,13 +2,10 @@ package models.daos
 
 import javax.inject.Inject
 
-import com.fasterxml.jackson.core.{JsonParser, JsonToken}
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.daos.drivers.Neo4j
+import models.daos.drivers.{Neo4j, NeoParsers}
 import models.{Repository, User}
 import play.api.libs.json._
-import play.api.libs.ws._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,7 +14,8 @@ import scala.util
 /**
  * Give access to the user object.
  */
-class UserDAO @Inject() (neo: Neo4j) {
+class UserDAO @Inject() (neo: Neo4j,
+                        parser: NeoParsers) {
 
   /**
    * Finds a user by its login info.
@@ -28,7 +26,7 @@ class UserDAO @Inject() (neo: Neo4j) {
   def find(loginInfo: LoginInfo): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE n.loginInfo = {loginInfo} RETURN n", Json.obj(
       "loginInfo" -> JsString(loginInfo.providerID + ":" + loginInfo.providerKey)
-    )).map(parseNeoUser)
+    )).map(parser.parseNeoUser)
   }
 
 
@@ -39,7 +37,7 @@ class UserDAO @Inject() (neo: Neo4j) {
    */
   def findAll(callback: (Any) => Future[Unit]): Future[Unit] = {
      Future( neo.cypherStream("MATCH (n:User) RETURN n ").onComplete{
-        case util.Success(parser) =>  parseJson(parser, callback)
+        case util.Success(toParse) => parser.parseJson(toParse, callback)
         case _ =>
       })
   }
@@ -52,7 +50,7 @@ class UserDAO @Inject() (neo: Neo4j) {
       neo.cypher("MATCH (u:User)-[c:CONTRIBUTED_TO]->(r:Repository) "+
         "WHERE  r.name={repoName} RETURN u",
         Json.obj("repoName" -> repository.name)
-      ).map(parseNeoUsers)
+      ).map(parser.parseNeoUsers)
   }
 
   /**
@@ -64,7 +62,7 @@ class UserDAO @Inject() (neo: Neo4j) {
   def find(userID: Int): Future[Option[User]] = {
     neo.cypher("MATCH (n:User) WHERE ID(n) = {userID} RETURN n", Json.obj(
       "userID" -> userID
-    )).map(parseNeoUser)
+    )).map(parser.parseNeoUser)
   }
 
   /**
@@ -74,9 +72,26 @@ class UserDAO @Inject() (neo: Neo4j) {
    * @return The found user or None if no user for the given ID could be found.
    */
   def find(username: String): Future[Option[User]] = {
-    neo.cypher("MATCH (n:User) WHERE n.username = {usernmae} RETURN n", Json.obj(
+    neo.cypher("MATCH (n:User) WHERE n.username = {username} RETURN n", Json.obj(
       "username" -> username
-    )).map(parseNeoUser)
+    )).map(parser.parseNeoUser)
+  }
+
+  /**
+    * Find all the repositories scored by a user
+    *
+    * @param user that scored the repositories
+    * @return a list of repositories scored by the user
+    */
+  def findScoredRepositories(user: User): Future[Seq[Repository]] = {
+    neo.cypher(
+      """
+        MATCH (n:User)-[:SCORED]->(r:Repository)
+        WHERE n.loginInfo = {loginInfo}
+        RETURN r
+      """, Json.obj(
+        "loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey)
+      )).map(parser.parseNeoRepos)
   }
 
   /**
@@ -88,7 +103,9 @@ class UserDAO @Inject() (neo: Neo4j) {
   def create(user: User): Future[User] = {
 
     val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
-    val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
+    val jsonToSend = jsonUser ++ Json.obj(
+      "loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey)
+    )
 
     neo.cypher("CREATE (n:User {props}) RETURN n", Json.obj(
       "props" -> jsonToSend
@@ -103,7 +120,9 @@ class UserDAO @Inject() (neo: Neo4j) {
    */
   def update(user: User): Future[User] = {
     val jsonUser = Json.toJson(user).as[JsObject] - "loginInfo"
-    val jsonToSend = jsonUser ++ Json.obj("loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey))
+    val jsonToSend = jsonUser ++ Json.obj(
+      "loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey)
+    )
 
     neo.cypher(
       """
@@ -114,76 +133,5 @@ class UserDAO @Inject() (neo: Neo4j) {
       "loginInfo" -> JsString(user.loginInfo.providerID + ":" + user.loginInfo.providerKey),
       "props" -> jsonToSend
     )).map(response => user)
-  }
-
-  /**
-   * Parses a WsResponse to get a unique user out of it.
-   *
-   * @param response response object
-   * @return The parsed user.
-   */
-  def parseNeoUser(response: WSResponse): Option[User] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _ :JsUndefined => None
-      case user => Some(neo.parseSingleUser(user))
-    }
-  }
-
-  /**
-   * Parses a WsResponse to get all users out of it.
-   *
-   * @param response response object
-   * @return The parsed users.
-   */
-  def parseNeoUsers(response: WSResponse): Seq[User] = {
-    val users = Json.parse(response.body) \\ "user"
-
-    users.length match {
-      case 0 => Seq()
-      case _ => users.map(neo.parseSingleUser(_))
-    }
-  }
-
-
-  /**
-   * Parse a stream  with a list of  objects
-   * @param jsonParser json parser responsible for parsing the stream
-   * @param callback callback function for each item
-   */
-  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
-    jsonParser.setCodec(new ObjectMapper())
-    jsonParser.getCurrentName() match {
-      case "row" => {
-        Stream.cons( parseJsonFragment(jsonParser,callback), Stream.continually(parseJsonFragment(jsonParser,callback))).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY);
-      }
-      case _ => {
-        Option(jsonParser.nextToken()).foreach(jsonToken => parseJson(jsonParser, callback))
-      }
-    }}
-
-  /**
-   *
-   * Parse a fragment of a User Json
-   * @param jsonParser parser with the whole json stream
-   * @param callback callback function for each item
-   */
-  def parseJsonFragment(jsonParser: JsonParser,callback: (Any) => Future[Unit])= {
-      jsonParser.getCurrentToken() match{
-        case JsonToken.START_OBJECT =>{
-          val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]();
-          val loginInfo = jsonTree.get("loginInfo").asText().split(":")
-          callback(Some(User(
-            LoginInfo(loginInfo(0), loginInfo(1)),
-            jsonTree.get("username").asText(),
-            Option(jsonTree.get("fullName")).map(_.asText),
-            Option(jsonTree.get("email")).map(_.asText),
-            Option(jsonTree.get("avatarURL")).map(_.asText),
-            jsonTree.get("karma").asInt(),
-            Option(jsonTree.get("publicEventsETag")).map(_.asText),
-            Option(jsonTree.get("lastPublicEventPull")).map(_.asLong())
-          )))
-        }
-        case _ =>
-      }
   }
  }

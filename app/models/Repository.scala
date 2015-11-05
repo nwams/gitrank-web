@@ -1,5 +1,7 @@
 package models
 
+import java.util.Date
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Reads, JsPath, Writes}
 
@@ -38,5 +40,31 @@ object Repository {
       (JsPath \ "name").read[String] and
       (JsPath \ "score").read[Float]
     )(Repository.apply _)
+}
+
+case class GitHubRepo(
+                       id: Int,
+                       name: String,
+                       updatedAt: Date,
+                       stars: Int,
+                       description: String
+                     )
+
+object GitHubRepo {
+  implicit val repoWrites: Writes[GitHubRepo] = (
+    (JsPath \ "id").write[Int] and
+      (JsPath \ "full_name").write[String] and
+      (JsPath \ "updated_at").write[Date] and
+      (JsPath \ "stargazers_count").write[Int] and
+      (JsPath \ "description").write[String]
+    )(unlift(GitHubRepo.unapply))
+
+  implicit val repoReads: Reads[GitHubRepo] = (
+    (JsPath \ "id").read[Int] and
+      (JsPath \ "full_name").read[String] and
+      (JsPath \ "updated_at").read[Date] and
+      (JsPath \ "stargazers_count").read[Int] and
+      (JsPath \ "description").read[String]
+    )(GitHubRepo.apply _)
 }
 

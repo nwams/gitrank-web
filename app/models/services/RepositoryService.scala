@@ -5,7 +5,7 @@ import javax.inject.{Named, Inject}
 
 import actors.RepositorySupervisor.PropagateRepositoryScore
 import akka.actor.ActorRef
-import models.daos.drivers.GitHubAPI
+import models.daos.drivers.{NeoParsers, GitHubAPI}
 import models.daos._
 import models._
 
@@ -13,6 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class RepositoryService @Inject()(
+                                   parser: NeoParsers,
                                    repoDAO: RepositoryDAO,
                                    contributionDAO: ContributionDAO,
                                    userDAO: UserDAO,
@@ -73,8 +74,10 @@ class RepositoryService @Inject()(
       case Some(existingContribution) => {
         contributionDAO.update(userName, repoName, existingContribution.copy(
           timestamp = contribution.timestamp,
-          addedLines = existingContribution.addedLines + contribution.addedLines - contributionDAO.parseWeekAddedLines(existingContribution.currentWeekBuffer),
-          removedLines = existingContribution.removedLines + contribution.removedLines - contributionDAO.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
+          addedLines = existingContribution.addedLines + contribution.addedLines -
+            parser.parseWeekAddedLines(existingContribution.currentWeekBuffer),
+          removedLines = existingContribution.removedLines + contribution.removedLines -
+            parser.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
           currentWeekBuffer = contribution.currentWeekBuffer
         ))
       }

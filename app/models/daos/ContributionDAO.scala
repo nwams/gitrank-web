@@ -2,15 +2,15 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.daos.drivers.{Neo4j}
+import models.daos.drivers.{Neo4j, NeoParsers}
 import models.{Contribution, Repository}
-import play.api.libs.json.{JsUndefined, Json}
-import play.api.libs.ws.WSResponse
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ContributionDAO @Inject() (neo: Neo4j){
+class ContributionDAO @Inject() (neo: Neo4j,
+                                parser: NeoParsers){
 
   /**
    * Finds a contribution in the data store.
@@ -30,7 +30,7 @@ class ContributionDAO @Inject() (neo: Neo4j){
         "username" -> username,
         "repoName" -> repoName
       )
-    ).map(parseNeoContribution)
+    ).map(parser.parseNeoContribution)
   }
 
 
@@ -45,7 +45,7 @@ class ContributionDAO @Inject() (neo: Neo4j){
         "username" -> username,
         "repoName" -> repoName
       )
-    ).map(parseNeoContribution).map(_.isDefined)
+    ).map(parser.parseNeoContribution).map(_.isDefined)
   }
 
   /**
@@ -64,7 +64,7 @@ class ContributionDAO @Inject() (neo: Neo4j){
       Json.obj(
         "username" -> username
       )
-    ).map(parseNeoContributions)
+    ).map(parser.parseNeoContributions)
   }
 
   /**
@@ -89,7 +89,7 @@ class ContributionDAO @Inject() (neo: Neo4j){
         "repoName" -> repoName,
         "props" -> Json.toJson(contribution)
       )
-    ).map(parseNeoContribution)
+    ).map(parser.parseNeoContribution)
   }
 
   /**
@@ -114,51 +114,6 @@ class ContributionDAO @Inject() (neo: Neo4j){
         "repoName" -> repoName,
         "props" -> Json.toJson(contribution)
       )
-    ).map(parseNeoContribution)
+    ).map(parser.parseNeoContribution)
   }
-
-  /**
-   * Parses a neo4j response to get a Contribution out of it.
-   *
-   * @param response neo4j response
-   * @return parsed contribution or None
-   */
-  def parseNeoContribution(response: WSResponse): Option[Contribution] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case repo => repo.asOpt[Contribution]
-    }
-  }
-
-  /**
-   * Parse multiple contributions and repos
-   * @param response response from neo4j
-   * @return map with each contribution from repo
-   */
-  def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
-      (Json.parse(response.body) \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
-  }
-
-  /**
-   * Parses a string representing the buffer of the current week contribution getting the deleted lines
-   *
-   * @param currentWeekBuffer String containing the deleted lines this week already counted for needed to be extracted.
-   * @return count of the deleted lines already accounted for extracted as an Int
-   */
-  def parseWeekDeletedLines(currentWeekBuffer: Option[String]): Int = {
-    val str = currentWeekBuffer.getOrElse("a0d0")
-    str.substring(str.indexOf("d"), str.length).toInt
-  }
-
-  /**
-   * Parses a string representing the buffer of the current week contribution getting the added lines
-   *
-   * @param currentWeekBuffer String containing the added lines this week already counted for needed to be extracted.
-   * @return count of the added lines already accounted for extracted as an Int
-   */
-  def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
-    val str = currentWeekBuffer.getOrElse("a0d0")
-    str.substring(0, str.indexOf("d")).toInt
-  }
-
 }
