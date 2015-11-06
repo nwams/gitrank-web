@@ -17,8 +17,8 @@ import scala.concurrent.Future
 
 
 class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
-  val retry_count = 4
-  val backout_time = 1000l
+  val retryCount = 4
+  val backoutTime = 1000l
 
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
@@ -65,7 +65,7 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * @return A repository with all fields initiated except for the score and weight field that are initiated by default
    *         to 0, returns None if the repository was not found
    */
-  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None, retryCount: Int = retry_count): Future[Option[Repository]] = {
+  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None, retryCount: Int = retryCount): Future[Option[Repository]] = {
 
     buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors").withQueryString(("client_id", githubClientId), ("client_secret", githubClientSecret)), oAuth2Info)
       .get()
@@ -91,7 +91,7 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
           })
         case HttpStatus.SC_ACCEPTED =>{
           if(retryCount>0) {
-            Thread.sleep(backout_time)
+            Thread.sleep(backoutTime)
             getRepository(repositoryName, oAuth2Info, retryCount -1)
           }
           else {
