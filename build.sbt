@@ -31,6 +31,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
   "net.databinder.dispatch" %% "dispatch-core" % "0.11.2",
+  "com.sendgrid" % "sendgrid-java" % "2.2.2",
     specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,
