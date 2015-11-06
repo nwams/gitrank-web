@@ -52,19 +52,19 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
    * @return json string
    */
   def createRepoQueryJson(queryString: String): String = {
+    val newString: String = queryString.replace("/", "(\\/)")
+    val queryField = Map(
+      "default_field" -> "repo.name",
+      "query" -> (newString + "*")
+    )
     Json.toJson(
       Map(
         "query" ->
           Map(
-            "wildcard" -> Map(
-              "repo.name" -> Map(
-                "value" -> Json.toJson("*"+queryString+"*")
-              )
-            )
+            "query_string" -> queryField
           )
       )
     ).toString()
+
   }
-
-
 }

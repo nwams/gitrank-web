@@ -74,7 +74,7 @@ class PublicAPIController @Inject()(
   def searchRepos(query: String) = Action.async { implicit request =>
     elasticSearchService.searchForRepos(query).map(
       repoNames => repoNames.isEmpty match {
-        case _ => Ok(Json.toJson(repoNames))
+        case _ => Ok(Json.toJson(Map("results" -> repoNames)))
       }
     )
   }

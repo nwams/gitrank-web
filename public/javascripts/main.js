@@ -45,5 +45,22 @@ $(document)
                 $('#scoreSupport').val(value)
             });
 
+        $('.ui.search')
+            .search({
+                apiSettings: {
+                    url: '/search/repo?queryString={query}'
+                },
+                fields: {
+                    results: "results",
+                    title:"title"
+                },
+                onSelect: function value(result, response){
+                    $("#goToRepoInput").val(result.title)
+                    goToRepoInputUrl()
+                }
+            })
+        ;
     });
+
+
 
