@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
 import models.{Contribution, Repository, User}
+import org.apache.http.HttpStatus
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
@@ -16,6 +17,9 @@ import scala.concurrent.Future
 
 
 class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
+  val retry_count = 4
+  val backout_time = 1000l
+
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
@@ -61,13 +65,13 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * @return A repository with all fields initiated except for the score and weight field that are initiated by default
    *         to 0, returns None if the repository was not found
    */
-  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None, retryCount: Int = 100): Future[Option[Repository]] = {
+  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None, retryCount: Int = retry_count): Future[Option[Repository]] = {
 
     buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors").withQueryString(("client_id", githubClientId), ("client_secret", githubClientSecret)), oAuth2Info)
       .get()
       .flatMap(response => {
       response.status match {
-        case 200 =>
+        case HttpStatus.SC_OK =>
           val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
             (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
@@ -85,12 +89,14 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
             .map(response => {
             Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
           })
-        case 202 =>{
+        case HttpStatus.SC_ACCEPTED =>{
           if(retryCount>0) {
-            Thread.sleep(100)
+            Thread.sleep(backout_time)
             getRepository(repositoryName, oAuth2Info, retryCount -1)
           }
-          else Future(None)
+          else {
+            Future(None)
+          }
         }
         case _ => Future(None)
       }
@@ -124,8 +130,8 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
       .get()
       .flatMap(response => {
       response.status match {
-        case 304 => Future(Set())
-        case 200 => {
+        case HttpStatus.SC_NOT_MODIFIED => Future(Set())
+        case HttpStatus.SC_OK => {
           val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
           if (linkHeader.isDefinedAt("next")) {
             doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map((repoList: Set[String]) =>

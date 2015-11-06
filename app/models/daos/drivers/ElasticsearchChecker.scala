@@ -6,6 +6,7 @@ import com.sendgrid.SendGrid
 import com.typesafe.config.ConfigFactory
 import play.api.Play
 
+import scala.util.{Failure, Try}
 import scalaj.http.Http
 
 /**
@@ -23,13 +24,12 @@ class ElasticsearchChecker() {
   val sgRecipients = conf.getString("sendgrid.recipients").split(",")
 
 
-  try {
-
+  Try(
     Http(elasticSearchAPIUrl + elasticSearchAPISearchEndpoint)
       .headers(("Accept", "application/json ; charset=UTF-8"), ("Content-Type", "application/json"))
       .asString
-  } catch {
-    case e: Exception => {
+  ) match {
+    case Failure(e)=>{
       val email = new SendGrid.Email()
       email.setTo(sgRecipients)
       email.setText("Elasticsearch is not working "+e.getMessage )
@@ -37,5 +37,7 @@ class ElasticsearchChecker() {
       email.setSubject("Error detected on deployment environment- Elasticsearch")
       new SendGrid(conf.getString("sendgrid.key")).send(email)
     }
+    case _ =>
+
   }
 }

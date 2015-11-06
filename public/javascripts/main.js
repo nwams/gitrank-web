@@ -54,7 +54,7 @@ $(document)
                     results: "results",
                     title:"title"
                 },
-                onSelect: function value(result, response){
+                onSelect: function value(result){
                     $("#goToRepoInput").val(result.title)
                     goToRepoInputUrl()
                 }
