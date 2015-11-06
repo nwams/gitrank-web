@@ -11,10 +11,13 @@ import modules.CustomGitHubProvider
 import org.specs2.matcher.XmlMatchers
 import org.specs2.specification.BeforeAfterEach
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsObject, JsArray}
-import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
+import play.api.libs.json.{JsArray, JsObject}
+import play.api.mvc._
+import play.api.routing.sird._
+import play.core.server.Server
 import play.filters.csrf.CSRF
 import setup.TestSetup
+import play.api.test._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -22,6 +25,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ApplicationControllerSpec extends PlaySpecification with BeforeAfterEach with XmlMatchers {
 
   def before = TestSetup.populateNeo4JData()
+
+  "Home page" should {
+    "be delivered correctly" in new WithApplication {
+      Server.withRouter() {
+        case GET(p"/search/repositories") => Action {
+          Results.Ok.sendResource("test/resources/github/search_repositories.json")
+        }
+      } {
+        implicit port =>
+          WsTestClient.withClient { client =>
+            val page = route(FakeRequest(GET, "/")).get
+            status(page) must equalTo(OK)
+            contentType(page) must beSome.which(_ == "text/html")
+          }
+      }
+    }
+  }
 
   "Repository page" should {
     "be delivered correctly" in new WithApplication {

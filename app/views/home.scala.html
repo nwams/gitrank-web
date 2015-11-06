@@ -10,7 +10,7 @@
         <div class="ui container">
             <h1 class="ui header inverted">Welcome to <b>Git</b>Rank</h1>
             <h3 class="ui header inverted">A platform where you can easily feedback and discover open source projects</h3>
-            <div class="ui four cards">
+            <div class="ui three cards">
                 @for(repository <- repositories) {
                     <div class="card">
                         <div class="content">
@@ -21,7 +21,7 @@
                             }"> @repository.name</a></div>
                             <div class="meta">
                                 <a href="https://github.com/@repository.name" class="octicon octicon-mark-github"></a> Last Updated on
-                                <span class="date">@repository.updatedAt.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT))</span>
+                                <span class="date">@repository.updatedAt.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))</span>
                             </div>
                             <div class="description">@repository.description</div>
                         </div>

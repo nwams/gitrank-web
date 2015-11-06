@@ -77,3 +77,6 @@ addBuildNumber := {
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
+
+// Change configuration during tests
+javaOptions in Test += "-Dconfig.file=conf/application.test.conf"
