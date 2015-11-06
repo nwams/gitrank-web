@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
 import models.{Quickstart, Contribution, Repository, User}
+import org.apache.http.HttpStatus
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{Json, JsArray, JsValue}
@@ -30,7 +31,7 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
       .map(
         response => {
           response.status match {
-            case 200 => {
+            case HttpStatus.SC_OK => {
               parseResponse(response)
             }
             case _ => Seq()
