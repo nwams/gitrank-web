@@ -70,9 +70,37 @@
         "avatarURL": "http://api.adorable.io/avatars/285/josh@newman.com.png",
         "karma": 1
       }
+    },
+    {
+      "labels": [
+        "User"
+      ],
+      "properties": {
+        "loginInfo": "github:4429209",
+        "username": "callicles",
+        "fullName": "Nicolas Newman",
+        "email": "josh@newman.com",
+        "avatarURL": "http://api.adorable.io/avatars/285/josh@newman.com.png",
+        "karma": 300
+      }
+    },
+    {
+      "labels": [
+        "OAuth2info"
+      ],
+      "properties": {
+        "accessToken": "4010989d59fH9991975931157427a23OIYcd32fb",
+        "tokenType": "bearer"
+      }
     }
   ],
   "edges": [
+    {
+      "type": "HAS_OAUTH2_INFO",
+      "sourceIndex": 7,
+      "targetIndex": 8,
+      "properties": {}
+    },
     {
       "type": "CONTRIBUTED_TO",
       "sourceIndex": 0,

@@ -35,7 +35,8 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,
   filters,
-  ws
+  ws,
+  "org.mashupbots.socko" %% "socko-webserver" % "0.6.0" // server for tests
 )
 
 scalacOptions in Test ++= Seq("-Yrangepos")
