@@ -20,16 +20,5 @@ class ApplicationSpec extends Specification {
         res => status(res) must equalTo(404)
       }
     }
-
-    "render the main page" in new WithApplication {
-      route(FakeRequest(GET, "/")).map{
-        home =>{
-          status(home) must equalTo(OK)
-          contentAsString(home) must contain("GitRank")
-          contentType(home) must beSome.which(_ == "text/html")
-        }
-      }
-
-    }
   }
 }

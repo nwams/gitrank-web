@@ -10,11 +10,14 @@ import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
 import models.{Feedback, User}
 import modules.CustomGitHubProvider
+import play.api.Play
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import play.api.Play.current
 
 
 /**
@@ -40,7 +43,21 @@ class ApplicationController @Inject()(
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(gitHubProvider, request.identity)))
+    val repoCount = Play.configuration.getInt("gitrank.homeReposSuggestions").getOrElse(0)
+
+    request.identity match {
+      case Some(user) => userService.getOAuthInfo(user).flatMap({
+        case Some(oauthInfo) => userService.getScoredRepositoriesNames(user).flatMap(filter =>
+          gitHub.getUserStaredRepositories(repoCount, user, oauthInfo, filter).map(gitHubRepos =>
+            Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
+          )
+        )
+        case None => throw new Error("User spotted without OAuth Credentials: " + user.username)
+      })
+      case None => gitHub.getMostStaredRepositories(repoCount).map(gitHubRepos =>
+        Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
+      )
+    }
   }
 
   /**
@@ -54,7 +71,7 @@ class ApplicationController @Inject()(
 
     if (page.getOrElse(1) <= 0){
       Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the feedback page, unfortunately negative pages have not been invented !"))
+        "We cannot find the feedback page, unfortunately negative pages have not been invented!"))
       )
     } else {
       val repoName: String = owner + "/" + repositoryName
@@ -181,7 +198,7 @@ class ApplicationController @Inject()(
             .map({
               case Some(guide) => Ok(Json.toJson(guide))
               case None => NotFound(views.html.error("notFound", 404, "Not Found",
-                "We cannot find the guide, it is likely that you misspelled it, try something else !"))
+                "We cannot find the guide, it is likely that you misspelled it, try something else!"))
             })
           case _ => quickstartService.updateVote(repository, false, id,request.identity)
             .map({

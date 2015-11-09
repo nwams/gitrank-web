@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "Semantic-UI" % "2.1.4",
   "org.webjars.bower" % "lodash" % "3.10.1",
+  "org.webjars.npm" % "emojify.js" % "1.1.0",
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
@@ -35,7 +36,8 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,
   filters,
-  ws
+  ws,
+  "org.mashupbots.socko" %% "socko-webserver" % "0.6.0" // server for tests
 )
 
 scalacOptions in Test ++= Seq("-Yrangepos")
@@ -77,3 +79,6 @@ addBuildNumber := {
 sources in (Compile, doc) := Seq.empty
 
 publishArtifact in (Compile, packageDoc) := false
+
+// Change configuration during tests
+javaOptions in Test += "-Dconfig.file=conf/application.test.conf"

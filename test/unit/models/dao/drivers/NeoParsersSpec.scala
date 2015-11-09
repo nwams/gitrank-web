@@ -1,26 +1,23 @@
-package unit.models.dao
+package unit.models.dao.drivers
 
 import java.io.ByteArrayInputStream
 
 import com.fasterxml.jackson.core.JsonFactory
 import models.User
-import models.daos.UserDAO
-import models.daos.drivers.Neo4j
+import models.daos.drivers.NeoParsers
 import org.junit.runner._
 import org.specs2.mock.Mockito
 import org.specs2.mutable._
 import org.specs2.runner._
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * Created by brunnoattorre1 on 8/30/15.
  */
 @RunWith(classOf[JUnitRunner])
-class UsersDAOSpec extends Specification with Mockito{
-
-  val neo4jMock = mock[Neo4j]
-
+class NeoParsersSpec extends Specification with Mockito{
 
   def callback (user:Any): Future[Unit] ={
     Future(
@@ -28,31 +25,28 @@ class UsersDAOSpec extends Specification with Mockito{
     )
   }
 
-  "userDAO#parseJson" should {
+  "NeoParsers#parseJson" should {
     "ParseJsonWithSingleUser" in {
-      val mockedFunction = mock[UsersDAOSpec]
+      val mockedFunction = mock[NeoParsersSpec]
       val goodJsonParser = new JsonFactory().createParser(new ByteArrayInputStream("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}".getBytes()));
-      val dao = new UserDAO(neo4jMock)
-      dao.parseJson(goodJsonParser, mockedFunction.callback)
+      val parser = new NeoParsers()
+      parser.parseJson(goodJsonParser, mockedFunction.callback)
       there was one(mockedFunction).callback(any[Any])
     }
     "ParseJsonWithMultipleUsers" in {
-      val mockedFunction = mock[UsersDAOSpec]
+      val mockedFunction = mock[NeoParsersSpec]
       val goodJsonParserTwoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0},{\"email\":\"brattorre@gmail.com\",\"username\":\"brunnoattorre\",\"fullName\":\"Brunno Attorre\",\"avatarURL\":\"https://avatars.githubusercontent.com/u/5482242?v=3\",\"loginInfo\":\"github:5482242\",\"karma\":0}]}]}],\"errors\":[]}");
-      val dao = new UserDAO(neo4jMock)
-      dao.parseJson(goodJsonParserTwoUsers, mockedFunction.callback)
+      val parser = new NeoParsers()
+      parser.parseJson(goodJsonParserTwoUsers, mockedFunction.callback)
       there was two(mockedFunction).callback(any[Any])
 
     }
     "ParseJsonWithNoUsers" in {
-      val mockedFunctionInner = mock[UsersDAOSpec]
+      val mockedFunctionInner = mock[NeoParsersSpec]
       val goodJsonParserNoUsers = new JsonFactory().createParser("{\"results\":[{\"columns\":[\"n\"],\"data\":[{\"row\":[]}]}],\"errors\":[]}");
-      val dao = new UserDAO(neo4jMock)
-      dao.parseJson(goodJsonParserNoUsers, mockedFunctionInner.callback)
+      val parser = new NeoParsers()
+      parser.parseJson(goodJsonParserNoUsers, mockedFunctionInner.callback)
       there was no(mockedFunctionInner).callback(any[Any])
     }
   }
-
-
-
 }

@@ -4,8 +4,6 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.inject.Inject
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
-import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
@@ -104,26 +102,5 @@ class Neo4j @Inject() (ws: WSClient){
         }
 
     }
-  }
-
-  /**
-   * Parser responsible for parsing the jsLookup
-   *
-   * @param user jsLookup for single user
-   * @return a single user
-   */
-  def parseSingleUser(user : JsLookup): User = {
-    val loginInfo = (user \ "loginInfo").as[String]
-    val logInfo = loginInfo.split(":")
-    User(
-      LoginInfo(logInfo(0), logInfo(1)),
-      (user \ "username").as[String],
-      (user \ "fullName").asOpt[String],
-      (user \ "email").asOpt[String],
-      (user \ "avatarURL").asOpt[String],
-      (user \ "karma").as[Int],
-      (user \ "publicEventsETag").asOpt[String],
-      (user \ "lastPublicEventPull").asOpt[Long]
-    )
   }
 }
