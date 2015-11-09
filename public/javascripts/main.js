@@ -46,7 +46,24 @@ $(document)
             });
 
         emojify.setConfig({img_dir : 'assets/lib/emojify.js/dist/images/basic'});
-        emojify.run()
+        emojify.run();
+
+        $('.ui.search')
+            .search({
+                apiSettings: {
+                    url: '/search/repo?queryString={query}'
+                },
+                fields: {
+                    results: "results",
+                    title:"title"
+                },
+                onSelect: function value(result){
+                    $("#goToRepoInput").val(result.title);
+                    goToRepoInputUrl();
+                }
+            });
 
     });
+
+
 

@@ -5,7 +5,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
-import models.{GitHubRepo, Contribution, Repository, User}
+import models.{Contribution, Repository, User, GitHubRepo}
+import org.apache.http.HttpStatus
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
@@ -14,7 +15,11 @@ import play.api.libs.ws._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
+
+class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
+  val retryCount = 4
+  val backoutTime = 1000l
+
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
@@ -38,7 +43,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
         .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
       userContribution.length match {
         case 0 => None
-        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)){
+        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
           (value: JsValue, contribution: Contribution) => {
             Contribution(
               (value \ "w").as[Long],
@@ -60,32 +65,45 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return A repository with all fields initiated except for the score and weight field that are initiated by default
    *         to 0, returns None if the repository was not found
    */
-  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None): Future[Option[Repository]] = {
+  def getRepository(repositoryName: String,
+                    oAuth2Info: Option[OAuth2Info] = None,
+                    retryCount: Int = retryCount): Future[Option[Repository]] = {
+
     buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
       .get()
       .flatMap(response => {
       response.status match {
-        case 200 =>
+        case HttpStatus.SC_OK =>
           val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
             }
           })
 
           val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
             }
           })
 
-          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id",githubClientId),("client_secret",githubClientSecret)), oAuth2Info)
+          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id", githubClientId), ("client_secret", githubClientSecret)), oAuth2Info)
             .get()
             .map(response => {
             Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
           })
+        case HttpStatus.SC_ACCEPTED =>{
+          if(retryCount>0) {
+            Thread.sleep(backoutTime)
+            getRepository(repositoryName, oAuth2Info, retryCount -1)
+          }
+          else {
+            Future(None)
+          }
+        }
         case _ => Future(None)
       }
     })
+
   }
 
   /**
@@ -110,7 +128,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .get()
       .map(response => {
         response.status match {
-          case 200 => (response.json \ "items").as[Seq[GitHubRepo]].take(size)
+          case HttpStatus.SC_OK => (response.json \ "items").as[Seq[GitHubRepo]].take(size)
           case _ => Seq()
         }
       })
@@ -155,7 +173,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .get()
       .flatMap(response =>
         response.status match {
-          case 200 =>
+          case HttpStatus.SC_OK =>
             val linkHeader = parseGitHubLink(response.header("link").getOrElse(""))
             val repoList = response.json.as[Seq[GitHubRepo]]
               .filter(repo => !filter.contains(repo.name))
@@ -186,7 +204,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
     * @return
     */
   def getContributedRepositories(user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
-    doContributionRequest(gitHubApiUrl + "/users/" + user.username +"/events/public", user, oAuth2Info)
+    doContributionRequest(gitHubApiUrl + "/users/" + user.username + "/events/public", user, oAuth2Info)
 
   /**
    * Actual implementation of the request and of the recursion.
@@ -202,15 +220,15 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .get()
       .flatMap(response => {
       response.status match {
-        case 304 => Future(Set())
-        case 200 => {
+        case HttpStatus.SC_NOT_MODIFIED => Future(Set())
+        case HttpStatus.SC_OK => {
           val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
           if (linkHeader.isDefinedAt("next")) {
             doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map((repoList: Set[String]) =>
-            repoList.size match {
-              case 0 => parseRepoNames(response, user.lastPublicEventPull)
-              case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
-            })
+              repoList.size match {
+                case 0 => parseRepoNames(response, user.lastPublicEventPull)
+                case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
+              })
           } else {
             Future(parseRepoNames(response, user.lastPublicEventPull))
           }

@@ -13,6 +13,7 @@ POST        /github/:owner/:repository/quickstart                         @contr
 POST        /github/:owner/:repository/quickstart/:id/:voteType           @controllers.ApplicationController.upVote(owner, repository, id: Int,voteType)
 GET         /github/:owner/:repository/quickstart                         @controllers.ApplicationController.createGuidePage(owner, repository)
 GET         /github/:owner/:repository/quickstart/guides                  @controllers.PublicAPIController.getGuides(owner, repository)
+GET         /search/repo                                                  @controllers.PublicAPIController.searchRepos(queryString: String ?= "")
 
 
 GET         /authenticate/:provider                                       @controllers.SocialAuthController.authenticate(provider)

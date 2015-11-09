@@ -2,8 +2,8 @@
 
 @(gitHubProvider: CustomGitHubProvider, user: Option[models.User] = None)(implicit request: RequestHeader)
 
-<nav class="ui large borderless top menu">
-    <div class="ui container">
+<nav class="ui large borderless top menu" style="z-index: 10000"    >
+    <div class="ui container" >
         <div class="link item">
             <a href="@routes.ApplicationController.index()"><b>Git</b>Rank</a>
         </div>
