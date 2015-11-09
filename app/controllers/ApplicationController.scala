@@ -10,11 +10,14 @@ import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
 import models.{Feedback, User}
 import modules.CustomGitHubProvider
+import play.api.Play
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import play.api.Play.current
 
 
 /**
@@ -40,16 +43,18 @@ class ApplicationController @Inject()(
    * @return The result to display.
    */
   def index = UserAwareAction.async { implicit request =>
+    val repoCount = Play.configuration.getInt("gitrank.homeReposSuggestions").getOrElse(0)
+
     request.identity match {
       case Some(user) => userService.getOAuthInfo(user).flatMap({
         case Some(oauthInfo) => userService.getScoredRepositoriesNames(user).flatMap(filter =>
-          gitHub.getUserStaredRepositories(6, user, oauthInfo, filter).map(gitHubRepos =>
+          gitHub.getUserStaredRepositories(repoCount, user, oauthInfo, filter).map(gitHubRepos =>
             Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
           )
         )
         case None => throw new Error("User spotted without OAuth Credentials: " + user.username)
       })
-      case None => gitHub.getMostStaredRepositories(6).map(gitHubRepos =>
+      case None => gitHub.getMostStaredRepositories(repoCount).map(gitHubRepos =>
         Ok(views.html.home(gitHubProvider, request.identity, gitHubRepos))
       )
     }

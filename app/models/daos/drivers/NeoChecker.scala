@@ -10,7 +10,7 @@ import scalaj.http.Http
  *
  * This is not in the neo4j driver since the driver needs play to run and cannot be eagerly instantiated.
  */
-class ConnectionChecker (){
+class NeoChecker (){
 
   val conf = ConfigFactory.load
 

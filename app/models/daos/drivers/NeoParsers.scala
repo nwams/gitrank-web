@@ -210,7 +210,7 @@ class NeoParsers {
     }
   }
 
-  implicit val OAuth2InfoWrites: Writes[OAuth2Info] = (
+  implicit val oAuth2InfoWrites: Writes[OAuth2Info] = (
     (JsPath \ "accessToken").write[String] and
       (JsPath \ "tokenType").writeNullable[String] and
       (JsPath \ "expiresIn").writeNullable[Int] and

@@ -18,16 +18,14 @@
                 <div class="link item">
                     <a href="@routes.ApplicationController.index()"><b>Git</b>Rank</a>
                 </div>
-                <div class="right menu">
-                    <div class="item">
-                        <div class="ui action input">
-                            <div class="ui search">
-                                <input class="prompt" id="goToRepoInput"  type="text" placeholder="Enter owner/repository">
-                                <div id="searchResult" class="results"></div>
-                            </div>
-                            <div id="goToRepoButton" class="ui primary button">Go</div>
-                        </div>
+                <div class="ui fluid category search item">
+
+                    <div class="ui icon input">
+                        <input id="goToRepoInput" class="prompt" type="text" placeholder="Search project ...">
+                        <i id="goToRepoButton" class="search icon"></i>
                     </div>
+                    <div class="results"></div>
+
                 </div>
             </div>
         </nav>

@@ -1,7 +1,7 @@
 package modules
 
 import com.google.inject.AbstractModule
-import models.daos.drivers.{ElasticsearchChecker, ConnectionChecker}
+import models.daos.drivers.{NeoChecker, ElasticsearchChecker}
 import net.codingwell.scalaguice.ScalaModule
 
 /**
@@ -10,7 +10,7 @@ import net.codingwell.scalaguice.ScalaModule
 class GitrankModule extends AbstractModule with ScalaModule{
 
   def configure() = {
-    bind[ConnectionChecker].asEagerSingleton()
+    bind[NeoChecker].asEagerSingleton()
     bind[ElasticsearchChecker].asEagerSingleton()
 
   }
