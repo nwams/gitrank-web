@@ -2,16 +2,17 @@ package models.daos
 
 import javax.inject.Inject
 
+import models.daos.drivers.{Neo4j, NeoParsers}
 import models.{Feedback, Score}
-import models.daos.drivers.Neo4j
-import play.api.libs.json.{JsArray, JsUndefined, Json}
+import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
-class ScoreDAO @Inject()(neo: Neo4j) {
+class ScoreDAO @Inject()(neo: Neo4j,
+                        parser: NeoParsers) {
 
   /**
    * Saves a score into the data store.
@@ -34,7 +35,7 @@ class ScoreDAO @Inject()(neo: Neo4j) {
         "repoName" -> repoName,
         "props" -> Json.toJson(score)
       )
-    ).map(parseNeoScore)
+    ).map(parser.parseNeoScore)
   }
 
 
@@ -56,7 +57,7 @@ class ScoreDAO @Inject()(neo: Neo4j) {
         "username" -> username,
         "repoName" -> repoName
       )
-    ).map(parseNeoScore)
+    ).map(parser.parseNeoScore)
   }
 
 
@@ -101,7 +102,7 @@ class ScoreDAO @Inject()(neo: Neo4j) {
         "repoName" -> repoName,
         "props" -> Json.toJson(score)
       )
-    ).map(parseNeoScore)
+    ).map(parser.parseNeoScore)
   }
 
   /**
@@ -128,7 +129,7 @@ class ScoreDAO @Inject()(neo: Neo4j) {
         "feedbackSkip" -> (page - 1) * itemsPerPage,
         "pageSize" -> itemsPerPage
       )
-    ).map(parseNeoFeedbackList)
+    ).map(parser.parseNeoFeedbackList)
   }
 
   /**
@@ -154,7 +155,7 @@ class ScoreDAO @Inject()(neo: Neo4j) {
         "scoreSkip" -> (page - 1) * itemsPerPage,
         "pageSize" -> itemsPerPage
       )
-    ).map(parseNeoScoreList)
+    ).map(parser.parseNeoScoreList)
   }
 
   /**
@@ -172,37 +173,5 @@ class ScoreDAO @Inject()(neo: Neo4j) {
       """,
       Json.obj("repoName" -> repoName)
     ).map(response => (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
-  }
-
-  /**
-   * Should parse a result list of feedback and get it back
-   *
-   * @param response response from neo
-   * @return Seq of Scores
-   */
-  def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      Feedback(neo.parseSingleUser((jsValue \ "row")(1)), (jsValue \ "row")(0).as[Score]))
-
-  /**
-   * Should parse a result list of scores and get it back
-   *
-   * @param response response from neo
-   * @return Seq of Scores
-   */
-  def parseNeoScoreList(response: WSResponse): Seq[Score] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
-
-  /**
-   * Parses a neo Score into a model
-   *
-   * @param response response from neo
-   * @return
-   */
-  def parseNeoScore(response: WSResponse): Option[Score] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case score => score.asOpt[Score]
-    }
   }
 }

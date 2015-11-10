@@ -5,7 +5,7 @@ import javax.inject._
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.daos.drivers.GitHubAPI
+import models.daos.drivers.{NeoParsers, GitHubAPI}
 import models.daos._
 import models.{Contribution, Repository, Score, User}
 import modules.CustomSocialProfile
@@ -20,6 +20,7 @@ import scala.concurrent.Future
  */
 @Singleton
 class UserService @Inject() (gitHubAPi: GitHubAPI,
+                                 parser: NeoParsers,
                                  userDAO: UserDAO,
                                  contributionDAO: ContributionDAO,
                                  scoreDAO: ScoreDAO,
@@ -113,8 +114,10 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
                 case Some(existingContribution) =>
                   contributionDAO.update(user.username, repositoryName, existingContribution.copy(
                     timestamp = contribution.timestamp,
-                    addedLines = existingContribution.addedLines + contribution.addedLines - contributionDAO.parseWeekAddedLines(existingContribution.currentWeekBuffer),
-                    removedLines = existingContribution.removedLines + contribution.removedLines - contributionDAO.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
+                    addedLines = existingContribution.addedLines + contribution.addedLines -
+                      parser.parseWeekAddedLines(existingContribution.currentWeekBuffer),
+                    removedLines = existingContribution.removedLines + contribution.removedLines -
+                      parser.parseWeekDeletedLines(existingContribution.currentWeekBuffer),
                     currentWeekBuffer = contribution.currentWeekBuffer
                   ))
                 case None => contributionDAO.add(user.username, repositoryName, contribution)
@@ -141,7 +144,8 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    * @param score score to be saved.
    * @return saved score.
    */
-  def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] = scoreDAO.save(username, repoName, score)
+  def scoreRepository(username: String, repoName:String, score: Score): Future[Option[Score]] =
+    scoreDAO.save(username, repoName, score)
 
   /**
    * Updates the user's karma according to its contributions
@@ -150,4 +154,13 @@ class UserService @Inject() (gitHubAPi: GitHubAPI,
    * @return
    */
   def propagateKarma (user: User) = karmaService.propagateUserKarma(user)
+
+  /**
+    * Gets the list of all the names of the repos the user has already scored
+    *
+    * @param user to get the score from
+    * @return Sequence of repository names
+    */
+  def getScoredRepositoriesNames(user: User): Future[Seq[String]] =
+    userDAO.findScoredRepositories(user).map(_.map(repo => repo.name))
 }

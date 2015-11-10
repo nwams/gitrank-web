@@ -3,15 +3,15 @@ package models.daos
 import javax.inject.Inject
 
 import models.Repository
-import models.daos.drivers.Neo4j
-import play.api.libs.json.{JsUndefined, Json}
-import play.api.libs.ws.WSResponse
+import models.daos.drivers.{Neo4j, NeoParsers}
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class RepositoryDAO @Inject() (neo: Neo4j) {
+class RepositoryDAO @Inject() (neo: Neo4j,
+                              parser: NeoParsers) {
 
   /**
    * Finds a Repository by its name.
@@ -22,7 +22,7 @@ class RepositoryDAO @Inject() (neo: Neo4j) {
   def find(name: String): Future[Option[Repository]] = {
     neo.cypher("MATCH (n:Repository) WHERE n.name = {name} RETURN n", Json.obj(
       "name" -> name
-    )).map(parseNeoRepo)
+    )).map(parser.parseNeoRepo)
   }
 
   /**
@@ -34,7 +34,7 @@ class RepositoryDAO @Inject() (neo: Neo4j) {
   def find(repoID: Int): Future[Option[Repository]] = {
     neo.cypher("MATCH (n:Repository) WHERE n.repoID = {id} RETURN n", Json.obj(
       "id" -> repoID
-    )).map(parseNeoRepo)
+    )).map(parser.parseNeoRepo)
   }
 
   /**
@@ -61,29 +61,4 @@ class RepositoryDAO @Inject() (neo: Neo4j) {
       "props" -> Json.toJson(repository)
     )).map(response => repository)
   }
-
-
-
-
-  /**
-   * Gets all the contributors for a given repository with all their contributions
-   *
-   * @return A Sequence of contributors
-   */
-  def parseNeoRepo(response: WSResponse): Option[Repository] = {
-    (((Json.parse(response.body) \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case repo => {
-        Some(Repository(
-          (repo \ "repoID").as[Int],
-          (repo \ "addedLines").as[Int],
-          (repo \ "removedLines").as[Int],
-          (repo \ "karmaWeight").as[Int],
-          (repo \ "name").as[String],
-          (repo \ "score").as[Float]
-        ))
-      }
-    }
-  }
-
 }

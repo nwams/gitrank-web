@@ -2,15 +2,15 @@ package models.daos
 
 import javax.inject.Inject
 
-import models.{Quickstart, Score}
-import models.daos.drivers.Neo4j
-import play.api.libs.json.{JsArray, JsUndefined, Json}
-import play.api.libs.ws.WSResponse
+import models.Quickstart
+import models.daos.drivers.{Neo4j, NeoParsers}
+import play.api.libs.json.Json
 
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class QuickstartDAO @Inject()(neo: Neo4j) {
+class QuickstartDAO @Inject()(neo: Neo4j,
+                             parser: NeoParsers) {
 
   /**
    * Saves a quickstart guide into the data store.
@@ -26,14 +26,14 @@ class QuickstartDAO @Inject()(neo: Neo4j) {
         MATCH (u:User),(r:Repository)
         WHERE u.username={username} AND r.name={repoName}
         CREATE UNIQUE (u)-[c:QUICKSTARTED {props}]->(r)
-        RETURN c
+        RETURN {id: id(c), properties: c}
       """,
       Json.obj(
         "username" -> username,
         "repoName" -> repoName,
         "props" -> Json.toJson(quickstart)
       )
-    ).map(parseNeoQuickstart)
+    ).map(parser.parseNeoQuickstart)
   }
 
   /**
@@ -53,80 +53,57 @@ class QuickstartDAO @Inject()(neo: Neo4j) {
       """
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
         WHERE r.name={repoName}
-        RETURN c ORDER BY c.timestamp DESC SKIP {scoreSkip} LIMIT {pageSize}
+        RETURN {id: id(c), properties: c} ORDER BY c.upvote DESC SKIP {scoreSkip} LIMIT {pageSize}
       """, Json.obj(
         "repoName" -> repoName,
         "scoreSkip" -> (page - 1) * itemsPerPage,
         "pageSize" -> itemsPerPage
       )
-    ).map(parseNeoQuickstartList)
+    ).map(parser.parseNeoQuickstartList)
   }
-
 
   /**
    * Update a quickstart guide
-   * @param title title of the guide
+   *
+   * @param id id of the guide
    * @param repoName repository name
    * @param quickstart data to be updated
    * @return quickstart guide updated
    */
-  def update(title: String, repoName: String, quickstart: Quickstart): Future[Option[Quickstart]] = {
+  def update(id: Int, repoName: String, quickstart: Quickstart): Future[Option[Quickstart]] = {
     neo.cypher(
       """
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
-        WHERE c.title={title} AND r.name={repoName}
+        WHERE id(c)={id} AND r.name={repoName}
         SET c={props}
-        RETURN c
+        RETURN {id: id(c), properties: c}
       """,
       Json.obj(
-        "title" -> title,
+        "id" -> id,
         "repoName" -> repoName,
         "props" -> Json.toJson(quickstart)
       )
-    ).map(parseNeoQuickstart)
+    ).map(parser.parseNeoQuickstart)
   }
 
   /**
    * Find a single quickstart guide
+   *
    * @param repoName name of the repo
-   * @param title title of the guide
+   * @param id id of the guide
    * @return guide itself
    */
-  def findRepositoryGuide(repoName: String, title: String): Future[Option[Quickstart]] = {
+  def findRepositoryGuide(repoName: String, id: Int): Future[Option[Quickstart]] = {
 
     neo.cypher(
       """
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
-        WHERE r.name={repoName}  AND c.title ={title}
-        RETURN c ORDER BY c.timestamp DESC
+        WHERE r.name={repoName}  AND id(c) = {id}
+        RETURN {id:id(c), properties: c} ORDER BY c.timestamp DESC
       """, Json.obj(
         "repoName" -> repoName,
-        "title" -> title
+        "id" -> id
       )
-    ).map(parseNeoQuickstart)
+    ).map(parser.parseNeoQuickstart)
   }
-
-  /**
-   * Parses a neo Quickstart into a model
-   *
-   * @param response response from neo
-   * @return Quickstart object
-   */
-  def parseNeoQuickstart(response: WSResponse): Option[Quickstart] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
-      case _: JsUndefined => None
-      case score => score.asOpt[Quickstart]
-    }
-  }
-
-  /**
-   * Should parse a result list of quickstarts and get it back
-   *
-   * @param response response from neo
-   * @return Seq of quickstarters
-   */
-  def parseNeoQuickstartList(response: WSResponse): Seq[Quickstart] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Quickstart])
-
-
 }

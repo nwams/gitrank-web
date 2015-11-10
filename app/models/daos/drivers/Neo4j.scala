@@ -4,8 +4,6 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import javax.inject.Inject
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
-import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
@@ -28,22 +26,6 @@ class Neo4j @Inject() (ws: WSClient){
 
   val neo4jUser = Play.configuration.getString("neo4j.username").getOrElse("neo4j")
   val neo4jPassword = Play.configuration.getString("neo4j.password").getOrElse("neo4j")
-
-  ws.url(neo4jEndpoint)
-    .withAuth(neo4jUser, neo4jPassword, WSAuthScheme.BASIC)
-    .withHeaders("Accept" -> "application/json ; charset=UTF-8", "Content-Type" -> "application/json")
-    .withRequestTimeout(10000)
-    .get()
-    .map(res => {
-    res.status match {
-      case 200 =>
-        val json = Json.parse(res.body)
-        if ((json \ "errors").as[Seq[JsObject]].nonEmpty) {
-          throw new Exception(res.body)
-        }
-      case _ => throw new Exception("Could not Connect to the Neo4j Database")
-    }
-  })
 
   /**
    * Sends a Cypher query to the neo4j server
@@ -120,26 +102,5 @@ class Neo4j @Inject() (ws: WSClient){
         }
 
     }
-  }
-
-  /**
-   * Parser responsible for parsing the jsLookup
-   *
-   * @param user jsLookup for single user
-   * @return a single user
-   */
-  def parseSingleUser(user : JsLookup): User = {
-    val loginInfo = (user \ "loginInfo").as[String]
-    val logInfo = loginInfo.split(":")
-    User(
-      LoginInfo(logInfo(0), logInfo(1)),
-      (user \ "username").as[String],
-      (user \ "fullName").asOpt[String],
-      (user \ "email").asOpt[String],
-      (user \ "avatarURL").asOpt[String],
-      (user \ "karma").as[Int],
-      (user \ "publicEventsETag").asOpt[String],
-      (user \ "lastPublicEventPull").asOpt[Long]
-    )
   }
 }

@@ -5,7 +5,8 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models.daos.OAuth2InfoDAO
-import models.{Contribution, Repository, User}
+import models.{Contribution, Repository, User, GitHubRepo}
+import org.apache.http.HttpStatus
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{JsArray, JsValue}
@@ -14,7 +15,11 @@ import play.api.libs.ws._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
+
+class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
+  val retryCount = 4
+  val backoutTime = 1000l
+
 
   val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
@@ -38,7 +43,7 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
         .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
       userContribution.length match {
         case 0 => None
-        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)){
+        case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
           (value: JsValue, contribution: Contribution) => {
             Contribution(
               (value \ "w").as[Long],
@@ -60,45 +65,146 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
    * @return A repository with all fields initiated except for the score and weight field that are initiated by default
    *         to 0, returns None if the repository was not found
    */
-  def getRepository(repositoryName: String, oAuth2Info: Option[OAuth2Info] = None): Future[Option[Repository]] = {
-    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors").withQueryString(("client_id",githubClientId),("client_secret",githubClientSecret)), oAuth2Info)
+  def getRepository(repositoryName: String,
+                    oAuth2Info: Option[OAuth2Info] = None,
+                    retryCount: Int = retryCount): Future[Option[Repository]] = {
+
+    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
       .get()
       .flatMap(response => {
       response.status match {
-        case 200 =>
+        case HttpStatus.SC_OK =>
           val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
             }
           })
 
           val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator){
+            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
               (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
             }
           })
 
-          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id",githubClientId),("client_secret",githubClientSecret)), oAuth2Info)
+          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id", githubClientId), ("client_secret", githubClientSecret)), oAuth2Info)
             .get()
             .map(response => {
             Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
           })
+        case HttpStatus.SC_ACCEPTED =>{
+          if(retryCount>0) {
+            Thread.sleep(backoutTime)
+            getRepository(repositoryName, oAuth2Info, retryCount -1)
+          }
+          else {
+            Future(None)
+          }
+        }
         case _ => Future(None)
       }
     })
+
   }
 
   /**
-   * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
-   * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
-   * with a 90 days limit to the api. This is the best we can do using the direct API.
-   *
-   * @param user user you want to get the contributions from
-   * @param oAuth2Info Authentication information of the user
-   * @return
-   */
+    * Gets the most stared repositories from GitHub.
+    *
+    * @param size How many repositories do we want, should be less than a 100 (GitHub page limit)
+    * @param oAuth2Info Oauth information of the current user
+    * @param filters filters the result by excluding the String list from the search results
+    * @return a Sequence of GitHub repositories
+    */
+  def getMostStaredRepositories( size: Int,
+                                 oAuth2Info: Option[OAuth2Info]= None,
+                                filters: Seq[String] = Seq()
+                               ): Future[Seq[GitHubRepo]] = {
+
+    val query = "stars:\"> 1000\" " + filters.map(filter => "NOT \""+filter+"\"").mkString(" ")
+
+    buildGitHubReq(ws.url(gitHubApiUrl + "/search/repositories"), oAuth2Info)
+      .withQueryString(
+        ("q", query),
+        ("sort", "stars"))
+      .get()
+      .map(response => {
+        response.status match {
+          case HttpStatus.SC_OK => (response.json \ "items").as[Seq[GitHubRepo]].take(size)
+          case _ => Seq()
+        }
+      })
+  }
+
+  /**
+    * Public API for making the request to GitHub to populate the homepage when the user is connected
+    *
+    * @param size number of item we want
+    * @param user user requesting the content
+    * @param oAuth2Info auth information of the current user
+    * @param filter list of the repo names that we do not want to be in the result
+    * @return
+    */
+  def getUserStaredRepositories(size: Int,
+                                user: User,
+                                oAuth2Info: OAuth2Info,
+                                filter: Seq[String] = Seq()
+                               ): Future[Seq[GitHubRepo]] =
+    doUserStaredRepositoriesQuery(gitHubApiUrl + "/users/" + user.username + "/starred",size, user, oAuth2Info, filter)
+
+  /**
+    * This is a method that makes the query to get the user stared repository. This is a recursive function made
+    * so to use the link header of the GitHub API if necessary to go through the pages
+    *
+    * @param url url to make the request to. (user starred url)
+    * @param size size of the sequence of repo to return
+    * @param user user that is making the request
+    * @param oAuth2Info auth information about the connected user
+    * @param filter filter containing the repo name we want to exclude from the research.
+    * @return
+    */
+  private def doUserStaredRepositoriesQuery(
+                                             url: String,
+                                             size: Int,
+                                             user: User,
+                                             oAuth2Info: OAuth2Info,
+                                             filter: Seq[String] = Seq()
+                                           ): Future[Seq[GitHubRepo]] = {
+
+    buildGitHubReq(ws.url(url), Some(oAuth2Info))
+      .get()
+      .flatMap(response =>
+        response.status match {
+          case HttpStatus.SC_OK =>
+            val linkHeader = parseGitHubLink(response.header("link").getOrElse(""))
+            val repoList = response.json.as[Seq[GitHubRepo]]
+              .filter(repo => !filter.contains(repo.name))
+              .take(size)
+
+            if (repoList.length < size && !linkHeader.isDefinedAt("next")){
+              getMostStaredRepositories(size - repoList.length, Some(oAuth2Info), filter)
+                .map(publicRepos => publicRepos ++ repoList)
+            } else if (repoList.length < size && linkHeader.isDefinedAt("next")){
+              doUserStaredRepositoriesQuery(linkHeader.get("next").get, size - repoList.length, user, oAuth2Info, filter)
+                .map(innerRepoList => repoList ++ innerRepoList)
+            } else {
+              Future.successful(repoList)
+            }
+
+          case _ => getMostStaredRepositories(size, Some(oAuth2Info))
+        }
+      )
+  }
+
+  /**
+    * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
+    * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
+    * with a 90 days limit to the api. This is the best we can do using the direct API.
+    *
+    * @param user user you want to get the contributions from
+    * @param oAuth2Info Authentication information of the user
+    * @return
+    */
   def getContributedRepositories(user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
-    doContributionRequest(gitHubApiUrl + "/users/" + user.username +"/events/public", user, oAuth2Info)
+    doContributionRequest(gitHubApiUrl + "/users/" + user.username + "/events/public", user, oAuth2Info)
 
   /**
    * Actual implementation of the request and of the recursion.
@@ -114,15 +220,15 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .get()
       .flatMap(response => {
       response.status match {
-        case 304 => Future(Set())
-        case 200 => {
+        case HttpStatus.SC_NOT_MODIFIED => Future(Set())
+        case HttpStatus.SC_OK => {
           val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
           if (linkHeader.isDefinedAt("next")) {
             doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map((repoList: Set[String]) =>
-            repoList.size match {
-              case 0 => parseRepoNames(response, user.lastPublicEventPull)
-              case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
-            })
+              repoList.size match {
+                case 0 => parseRepoNames(response, user.lastPublicEventPull)
+                case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
+              })
           } else {
             Future(parseRepoNames(response, user.lastPublicEventPull))
           }
@@ -145,7 +251,10 @@ class GitHubAPI @Inject() (ws: WSClient, oauthDAO: OAuth2InfoDAO){
       .withRequestTimeout(10000)
 
     oauthInfo match {
-      case None => req
+      case None => req.withQueryString(
+          ("client_id", githubClientId),
+          ("client_secret", githubClientSecret)
+        )
       case Some(oAuth) =>req.withHeaders("Authorization" -> ("token "+ oAuth.accessToken))
     }
   }
