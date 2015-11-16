@@ -41,7 +41,7 @@ function appendAndSort(listDOM, div){
     }
     var list = [];
     for (var i in listDOM) {
-        if (listDOM[i].nodeType == 1 && listDOM[i].getAttribute("upvote")!= null) { // get rid of the whitespace text nodes
+        if (listDOM[i].nodeType === 1 && listDOM[i].getAttribute("upvote")!= null) { // get rid of the whitespace text nodes
             list.push(listDOM[i]);
         }
     }
