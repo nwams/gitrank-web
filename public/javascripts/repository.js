@@ -35,6 +35,21 @@ function buildQuickstartGuides(data) {
     data.forEach(createGuideElement);
 }
 
+function appendAndSort(listDOM, div){
+    var sort_by_name = function(a, b) {
+        return  b.getAttribute("upvote") - a.getAttribute("upvote");
+    }
+    var list = [];
+    for (var i in listDOM) {
+        if (listDOM[i].nodeType === 1 && listDOM[i].getAttribute("upvote")!= null) { // get rid of the whitespace text nodes
+            list.push(listDOM[i]);
+        }
+    }
+    list.push(div)
+    list.sort(sort_by_name);
+    return list
+
+}
 function createGuideElement (guide){
     var div = document.createElement('div');
     div.className = 'comment';
@@ -57,16 +72,23 @@ function createGuideElement (guide){
 
     var icon = document.createElement('i');
     icon.className = 'ui thumbs up icon';
-    icon.setAttribute("style", "cursor: pointer");
+    if( $('.right.menu').find('.avatar').length >= 1) {
+        icon.setAttribute("style", "cursor: pointer");
 
-    icon.onclick= function(){ upvote( guide.id ); } ;
+        icon.onclick= function(){ upvote( guide.id ); } ;
+    }
     thumbsup.appendChild(icon);
 
     icon = document.createElement('i');
     icon.id = 'thumbsdown';
     icon.className = 'ui thumbs down icon';
-    icon.onclick= function(){ downvote( guide.id ); } ;
-    icon.setAttribute("style", "cursor: pointer");
+    if( $('.right.menu').find('.avatar').length >= 1) {
+        icon.onclick = function () {
+            downvote(guide.id);
+        };
+        icon.setAttribute("style", "cursor: pointer");
+
+    }
     thumbsdown.appendChild(icon);
 
 
@@ -74,7 +96,15 @@ function createGuideElement (guide){
     div.appendChild(description);
     div.appendChild(thumbsup);
     div.appendChild(thumbsdown);
-    document.getElementById("guides").appendChild(div);
+    div.setAttribute("upvote", guide.upvote);
+
+
+    var listDOM = document.getElementById("guides").childNodes;
+    var list = appendAndSort(listDOM, div)
+    for (var i = 0; i < list.length; i++) {
+        document.getElementById("guides").appendChild(list[i]);
+    }
+
 }
 
 function buildParallelCoordinates(data) {
