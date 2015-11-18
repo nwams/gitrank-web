@@ -14,7 +14,7 @@
                 @for(repository <- repositories) {
                     <div class="card">
                         <div class="content">
-                            <span class="right floated"><i class="star icon"></i>@repository.stars</span>
+                            <span class="right floated"><i class="octicon octicon-star"></i> @repository.stars</span>
                             <div class="header"><a href="@{
                                 val repoData = repository.name.split("/")
                                 routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None)
