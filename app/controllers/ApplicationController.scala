@@ -69,7 +69,7 @@ class ApplicationController @Inject()(
    */
   def gitHubRepository(owner: String, repositoryName: String, page: Option[Int] = None) = UserAwareAction.async { implicit request =>
 
-    if (page.getOrElse(1) <= 0){
+    if (page.getOrElse(1) <= 0) {
       Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
         "We cannot find the feedback page, unfortunately negative pages have not been invented!"))
       )
@@ -83,9 +83,9 @@ class ApplicationController @Inject()(
               repoService.canAddFeedback(repoName, request.identity).flatMap({
                 case true => repoService.canUpdateFeedback(repoName, request.identity).map(
                   canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
-                  (owner, repositoryName, page.getOrElse(1))))
+                    (owner, repositoryName, page.getOrElse(1))))
                 case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
-                (owner, repositoryName, page.getOrElse(1))))
+                  (owner, repositoryName, page.getOrElse(1))))
               })
             } else {
               Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
@@ -110,9 +110,19 @@ class ApplicationController @Inject()(
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) =>
-        repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
-          Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
-        )
+        request.identity match {
+          case Some(user) => owner match {
+            case user.username => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+            case _ => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
+                repoService.getMapScoreFromUser(repoName,user.username).map(map => Ok(views.html.feedbackForm(gitHubProvider, request.identity)
+                  (owner, repositoryName, FeedbackForm.form.bind(map), canUpdate)) )
+            )
+          }
+          case None => repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
+            Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
+          )
+        }
+
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
@@ -125,7 +135,7 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system (GitHub)
    * @return Redirect to repo page
    */
-  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async {implicit request =>
+  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async { implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest(views.html.feedbackForm(gitHubProvider, Some(request.identity))
         (owner, repositoryName, formWithErrors, update.getOrElse(false)))),
@@ -196,16 +206,17 @@ class ApplicationController @Inject()(
         voteType match {
           case "upvote" => quickstartService.updateVote(repository, true, id, request.identity)
             .map({
-              case Some(guide) => Ok(Json.toJson(guide))
-              case None => NotFound(views.html.error("notFound", 404, "Not Found",
-                "We cannot find the guide, it is likely that you misspelled it, try something else!"))
-            })
-          case _ => quickstartService.updateVote(repository, false, id,request.identity)
+            case Some(guide) => Ok(Json.toJson(guide))
+            case None => NotFound(views.html.error("notFound", 404, "Not Found",
+              "We cannot find the guide, it is likely that you misspelled it, try something else!"))
+          })
+          case _ => quickstartService.updateVote(repository, false, id, request.identity)
             .map({
-              case Some(guide) => Ok(Json.toJson(guide))
-              case None => println("===>test2");NotFound(views.html.error("notFound", 404, "Not Found",
+            case Some(guide) => Ok(Json.toJson(guide))
+            case None => println("===>test2");
+              NotFound(views.html.error("notFound", 404, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
-            })
+          })
         }
       case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
