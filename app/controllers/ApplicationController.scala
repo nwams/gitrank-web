@@ -10,7 +10,9 @@ import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
 import models.{Feedback, User}
 import modules.CustomGitHubProvider
+import org.apache.http.HttpStatus
 import play.api.Play
+import play.api.http.Status
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 
@@ -36,6 +38,7 @@ class ApplicationController @Inject()(
                                        gitHub: GitHubAPI,
                                        quickstartService: QuickstartService)
   extends Silhouette[User, SessionAuthenticator] {
+
 
   /**
    * Handles the main action.
@@ -70,7 +73,7 @@ class ApplicationController @Inject()(
   def gitHubRepository(owner: String, repositoryName: String, page: Option[Int] = None) = UserAwareAction.async { implicit request =>
 
     if (page.getOrElse(1) <= 0) {
-      Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
+      Future.successful(NotFound(views.html.error("notFound",HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the feedback page, unfortunately negative pages have not been invented!"))
       )
     } else {
@@ -88,12 +91,12 @@ class ApplicationController @Inject()(
                   (owner, repositoryName, page.getOrElse(1))))
               })
             } else {
-              Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
+              Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
                 "The requested page does not exist")))
             }
           })
         )
-        case None => Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
+        case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
           "We cannot find the repository page, it is likely that you misspelled it, try something else!")))
       })
     }
@@ -123,7 +126,7 @@ class ApplicationController @Inject()(
           )
         }
 
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+      case None => Future(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
@@ -185,7 +188,7 @@ class ApplicationController @Inject()(
     repoService.getFromNeoOrGitHub(request.identity, repoName).map({
       case Some(repository) =>
         Ok(views.html.quickstartGuide(gitHubProvider, request.identity)(owner, repositoryName, QuickstartForm.form))
-      case None => NotFound(views.html.error("notFound", 404, "Not Found",
+      case None => NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!"))
     })
   }
@@ -207,18 +210,18 @@ class ApplicationController @Inject()(
           case "upvote" => quickstartService.updateVote(repository, true, id, request.identity)
             .map({
             case Some(guide) => Ok(Json.toJson(guide))
-            case None => NotFound(views.html.error("notFound", 404, "Not Found",
+            case None => NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
               "We cannot find the guide, it is likely that you misspelled it, try something else!"))
           })
           case _ => quickstartService.updateVote(repository, false, id, request.identity)
             .map({
             case Some(guide) => Ok(Json.toJson(guide))
             case None => println("===>test2");
-              NotFound(views.html.error("notFound", 404, "Not Found",
+              NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
           })
         }
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+      case None => Future(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
