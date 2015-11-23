@@ -113,17 +113,14 @@ class ApplicationController @Inject()(
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) =>
-        request.identity match {
-          case Some(user) => owner match {
-            case user.username => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
-            case _ => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
-                repoService.getMapScoreFromUser(repoName,user.username).map(map => Ok(views.html.feedbackForm(gitHubProvider, request.identity)
+        repoService.canAddFeedback(repoName, request.identity).flatMap{
+          case canAdd => canAdd match {
+            case false => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+            case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
+                repoService.getMapScoreFromUser(repoName,request.identity).map(map => Ok(views.html.feedbackForm(gitHubProvider, request.identity)
                   (owner, repositoryName, FeedbackForm.form.bind(map), canUpdate)) )
             )
           }
-          case None => repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
-            Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
-          )
         }
 
       case None => Future(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
@@ -216,7 +213,7 @@ class ApplicationController @Inject()(
           case _ => quickstartService.updateVote(repository, false, id, request.identity)
             .map({
             case Some(guide) => Ok(Json.toJson(guide))
-            case None => println("===>test2");
+            case None => 
               NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
           })

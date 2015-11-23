@@ -161,13 +161,17 @@ class RepositoryService @Inject()(
   /**
    * Get a map with a user feedback
    * @param repoName repository of the feedback
-   * @param username username
+   * @param user user of the request
    * @return map with feedback values
    */
-  def getMapScoreFromUser(repoName:String, username:String ): Future[Map[String,String]]={
-    getScoreFromUser(repoName,username).map{
-      score => score.fold(HashMap[String,String]())(x => x.toMap())
+  def getMapScoreFromUser(repoName:String, user:Option[User] ): Future[Map[String,String]]={
+    user match {
+      case Some(u) =>  getScoreFromUser(repoName,u.username).map{
+        score => score.fold(HashMap[String,String]())(x => x.toMap())
+      }
+      case None => Future.successful(HashMap[String,String]())
     }
+
   }
   /**
    * Get all the scoring made for a repository for the given page and item per page.
