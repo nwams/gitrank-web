@@ -117,9 +117,12 @@ class ApplicationController @Inject()(
           case canAdd => canAdd match {
             case false => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
             case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
-                repoService.getMapScoreFromUser(repoName,request.identity).map(map => Ok(views.html.feedbackForm(gitHubProvider, request.identity)
-                  (owner, repositoryName, FeedbackForm.form.bind(map), canUpdate)) )
-            )
+                repoService.getMapScoreFromUser(repoName,request.identity).map(map =>
+                  map.isEmpty match {
+                    case false => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form.bind(map), canUpdate))
+                    case true => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
+                  }
+            ))
           }
         }
 
@@ -213,7 +216,7 @@ class ApplicationController @Inject()(
           case _ => quickstartService.updateVote(repository, false, id, request.identity)
             .map({
             case Some(guide) => Ok(Json.toJson(guide))
-            case None => 
+            case None =>
               NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
           })
