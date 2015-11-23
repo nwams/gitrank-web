@@ -113,18 +113,22 @@ class ApplicationController @Inject()(
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) =>
-        repoService.canAddFeedback(repoName, request.identity).flatMap{
-          case canAdd => canAdd match {
-            case false => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
-            case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
+        request.identity match {
+          case Some(id) => repoService.canAddFeedback(repoName, request.identity).flatMap{
+            case canAdd => canAdd match {
+              case false => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+              case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
                 repoService.getMapScoreFromUser(repoName,request.identity).map(map =>
                   map.isEmpty match {
                     case false => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form.bind(map), canUpdate))
                     case true => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
                   }
-            ))
+                ))
+            }
           }
+          case None => Future.successful(Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, false)))
         }
+
 
       case None => Future(NotFound(views.html.error("notFound", STATUS_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
