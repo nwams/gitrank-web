@@ -9,12 +9,12 @@
     <div class="masthead home">
         <div class="ui container">
             <h1 class="ui header inverted">Welcome to <b>Git</b>Rank</h1>
-            <h3 class="ui header inverted">A platform where you can easily feedback and discover open source projects</h3>
+            <h3 class="ui header inverted">A platform where you can easily discover and give feedback on open source projects</h3>
             <div class="ui three cards">
                 @for(repository <- repositories) {
                     <div class="card">
                         <div class="content">
-                            <span class="right floated"><i class="star icon"></i>@repository.stars</span>
+                            <span class="right floated"><i class="octicon octicon-star"></i> @repository.stars</span>
                             <div class="header"><a href="@{
                                 val repoData = repository.name.split("/")
                                 routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None)

@@ -282,13 +282,16 @@ function buildParallelCoordinates(data) {
 
 $(document)
     .ready(function () {
+
+        var basePath = window.location.protocol + '//'+ window.location.host + window.location.pathname
+
         $.ajax({
-            url: '' + window.location.href + '/lastFeedback',
+            url: basePath + '/lastFeedback',
             success: buildParallelCoordinates
         });
 
         $.ajax({
-            url: '' + window.location.href + '/quickstart/guides',
+            url: basePath + '/quickstart/guides',
             success: buildQuickstartGuides
         });
 
