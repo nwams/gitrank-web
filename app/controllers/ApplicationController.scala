@@ -115,7 +115,7 @@ class ApplicationController @Inject()(
         request.identity match {
           case Some(id) => repoService.canAddFeedback(repoName, request.identity).flatMap{
             case canAdd => canAdd match {
-              case false => Future(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+              case false => Future.successful(Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
               case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
                 repoService.getMapScoreFromUser(repoName,request.identity).map(map =>
                   map.isEmpty match {
@@ -129,7 +129,7 @@ class ApplicationController @Inject()(
         }
 
 
-      case None => Future(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
+      case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
@@ -224,7 +224,7 @@ class ApplicationController @Inject()(
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
           })
         }
-      case None => Future(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
+      case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
