@@ -5,14 +5,24 @@ import java.util.Date
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{Reads, JsPath, Writes}
 
-case class Score (
-                   timestamp: Date,
-                   designScore: Int,
-                   docScore: Int,
-                   supportScore: Int,
-                   maturityScore: Int,
-                   feedback: String,
-                   karma: Int)
+import scala.collection.immutable.HashMap
+
+case class Score(
+                  timestamp: Date,
+                  designScore: Int,
+                  docScore: Int,
+                  supportScore: Int,
+                  maturityScore: Int,
+                  feedback: String,
+                  karma: Int) {
+  def toMap(): HashMap[String, String] = {
+    HashMap("scoreDocumentation" -> Integer.toString(docScore),
+      "scoreMaturity" -> Integer.toString(maturityScore),
+      "scoreDesign" -> Integer.toString(designScore),
+      "scoreSupport" -> Integer.toString(supportScore),
+      "feedback" -> feedback)
+  }
+}
 
 object Score {
   implicit val scoreWrites: Writes[Score] = (
@@ -36,7 +46,7 @@ object Score {
     )(Score.apply _)
 }
 
-case class Feedback (
-                    user: User,
-                    score: Score
-                      )
+case class Feedback(
+                     user: User,
+                     score: Score
+                     )

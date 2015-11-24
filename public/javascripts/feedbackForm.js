@@ -4,6 +4,7 @@
 $(document)
     .ready(function () {
 
+
         $('.ui.form')
             .form({
                 fields: {
@@ -35,4 +36,5 @@ $(document)
                 }
             })
         ;
+
     });

@@ -44,6 +44,18 @@ $(document)
             .rating('setting', 'onRate', function (value) {
                 $('#scoreSupport').val(value)
             });
+        $('#docScore').rating({
+            initialRating: $('#scoreDocumentation').val()
+        })
+        $('#matScore').rating({
+            initialRating: $('#scoreMaturity').val()
+        })
+        $('#desScore').rating({
+            initialRating: $('#scoreDesign').val()
+        })
+        $('#supScore').rating({
+            initialRating: $('#scoreSupport').val()
+        })
 
         emojify.setConfig({img_dir : 'assets/lib/emojify.js/dist/images/basic'});
         emojify.run();
