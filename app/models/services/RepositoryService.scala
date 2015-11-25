@@ -166,7 +166,7 @@ class RepositoryService @Inject()(
    */
   def getMapScoreFromUser(repoName:String, user:Option[User] ): Future[Map[String,String]]={
     user match {
-      case Some(u) =>  getScoreFromUser(repoName,u.username).map{
+      case Some(u) => getScoreFromUser(repoName,u.username).map{
         score => score.fold(HashMap[String,String]())(x => x.toMap())
       }
       case None => Future.successful(HashMap[String,String]())

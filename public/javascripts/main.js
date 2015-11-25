@@ -17,9 +17,6 @@ $(document)
         $('.popup')
             .popup();
 
-        $('.ui.rating')
-            .rating();
-
         $('#goToRepoButton').click(goToRepoInputUrl);
 
         $('#goToRepoInput').keyup(function (e) {
@@ -28,34 +25,6 @@ $(document)
             }
         });
 
-        $('#docScore')
-            .rating('setting', 'onRate', function (value) {
-                $('#scoreDocumentation').val(value)
-            });
-        $('#matScore')
-            .rating('setting', 'onRate', function (value) {
-                $('#scoreMaturity').val(value)
-            });
-        $('#desScore')
-            .rating('setting', 'onRate', function (value) {
-                $('#scoreDesign').val(value)
-            });
-        $('#supScore')
-            .rating('setting', 'onRate', function (value) {
-                $('#scoreSupport').val(value)
-            });
-        $('#docScore').rating({
-            initialRating: $('#scoreDocumentation').val()
-        })
-        $('#matScore').rating({
-            initialRating: $('#scoreMaturity').val()
-        })
-        $('#desScore').rating({
-            initialRating: $('#scoreDesign').val()
-        })
-        $('#supScore').rating({
-            initialRating: $('#scoreSupport').val()
-        })
 
         emojify.setConfig({img_dir : 'assets/lib/emojify.js/dist/images/basic'});
         emojify.run();

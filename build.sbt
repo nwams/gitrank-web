@@ -25,7 +25,7 @@ libraryDependencies ++= Seq(
   "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
   "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
-  "org.webjars" % "Semantic-UI" % "2.1.4",
+  "org.webjars" % "Semantic-UI" % "2.1.6",
   "org.webjars.bower" % "lodash" % "3.10.1",
   "org.webjars.npm" % "emojify.js" % "1.1.0",
   "org.webjars" % "jquery" % "2.1.4",
