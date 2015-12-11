@@ -35,7 +35,6 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * @param oAuth2Info Authentication info
    * @return Contribution to be used as an update.
    */
-  //TODO: Fix retry count
   def getUserContribution(repositoryName: String, user: User, oAuth2Info: OAuth2Info, retryCount: Int = retryCount): Future[Option[Contribution]] = {
     buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), Some(oAuth2Info))
       .get()
@@ -47,15 +46,15 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
             getUserContribution(repositoryName, user, oAuth2Info, retryCount - 1)
           }
           else {
-            Future(None)
+            Future.successful(None)
           }
         }
         case HttpStatus.SC_OK => {
           val userContribution = response.json.as[JsArray].value
             .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
           userContribution.length match {
-            case 0 => Future(None)
-            case 1 => Future(Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
+            case 0 => Future.successful(None)
+            case 1 => Future.successful(Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
               (value: JsValue, contribution: Contribution) => {
                 Contribution(
                   (value \ "w").as[Long],
@@ -112,10 +111,10 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
             getRepository(repositoryName, oAuth2Info, retryCount - 1)
           }
           else {
-            Future(None)
+            Future.successful(None)
           }
         }
-        case _ => Future(None)
+        case _ => Future.successful(None)
       }
     })
 
