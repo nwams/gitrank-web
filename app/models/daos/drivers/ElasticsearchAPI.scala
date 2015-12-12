@@ -11,6 +11,7 @@ import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{Json, JsArray, JsValue}
 import play.api.libs.ws._
+import utils.ElasticQueryParser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -53,7 +54,7 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
    * @return json string
    */
   def createRepoQueryJson(queryString: String): String = {
-    val newString: String = queryString.replace("/", "(\\/)")
+    val newString: String = ElasticQueryParser.escapeCharsForQuery(queryString)
     val queryField = Map(
       "default_field" -> "repo.name",
       "query" -> (newString + "*")
