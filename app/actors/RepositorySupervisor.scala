@@ -10,14 +10,19 @@ import models.services.{RepositoryService, UserService}
 import models.{Repository, Score}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+
 object RepositorySupervisor {
 
   case class PropagateRepositoryScore(repository: Repository, score: Score)
 
   def props = Props[RepositorySupervisor]
-
 }
-class RepositorySupervisor @Inject()(userDAO: UserDAO, userService: UserService, repositoryService: RepositoryService) extends Actor with ActorLogging {
+
+class RepositorySupervisor @Inject()(
+                                      userDAO: UserDAO,
+                                      userService: UserService,
+                                      repositoryService: RepositoryService
+                                    ) extends Actor with ActorLogging {
 
   override def receive: Receive = LoggingReceive {
     case s: String => log.info(s)

@@ -177,7 +177,10 @@ class NeoParsers {
   def parseNeoQuickstart(response: WSResponse): Option[Quickstart] = {
     (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
-      case score => Some((score \ "properties").as[Quickstart].copy(id=(score \ "id").asOpt[Int]))
+      case score => Some((score \ "properties").as[Quickstart].copy(
+        id=(score \ "id").asOpt[Int],
+        owner = (score \ "owner").asOpt[Int]
+      ))
     }
   }
 
@@ -189,7 +192,10 @@ class NeoParsers {
     */
   def parseNeoQuickstartList(response: WSResponse): Seq[Quickstart] =
     ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
-      ((jsValue \ "row")(0) \ "properties").as[Quickstart].copy(id=((jsValue \ "row")(0) \ "id").asOpt[Int]))
+      ((jsValue \ "row")(0) \ "properties").as[Quickstart].copy(
+        id=((jsValue \ "row")(0) \ "id").asOpt[Int],
+        owner = ((jsValue \ "row")(0) \ "owner").asOpt[Int]
+      ))
 
   /**
     * Parses a WsResponse to get a unique OAuth2Info out of it.
@@ -276,5 +282,15 @@ class NeoParsers {
   def parseWeekAddedLines(currentWeekBuffer: Option[String]): Int = {
     val str = currentWeekBuffer.getOrElse("a0d0")
     str.substring(0, str.indexOf("d")).toInt
+  }
+
+  /**
+    * Parses a boolean result from neo4j
+    *
+    * @param response Ws response from neo4j
+    * @return Boolean
+    */
+  def parseNeoBoolean(response: WSResponse): Boolean = {
+    (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Boolean]
   }
 }

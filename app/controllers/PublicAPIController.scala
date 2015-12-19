@@ -2,10 +2,13 @@ package controllers
 
 import javax.inject.Inject
 
-import models.daos.drivers.ElasticsearchAPI
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
+import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
+import models.User
 import models.services.{ElasticSearchService, QuickstartService, RepositoryService}
 import play.api.libs.json._
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Action
+import play.api.i18n.MessagesApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -16,11 +19,13 @@ import scala.concurrent.Future
  * @param repoService Repository service injected
  */
 class PublicAPIController @Inject()(
+                                     val messagesApi: MessagesApi,
+                                     val env: Environment[User, SessionAuthenticator],
                                      repoService: RepositoryService,
                                      quickstartService: QuickstartService,
                                      elasticSearchService: ElasticSearchService
                                      )
-  extends Controller {
+  extends Silhouette[User, SessionAuthenticator] {
 
   /**
    * API point used by the parallel coordinates to get the scoring data.
@@ -54,7 +59,7 @@ class PublicAPIController @Inject()(
    * @param repositoryName repository name on the repo system (GitHub)
    * @return the list of guides for the given repo
    */
-  def getGuides(owner: String, repositoryName: String) = Action.async { implicit request =>
+  def getGuides(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(None, repoName).flatMap({
       case Some(repository) =>
@@ -62,6 +67,19 @@ class PublicAPIController @Inject()(
           Ok(Json.toJson(guides))
         )
       case None => Future(NotFound("No Quickstart guide found"))
+    })
+  }
+
+  /**
+    * API endpoint to delete a quickstart guide
+    *
+    * @param id of the quickstart to be deleted
+    * @return OK or NotModified
+    */
+  def deleteQuickstart(id: Int) = SecuredAction.async { implicit  request =>
+    quickstartService.delete(request.identity, id).map({
+      case true => Ok
+      case false => NotModified
     })
   }
 

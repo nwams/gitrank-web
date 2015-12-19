@@ -15,6 +15,7 @@ class QuickstartService @Inject()(
 
   /**
    * Create a quickstart guide
+   *
    * @param user user who made the guide
    * @param repoName repo name for whom the guide is intended
    * @param title title of the quick starter
@@ -26,14 +27,10 @@ class QuickstartService @Inject()(
     repositoryService.findOrCreate(user, repoName).flatMap(repo => {
 
       val quickstart = Quickstart(
-        None,
         new Date(),
         title,
         description,
-        if (url.startsWith("http")) url else "http://" + url,
-        0,
-        0,
-        List()
+        if (url.startsWith("http")) url else "http://" + url
       )
 
       quickstartDAO.save(user.username, repo.name, quickstart).map({
@@ -44,7 +41,33 @@ class QuickstartService @Inject()(
   }
 
   /**
+    * Deletes the quickstart if it is one of the user's quickstart
+    *
+    * @throws Exception if the user is not authorized
+    * @param user That wants to delete the quickstart
+    * @param quickstartId id of the quickstart to be deleted
+    * @return If the quickstart has been deleted properly
+    */
+  def delete(user: User, quickstartId: Int): Future[Boolean] = {
+    quickstartDAO.canDelete(user.username, quickstartId).flatMap({
+      case true => quickstartDAO.delete(quickstartId)
+      case false => Future.successful(false)
+    })
+  }
+
+  /**
+    * Checks if a user can delete a quickstart
+    *
+    * @param user that to check the user from
+    * @param quickstartId id of the quickstart to be removed
+    * @return boolean true if the quickstart should be deleted
+    */
+  def canDelete(user: User, quickstartId: Int): Future[Boolean] =
+    quickstartDAO.canDelete(user.username, quickstartId)
+
+  /**
    * Get all quickstart guides from repo
+   *
    * @param repository repository
    * @return sequence of guides
    */
@@ -71,6 +94,7 @@ class QuickstartService @Inject()(
 
   /**
    * Update downvote and upVote of a guide on given repo
+   *
    * @param repository repo on which the guide is
    * @param upVote is it upVote?
    * @param id id of the guide

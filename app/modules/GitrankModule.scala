@@ -12,6 +12,5 @@ class GitrankModule extends AbstractModule with ScalaModule{
   def configure() = {
     bind[NeoChecker].asEagerSingleton()
     bind[ElasticsearchChecker].asEagerSingleton()
-
   }
 }
