@@ -26,7 +26,6 @@ class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
   val githubClientId = configuration.getString("silhouette.github.clientID").getOrElse("")
   val githubClientSecret = configuration.getString("silhouette.github.clientSecret").getOrElse("")
 
-
   /**
    * Get the user contributions statistics since last year or since the past update
    *
@@ -88,6 +87,7 @@ class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
               }
             })
 
+
           val innerReq = buildGitHubReq(gitHubApiUrl + "/repos/" + repositoryName, oAuth2Info)
             .addQueryParameter("client_id", githubClientId)
             .addQueryParameter("client_secret", githubClientSecret)
@@ -107,10 +107,11 @@ class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
     */
   def getMostStaredRepositories(size: Int,
                                  oAuth2Info: Option[OAuth2Info]= None,
-                                filters: Seq[String] = Seq()
-                               ): Future[Seq[GitHubRepo]] = {
 
-    val query = "stars:\"> 1000\" " + filters.map(filter => "NOT \""+filter+"\"").mkString(" ")
+                                filters: Seq[String] = Seq()
+                                 ): Future[Seq[GitHubRepo]] = {
+
+    val query = "stars:\"> 1000\" " + filters.map(filter => "NOT \"" + filter + "\"").mkString(" ")
 
     val req = buildGitHubReq(gitHubApiUrl + "/search/repositories", oAuth2Info)
       .addQueryParameter("q", query)
@@ -121,39 +122,40 @@ class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
   }
 
   /**
-    * Public API for making the request to GitHub to populate the homepage when the user is connected
-    *
-    * @param size number of item we want
-    * @param user user requesting the content
-    * @param oAuth2Info auth information of the current user
-    * @param filter list of the repo names that we do not want to be in the result
-    * @return
-    */
+   * Public API for making the request to GitHub to populate the homepage when the user is connected
+   *
+   * @param size number of item we want
+   * @param user user requesting the content
+   * @param oAuth2Info auth information of the current user
+   * @param filter list of the repo names that we do not want to be in the result
+   * @return
+   */
   def getUserStaredRepositories(size: Int,
                                 user: User,
                                 oAuth2Info: OAuth2Info,
                                 filter: Seq[String] = Seq()
-                               ): Future[Seq[GitHubRepo]] =
-    doUserStaredRepositoriesQuery(gitHubApiUrl + "/users/" + user.username + "/starred",size, user, oAuth2Info, filter)
+                                 ): Future[Seq[GitHubRepo]] =
+    doUserStaredRepositoriesQuery(gitHubApiUrl + "/users/" + user.username + "/starred", size, user, oAuth2Info, filter)
 
   /**
-    * This is a method that makes the query to get the user stared repository. This is a recursive function made
-    * so to use the link header of the GitHub API if necessary to go through the pages
-    *
-    * @param url url to make the request to. (user starred url)
-    * @param size size of the sequence of repo to return
-    * @param user user that is making the request
-    * @param oAuth2Info auth information about the connected user
-    * @param filter filter containing the repo name we want to exclude from the research.
-    * @return
-    */
+   * This is a method that makes the query to get the user stared repository. This is a recursive function made
+   * so to use the link header of the GitHub API if necessary to go through the pages
+   *
+   * @param url url to make the request to. (user starred url)
+   * @param size size of the sequence of repo to return
+   * @param user user that is making the request
+   * @param oAuth2Info auth information about the connected user
+   * @param filter filter containing the repo name we want to exclude from the research.
+   * @return
+   */
   private def doUserStaredRepositoriesQuery(
                                              url: String,
                                              size: Int,
                                              user: User,
                                              oAuth2Info: OAuth2Info,
                                              filter: Seq[String] = Seq()
-                                           ): Future[Seq[GitHubRepo]] = {
+                                             ): Future[Seq[GitHubRepo]] = {
+
 
     doGitHubRequest(url, Some(oAuth2Info))
       .flatMap({
@@ -177,14 +179,14 @@ class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
   }
 
   /**
-    * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
-    * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
-    * with a 90 days limit to the api. This is the best we can do using the direct API.
-    *
-    * @param user user you want to get the contributions from
-    * @param oAuth2Info Authentication information of the user
-    * @return
-    */
+   * Get the repository name set of the repository a user has contributed to. This method explores the GitHub api
+   * pages recursively to get all the contributions. The GitHub API is limited to 10 pages with 30 events per pages
+   * with a 90 days limit to the api. This is the best we can do using the direct API.
+   *
+   * @param user user you want to get the contributions from
+   * @param oAuth2Info Authentication information of the user
+   * @return
+   */
   def getContributedRepositories(user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
     doContributionRequest(gitHubApiUrl + "/users/" + user.username + "/events/public", user, oAuth2Info)
 
