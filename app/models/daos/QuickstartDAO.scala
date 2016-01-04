@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import models.Quickstart
 import models.daos.drivers.{Neo4j, NeoParsers}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -91,9 +91,9 @@ class QuickstartDAO @Inject()(neo: Neo4j,
     *
     * @param id id of the quickstart
     *
-    * @return Future of boolean telling if the deletion occurred properly
+    * @return Empty JsValue
     */
-  def delete(id: Int): Future[Boolean] = {
+  def delete(id: Int): Future[JsValue] = {
     neo.cypher(
       """
         MATCH ()-[r:QUICKSTARTED]->()
@@ -103,12 +103,7 @@ class QuickstartDAO @Inject()(neo: Neo4j,
       Json.obj(
         "id" -> id
       )
-    ).map(response => {
-      response.status match {
-        case 200 => true
-        case _ => throw new Error("Could not delete quickstart from the database")
-      }
-    })
+    )
   }
 
   /**

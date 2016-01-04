@@ -23,6 +23,8 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % "3.0.4",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",
   "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
+  "net.databinder.dispatch" %% "dispatch-core" % "0.11.3", // Used to decorolate DAOs from WS and play, this should also
+                                                           // be used in tests
   "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
   "org.webjars" % "Semantic-UI" % "2.1.6",

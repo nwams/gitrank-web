@@ -19,7 +19,7 @@ class QuickstartService @Inject()(
    * @param user user who made the guide
    * @param repoName repo name for whom the guide is intended
    * @param title title of the quick starter
-   * @param description descritption of the quick starter
+   * @param description description of the quick starter
    * @param url url
    * @return guide created
    */
@@ -50,7 +50,7 @@ class QuickstartService @Inject()(
     */
   def delete(user: User, quickstartId: Int): Future[Boolean] = {
     quickstartDAO.canDelete(user.username, quickstartId).flatMap({
-      case true => quickstartDAO.delete(quickstartId)
+      case true => quickstartDAO.delete(quickstartId).map(v => true)
       case false => Future.successful(false)
     })
   }

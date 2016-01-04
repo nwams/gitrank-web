@@ -9,7 +9,6 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util
 
 /**
  * Give access to the user object.
@@ -35,11 +34,8 @@ class UserDAO @Inject() (neo: Neo4j,
    * @param callback callback function for each user
    *
    */
-  def findAll(callback: (Any) => Future[Unit]): Future[Unit] = {
-     Future( neo.cypherStream("MATCH (n:User) RETURN n ").onComplete{
-        case util.Success(toParse) => parser.parseJson(toParse, callback)
-        case _ =>
-      })
+  def findAll(callback: (Any) => Future[Unit]): Unit = {
+    parser.parseJson(neo.cypherStream("MATCH (n:User) RETURN n "), callback)
   }
 
   /**

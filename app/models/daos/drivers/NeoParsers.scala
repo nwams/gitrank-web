@@ -7,7 +7,6 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import models._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 
@@ -38,13 +37,13 @@ class NeoParsers {
   }
 
   /**
-    * Parses a WsResponse to get a unique user out of it.
+    * Parses a Json to get a unique user out of it.
     *
-    * @param response response object
+    * @param json Json object gotten from the request to neo4j
     * @return The parsed user.
     */
-  def parseNeoUser(response: WSResponse): Option[User] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoUser(json: JsValue): Option[User] = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _ :JsUndefined => None
       case user => Some(parseSingleUser(user))
     }
@@ -53,11 +52,11 @@ class NeoParsers {
   /**
     * Parses a WsResponse to get all users out of it.
     *
-    * @param response response object
+    * @param json Json object gotten from the request to neo4j
     * @return The parsed users.
     */
-  def parseNeoUsers(response: WSResponse): Seq[User] = {
-    val users = Json.parse(response.body) \\ "user"
+  def parseNeoUsers(json: JsValue): Seq[User] = {
+    val users = json \\ "user"
 
     users.length match {
       case 0 => Seq()
@@ -67,10 +66,11 @@ class NeoParsers {
 
   /**
     * Parse a stream  with a list of  objects
+    *
     * @param jsonParser json parser responsible for parsing the stream
     * @param callback callback function for each item
     */
-  def parseJson( jsonParser: JsonParser,callback: (Any) => Future[Unit]): Unit ={
+  def parseJson(jsonParser: JsonParser, callback: (Any) => Future[Unit]): Unit ={
     jsonParser.setCodec(new ObjectMapper())
 
     jsonParser.getCurrentName match {
@@ -81,17 +81,16 @@ class NeoParsers {
         ).find( x => jsonParser.nextToken() == JsonToken.END_ARRAY)
       }
       case _ => Option(jsonParser.nextToken()).foreach(jsonToken => parseJson(jsonParser, callback))
-
     }
   }
 
   /**
-    *
     * Parse a fragment of a User Json
+    *
     * @param jsonParser parser with the whole json stream
     * @param callback callback function for each item
     */
-  def parseJsonFragment(jsonParser: JsonParser,callback: (Any) => Future[Unit])= {
+  def parseJsonFragment(jsonParser: JsonParser, callback: (Any) => Future[Unit])= {
     jsonParser.getCurrentToken match{
       case JsonToken.START_OBJECT =>{
         val jsonTree : JsonNode = jsonParser.readValueAsTree[JsonNode]()
@@ -114,11 +113,11 @@ class NeoParsers {
   /**
     * Gets all the contributors for a given repository with all their contributions
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return A Sequence of contributors
     */
-  def parseNeoRepo(response: WSResponse): Option[Repository] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoRepo(json: JsValue): Option[Repository] = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => Some(repo.as[Repository])
     }
@@ -127,11 +126,11 @@ class NeoParsers {
   /**
     * Parse a list of repositories
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return a list of repositories
     */
-  def parseNeoRepos(response: WSResponse): Seq[Repository] = {
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+  def parseNeoRepos(json: JsValue): Seq[Repository] = {
+    ((json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
       (jsValue \ "row")(0).as[Repository]
     )
   }
@@ -139,30 +138,30 @@ class NeoParsers {
   /**
     * Should parse a result list of feedback and get it back
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return Seq of Scores
     */
-  def parseNeoFeedbackList(response: WSResponse): Seq[Feedback] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+  def parseNeoFeedbackList(json: JsValue): Seq[Feedback] =
+    ((json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
       Feedback(parseSingleUser((jsValue \ "row")(1)), (jsValue \ "row")(0).as[Score]))
 
   /**
     * Should parse a result list of scores and get it back
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return Seq of Scores
     */
-  def parseNeoScoreList(response: WSResponse): Seq[Score] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
+  def parseNeoScoreList(json: JsValue): Seq[Score] =
+    ((json \ "results")(0) \ "data").as[JsArray].value.map(jsValue => (jsValue \ "row")(0).as[Score])
 
   /**
     * Parses a neo Score into a model
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return
     */
-  def parseNeoScore(response: WSResponse): Option[Score] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoScore(json: JsValue): Option[Score] = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case score => score.asOpt[Score]
     }
@@ -171,11 +170,11 @@ class NeoParsers {
   /**
     * Parses a neo Quickstart into a model
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return Quickstart object
     */
-  def parseNeoQuickstart(response: WSResponse): Option[Quickstart] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoQuickstart(json: JsValue): Option[Quickstart] = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case score => Some((score \ "properties").as[Quickstart].copy(
         id=(score \ "id").asOpt[Int],
@@ -187,24 +186,24 @@ class NeoParsers {
   /**
     * Should parse a result list of quickstarts and get it back
     *
-    * @param response response from neo
+    * @param json Json object gotten from the request to neo4j
     * @return Seq of quickstarters
     */
-  def parseNeoQuickstartList(response: WSResponse): Seq[Quickstart] =
-    ((response.json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
+  def parseNeoQuickstartList(json: JsValue): Seq[Quickstart] =
+    ((json \ "results")(0) \ "data").as[JsArray].value.map(jsValue =>
       ((jsValue \ "row")(0) \ "properties").as[Quickstart].copy(
         id=((jsValue \ "row")(0) \ "id").asOpt[Int],
         owner = ((jsValue \ "row")(0) \ "owner").asOpt[Int]
       ))
 
   /**
-    * Parses a WsResponse to get a unique OAuth2Info out of it.
+    * Parses a json to get a unique OAuth2Info out of it.
     *
-    * @param response response object
+    * @param json Json object gotten from the request to neo4j
     * @return The parsed OAuth2Info.
     */
-  def parseNeoOAuth2Info(response: WSResponse) = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoOAuth2Info(json: JsValue) = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => Some(OAuth2Info(
         (repo \ "accessToken").as[String],
@@ -243,11 +242,11 @@ class NeoParsers {
   /**
     * Parses a neo4j response to get a Contribution out of it.
     *
-    * @param response neo4j response
+    * @param json Json object gotten from the request to neo4j
     * @return parsed contribution or None
     */
-  def parseNeoContribution(response: WSResponse): Option[Contribution] = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0) match {
+  def parseNeoContribution(json: JsValue): Option[Contribution] = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0) match {
       case _: JsUndefined => None
       case repo => repo.asOpt[Contribution]
     }
@@ -255,11 +254,12 @@ class NeoParsers {
 
   /**
     * Parse multiple contributions and repos
-    * @param response response from neo4j
+    *
+    * @param json Json object gotten from the request to neo4j
     * @return map with each contribution from repo
     */
-  def parseNeoContributions(response: WSResponse): Seq[(Repository,Contribution)] = {
-    (response.json \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
+  def parseNeoContributions(json: JsValue): Seq[(Repository,Contribution)] = {
+    (json \\ "row").map{contribution => (contribution(0).as[Repository], contribution(1).as[Contribution])}.seq
   }
 
   /**
@@ -287,10 +287,10 @@ class NeoParsers {
   /**
     * Parses a boolean result from neo4j
     *
-    * @param response Ws response from neo4j
+    * @param json json from neo4j
     * @return Boolean
     */
-  def parseNeoBoolean(response: WSResponse): Boolean = {
-    (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Boolean]
+  def parseNeoBoolean(json: JsValue): Boolean = {
+    (((json \ "results")(0) \ "data")(0) \ "row")(0).as[Boolean]
   }
 }
