@@ -30,5 +30,6 @@ class RepositorySupervisor @Inject()(
       for {
         users <- userDAO.findAllFromRepo(repository)
       } yield users.foreach(userService.propagateKarma)
+    case _ => log.error("Unknown message received")
   }
 }

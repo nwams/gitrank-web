@@ -41,7 +41,6 @@ function buildParallelCoordinates(data) {
 
     var line = d3.svg.line(),
         axis = d3.svg.axis().orient("left"),
-        background,
         foreground,
         dimensions;
 
@@ -81,7 +80,7 @@ function buildParallelCoordinates(data) {
     }));
 
     // Add grey background lines for context.
-    background = svg.append("g")
+    var background = svg.append("g")
         .attr("class", "background")
         .selectAll("path")
         .data(data)
