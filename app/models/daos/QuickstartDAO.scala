@@ -63,6 +63,22 @@ class QuickstartDAO @Inject()(neo: Neo4j,
   }
 
   /**
+    * Function to get the count of Quickstart for the given repository
+    *
+    * @param repoName name of the repository to get
+    * @return Count in a Future
+    */
+  def countRepositoryQuickstart(repoName: String): Future[Int] =
+    neo.cypher(
+      """
+        MATCH ()-[c:QUICKSTARTED]->(r:Repository)
+        WHERE r.name = {repoName}
+        RETURN COUNT(r) AS quickstartCount
+      """, Json.obj(
+      "repoName" -> repoName
+      )).map(json => (((json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
+
+  /**
    * Update a quickstart guide
    *
    * @param id id of the guide

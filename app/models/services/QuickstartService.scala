@@ -71,8 +71,9 @@ class QuickstartService @Inject()(
    * @param repository repository
    * @return sequence of guides
    */
-  def getQuickstartGuidesForRepo(repository: Repository, page: Int = 1): Future[Seq[Quickstart]] = {
-    quickstartDAO.findRepositoryGuides(repository.name, page)
+  def getQuickstartGuidesForRepo(repository: Repository, page: Option[Int] = None): Future[Seq[Quickstart]] = page match {
+    case Some(p) => quickstartDAO.findRepositoryGuides(repository.name, p)
+    case None => quickstartDAO.findRepositoryGuides(repository.name, 1)
   }
 
   /**
@@ -110,5 +111,26 @@ class QuickstartService @Inject()(
       }
       case None => Future(None)
     }
+  }
+
+  /**
+    * Gets the number of quickstart pages result for a given repository.
+    *
+    * @param repoName name of the repository to get the page count from
+    * @param itemsPerPage number of items to put in the page
+    * @return number of page as an integer.
+    */
+  def getQuickstartPageCount(repoName: String, itemsPerPage: Int = 10): Future[Int] = {
+
+    if (itemsPerPage == 0) {
+      throw new Exception("There can't be 0 items on a page")
+    }
+
+    quickstartDAO.countRepositoryQuickstart(repoName).map(quickstartCount => {
+      quickstartCount % itemsPerPage match {
+        case 0 => quickstartCount / itemsPerPage
+        case _ => (quickstartCount / itemsPerPage) + 1
+      }
+    })
   }
 }

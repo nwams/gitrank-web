@@ -17,7 +17,7 @@ object TestSetup {
   /**
    * Clears all the data from the neo4J database
    */
-  def clearNeo4JData = cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
+  def clearNeo4JData = cypher("MATCH (n) DETACH DELETE n")
 
   /**
    * Populates the database with the data in the json file test/resources/neo4j.json

@@ -6,12 +6,11 @@ import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import models.User
 import models.services.{ElasticSearchService, QuickstartService, RepositoryService}
+import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc.Action
-import play.api.i18n.MessagesApi
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 /**
  * Controller for the public APIs endpoints
@@ -49,24 +48,6 @@ class PublicAPIController @Inject()(
     repoService.retrieve(owner + "/" + repoName).map({
       case Some(repo) => Ok(buildScoreBadge(repo.score)).as("image/svg+xml")
       case None => NotFound("Badge Not Found")
-    })
-  }
-
-  /**
-   * Service for getting the quickstart guides of a repo
-   *
-   * @param owner Owner of the repository on the repo system (GitHub)
-   * @param repositoryName repository name on the repo system (GitHub)
-   * @return the list of guides for the given repo
-   */
-  def getGuides(owner: String, repositoryName: String) = UserAwareAction.async { implicit request =>
-    val repoName: String = owner + "/" + repositoryName
-    repoService.getFromNeoOrGitHub(None, repoName).flatMap({
-      case Some(repository) =>
-        quickstartService.getQuickstartGuidesForRepo(repository).map(guides =>
-          Ok(Json.toJson(guides))
-        )
-      case None => Future(NotFound("No Quickstart guide found"))
     })
   }
 

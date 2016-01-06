@@ -13,7 +13,7 @@ case class Quickstart(
                        upvote: Int = 0,
                        downvote: Int = 0,
                        listVoters: Seq[String] = List(),
-                       id: Option[Int] = None, // Present when the quickstart was retrived from the database
+                       id: Option[Int] = None, // Present when the quickstart was retrieved from the database
                        owner: Option[Int] = None // Owner id of the quickstart
                        )
 

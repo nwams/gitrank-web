@@ -18,13 +18,13 @@
     </head>
     <body>
 
-        @navbar(gitHubProvider, user)
+        @shared.navbar(gitHubProvider, user)
 
         <div id="content">
             @content
         </div>
 
-        @footer()
+        @shared.footer()
         <script src="@routes.Assets.at("lib/Semantic-UI/semantic.min.js")" type="text/javascript"></script>
         <script src="@routes.Assets.at("javascripts/main.js")" type="text/javascript"></script>
 

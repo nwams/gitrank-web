@@ -12,7 +12,6 @@ import org.specs2.matcher.XmlMatchers
 import org.specs2.specification.BeforeAfterEach
 import play.api.Application
 import play.api.i18n.MessagesApi
-import play.api.libs.json.{JsArray, JsObject}
 import play.api.test._
 import play.filters.csrf.CSRF
 import setup.{TestSetup, WithGitHub}
@@ -134,14 +133,12 @@ class ApplicationControllerSpec extends PlaySpecification with BeforeAfterEach w
       // TODO This should be changed to 200
       status(result) must equalTo(303)
 
-      val json = route(FakeRequest(GET, "/github/test/test2/quickstart/guides")).get
-      status(json) must equalTo(OK)
-      val content = contentAsJson(json).as[JsArray].value.head
-      (content \ "title").as[String] must equalTo("Added Quickstart")
-      (content \ "description").as[String] must equalTo("a super test guide")
-      (content \ "url").as[String] must equalTo("http://test.com")
-      (content \ "upvote").as[Int] must equalTo(0)
-      (content \ "downvote").as[Int] must equalTo(0)
+      val content = contentAsString(route(FakeRequest(GET, "/github/test/test2")).get)
+
+      content must contain("Added Quickstart")
+      content must contain("a super test guide")
+      content must contain("http://test.com")
+      content must contain("0")
     }
   }
 
@@ -181,60 +178,6 @@ class ApplicationControllerSpec extends PlaySpecification with BeforeAfterEach w
       content must contain("2.0/5")
       // Detail of the score
       content must contain("3")
-    }
-  }
-
-  "up vote post endpoint" should {
-    "prevent posting if the user is not connected" in new WithApplication {
-      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
-      val quickstart = contentAsJson(json).as[JsArray].value.head
-
-      val response = route(FakeRequest(POST, "/github/test/test2/quickstart/" + (quickstart \ "id").as[Int] +"/upvote")).get
-      // TODO this should be changed to 401
-      status(response) must equalTo(303)
-    }
-
-    "should not be able to post an up vote if the user is has already voted" in new WithApplication {
-
-      val mocked = createAuthApplicationController(app,
-        User(LoginInfo("github", "User1"), "User1" ,Some("Josh Newman"), Some("josh@newman.com"),
-          Some("http://api.adorable.io/avatars/285/josh@newman.com.png"), 180, None, None)
-      )
-
-      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
-      val quickstart = contentAsJson(json).as[JsArray].value.head
-      val result = mocked._2.upVote("test", "test1", (quickstart \ "id").as[Int], "upvote")(mocked._1)
-
-      status(result) must equalTo(OK)
-
-      val content = contentAsJson(result).as[JsObject]
-      (content \ "title").as[String] must equalTo("Top 10 of the test quickstart")
-      (content \ "description").as[String] must equalTo("A comprehensive overview of all the testing techniques")
-      (content \ "url").as[String] must equalTo("http://www.nikelodeon.com")
-      (content \ "upvote").as[Int] must equalTo(3)
-      (content \ "downvote").as[Int] must equalTo(1)
-    }
-
-    "should be able to post an up vote if the user did not already voted" in new WithApplication {
-
-
-      val mocked = createAuthApplicationController(app,
-        User(LoginInfo("github", "User2"), "User2" ,Some("Samuel Adams"), Some("sam@adams.com"),
-          Some("http://api.adorable.io/avatars/285/josh@newman.com.png"), 180, None, None)
-      )
-
-      val json = route(FakeRequest(GET, "/github/test/test1/quickstart/guides")).get
-      val quickstart = contentAsJson(json).as[JsArray].value.head
-      val result = mocked._2.upVote("test", "test1", (quickstart \ "id").as[Int], "upvote")(mocked._1)
-
-      status(result) must equalTo(OK)
-
-      val content = contentAsJson(result).as[JsObject]
-      (content \ "title").as[String] must equalTo("Top 10 of the test quickstart")
-      (content \ "description").as[String] must equalTo("A comprehensive overview of all the testing techniques")
-      (content \ "url").as[String] must equalTo("http://www.nikelodeon.com")
-      (content \ "upvote").as[Int] must equalTo(4)
-      (content \ "downvote").as[Int] must equalTo(1)
     }
   }
 
