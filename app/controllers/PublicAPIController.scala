@@ -113,10 +113,10 @@ class PublicAPIController @Inject()(
         <text x="44.5" y="15" fill="#010101" fill-opacity=".3">Gitrank Score</text>
         <text x="44.5" y="14">Gitrank Score</text>
         <text x="102" y="15" fill="#010101" fill-opacity=".3">
-          {repoScore}
+          {f"$repoScore%.1f"}
         </text>
         <text x="102" y="14">
-          {repoScore}
+          {f"$repoScore%.1f"}
         </text>
       </g>
     </svg>
