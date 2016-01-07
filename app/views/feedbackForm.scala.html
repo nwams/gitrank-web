@@ -15,7 +15,8 @@
         </h2>
 
         <h3 class="ui dividing header ">Feedback</h3>
-        @helper.form(action = routes.ApplicationController.postScore(owner, repository, Some(update)), 'class -> "ui form") {
+        @helper.form(action = routes.ApplicationController.postScore(owner, repository, Some(update)),
+            'class -> "ui form") {
             @helper.CSRF.formField
 
             @if(user.isEmpty) {

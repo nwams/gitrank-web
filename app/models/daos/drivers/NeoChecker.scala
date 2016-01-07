@@ -1,7 +1,9 @@
 package models.daos.drivers
 
 import java.net.ConnectException
+import javax.inject.Inject
 import com.typesafe.config.ConfigFactory
+import play.api.Configuration
 import scalaj.http.Http
 
 /**
@@ -10,14 +12,14 @@ import scalaj.http.Http
  *
  * This is not in the neo4j driver since the driver needs play to run and cannot be eagerly instantiated.
  */
-class NeoChecker (){
+class NeoChecker @Inject()(configuration: Configuration){
 
   val conf = ConfigFactory.load
 
-  val neo4jUsername = conf.getString("neo4j.username")
-  val neo4jPassword = conf.getString("neo4j.password")
-  val neo4jServer = conf.getString("neo4j.server")
-  val neo4jEndpoint = conf.getString("neo4j.endpoint")
+  val neo4jUsername = configuration.getString("neo4j.username").getOrElse(Neo4jDefaults.user)
+  val neo4jPassword = configuration.getString("neo4j.password").getOrElse(Neo4jDefaults.password)
+  val neo4jServer = configuration.getString("neo4j.server").getOrElse(Neo4jDefaults.serverAddress)
+  val neo4jEndpoint = configuration.getString("neo4j.endpoint").getOrElse(Neo4jDefaults.endpoint)
 
   try {
     Http(neo4jServer + neo4jEndpoint)

@@ -1,55 +1,49 @@
 package models.daos.drivers
 
-import java.text.SimpleDateFormat
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.impl.providers.OAuth2Info
-import models.daos.OAuth2InfoDAO
-import models.{Quickstart, Contribution, Repository, User}
-import org.apache.http.HttpStatus
-import play.api.Play
-import play.api.Play.current
-import play.api.libs.json.{Json, JsArray, JsValue}
-import play.api.libs.ws._
+import dispatch._
+import play.api.Configuration
+import play.api.libs.json.{JsArray, Json}
 import utils.ElasticQueryParser
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class ElasticsearchAPI @Inject()(ws: WSClient) {
+class ElasticsearchAPI @Inject()(configuration: Configuration) {
 
-  val elasticSearchAPIUrl = Play.configuration.getString("elasticsearch.server").getOrElse("http://localhost:9200")
-  val elasticSearchAPISearchEndpoint = Play.configuration.getString("elasticsearch.endpoint").getOrElse("/github/repository/_search")
+  val elasticSearchAPIUrl = configuration.getString("elasticsearch.server").getOrElse("http://localhost:9200")
+  val elasticSearchAPISearchEndpoint = configuration.getString("elasticsearch.endpoint").getOrElse("/github/repository/_search")
 
 
   /**
    * Perform a search request for github repository names on elasticsearch
+   *
    * @param queryString query with repo name for full text search
    * @return ordered sequence of search results
    */
   def searchForRepos(queryString: String): Future[Seq[String]] = {
-    ws.url(elasticSearchAPIUrl + elasticSearchAPISearchEndpoint).post(createRepoQueryJson(queryString))
-      .map(
-        response => {
-          response.status match {
-            case HttpStatus.SC_OK => {
-              parseResponse(response)
-            }
-            case _ => Seq()
-          }
-        }
-      )
+    val post = url(elasticSearchAPIUrl + elasticSearchAPISearchEndpoint) << createRepoQueryJson(queryString)
+    Http(post OK as.String).map(body => parseBody(body))
   }
 
-  def parseResponse(response: WSResponse): Seq[String] = {
-    ((response.json \ "hits") \ "total").as[Int] match {
+  /**
+    * Parses the body of an elasticsearch response, as json
+    *
+    * @param body String body containing the json with the response
+    * @return Sequence of string results
+    */
+  def parseBody(body: String): Seq[String] = {
+    val json = Json.parse(body)
+    ((json \ "hits") \ "total").as[Int] match {
       case 0 => Seq()
-      case _ => ((response.json \ "hits") \ "hits").as[JsArray].value.map(jsValue => (jsValue \\ "name")(0).as[String])
+      case _ => ((json \ "hits") \ "hits").as[JsArray].value.map(jsValue => (jsValue \\ "name")(0).as[String])
     }
   }
 
   /**
    * Create json for Elasticsearch query
+   *
    * @param queryString name of the repo to be searched
    * @return json string
    */
@@ -67,6 +61,5 @@ class ElasticsearchAPI @Inject()(ws: WSClient) {
           )
       )
     ).toString()
-
   }
 }

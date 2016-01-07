@@ -1,8 +1,14 @@
 @import modules.CustomGitHubProvider
-@import _root_.forms.FeedbackForm.Data
-
 @import models.forms.QuickstartForm
-@(gitHubProvider: CustomGitHubProvider, user: Option[models.User])(owner: String, repository: String, form: Form[QuickstartForm.Data])(implicit request: RequestHeader, messages: Messages)
+
+@(
+        gitHubProvider: CustomGitHubProvider,
+        user: Option[models.User]
+)(
+        owner: String,
+        repository: String,
+        form: Form[QuickstartForm.Data]
+)(implicit request: RequestHeader, messages: Messages)
 
 @main("GitRank - " + owner + "/" + repository + " Feedback form !", gitHubProvider, user) {
     <div class="ui container">

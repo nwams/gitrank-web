@@ -4,28 +4,27 @@ import java.text.SimpleDateFormat
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.impl.providers.OAuth2Info
+import dispatch._
 import models.daos.OAuth2InfoDAO
-import models.{Contribution, Repository, User, GitHubRepo}
-import org.apache.http.HttpStatus
-import play.api.Play
-import play.api.Play.current
-import play.api.libs.json.{JsArray, JsValue}
-import play.api.libs.ws._
+import models.{Contribution, GitHubRepo, Repository, User}
+import org.apache.http.{HttpHeaders, HttpStatus}
+import play.api.Configuration
+import play.api.libs.json.{JsArray, JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
-class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
+class GitHubAPI @Inject()(oauthDAO: OAuth2InfoDAO,
+                         configuration: Configuration) {
+
   val retryCount = 4
   val backoutTime = 1000l
 
-
-  val gitHubApiUrl = Play.configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
+  val gitHubApiUrl = configuration.getString("gitrank.githubApiUri").getOrElse("https://api.github.com")
   val gitHubDateFormatter = new SimpleDateFormat("yyyy-mm-dd'T'hh:mm:ss'Z'")
-  val githubClientId = Play.configuration.getString("silhouette.github.clientID").getOrElse("")
-  val githubClientSecret = Play.configuration.getString("silhouette.github.clientSecret").getOrElse("")
-
+  val githubClientId = configuration.getString("silhouette.github.clientID").getOrElse("")
+  val githubClientSecret = configuration.getString("silhouette.github.clientSecret").getOrElse("")
 
   /**
    * Get the user contributions statistics since last year or since the past update
@@ -35,26 +34,17 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * @param oAuth2Info Authentication info
    * @return Contribution to be used as an update.
    */
-  def getUserContribution(repositoryName: String, user: User, oAuth2Info: OAuth2Info, retryCount: Int = retryCount): Future[Option[Contribution]] = {
-    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), Some(oAuth2Info))
-      .get()
-      .flatMap(response => {
-      response.status match {
-        case HttpStatus.SC_ACCEPTED => {
-          if (retryCount > 0) {
-            Thread.sleep(backoutTime)
-            getUserContribution(repositoryName, user, oAuth2Info, retryCount - 1)
-          }
-          else {
-            Future.successful(None)
-          }
-        }
-        case HttpStatus.SC_OK => {
-          val userContribution = response.json.as[JsArray].value
+  def getUserContribution(repositoryName: String, user: User, oAuth2Info: OAuth2Info): Future[Option[Contribution]] =
+    doGitHubRequest(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors", Some(oAuth2Info))
+      .map({
+        case None => None
+        case Some(res) =>
+          val userContribution = res.json.as[JsArray].value
             .filter(contributor => (contributor \ "author" \ "login").as[String] == user.username)
+
           userContribution.length match {
-            case 0 => Future.successful(None)
-            case 1 => Future.successful(Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
+            case 0 => None
+            case 1 => Some((userContribution.head \ "weeks").as[JsArray].value.foldRight(Contribution(0, 0, 0, None)) {
               (value: JsValue, contribution: Contribution) => {
                 Contribution(
                   (value \ "w").as[Long],
@@ -63,13 +53,9 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
                   Some("a" + (value \ "a").as[Int] + "d" + (value \ "d").as[Int])
                 )
               }
-            }))
+            })
           }
-        }
-      }
-
-    })
-  }
+      })
 
   /**
    * Retrieves a blank repository from GitHub.
@@ -83,69 +69,56 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
                     oAuth2Info: Option[OAuth2Info] = None,
                     retryCount: Int = retryCount): Future[Option[Repository]] = {
 
-    buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors"), oAuth2Info)
-      .get()
-      .flatMap(response => {
-      response.status match {
-        case HttpStatus.SC_OK =>
-          val linesAdded = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
-              (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
-            }
-          })
+    doGitHubRequest(gitHubApiUrl + "/repos/" + repositoryName + "/stats/contributors", oAuth2Info)
+      .flatMap({
+        case None => Future.successful(None)
+        case Some(res) =>
+          val linesAdded = res.json.as[JsArray].value.foldLeft(0)(
+            (accumulator: Int, contributor: JsValue) => {
+              (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
+                (innerAcc: Int, week: JsValue) => innerAcc + (week \ "a").as[Int]
+              }
+            })
 
-          val linesDeleted = response.json.as[JsArray].value.foldLeft(0)((accumulator: Int, contributor: JsValue) => {
-            (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
-              (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
-            }
-          })
+          val linesDeleted = res.json.as[JsArray].value.foldLeft(0)(
+            (accumulator: Int, contributor: JsValue) => {
+              (contributor \ "weeks").as[JsArray].value.foldLeft(accumulator) {
+                (innerAcc: Int, week: JsValue) => innerAcc + (week \ "d").as[Int]
+              }
+            })
 
-          buildGitHubReq(ws.url(gitHubApiUrl + "/repos/" + repositoryName).withQueryString(("client_id", githubClientId), ("client_secret", githubClientSecret)), oAuth2Info)
-            .get()
-            .map(response => {
-            Some(Repository((response.json \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0))
-          })
-        case HttpStatus.SC_ACCEPTED => {
-          if (retryCount > 0) {
-            Thread.sleep(backoutTime)
-            getRepository(repositoryName, oAuth2Info, retryCount - 1)
-          }
-          else {
-            Future.successful(None)
-          }
-        }
-        case _ => Future.successful(None)
-      }
-    })
 
+          val innerReq = buildGitHubReq(gitHubApiUrl + "/repos/" + repositoryName, oAuth2Info)
+            .addQueryParameter("client_id", githubClientId)
+            .addQueryParameter("client_secret", githubClientSecret)
+
+          Http(innerReq OK as.String)
+            .map(body => Some(Repository((Json.parse(body) \ "id").as[Int], linesAdded, linesDeleted, 0, repositoryName, 0)))
+      })
   }
 
   /**
-   * Gets the most stared repositories from GitHub.
-   *
-   * @param size How many repositories do we want, should be less than a 100 (GitHub page limit)
-   * @param oAuth2Info Oauth information of the current user
-   * @param filters filters the result by excluding the String list from the search results
-   * @return a Sequence of GitHub repositories
-   */
+    * Gets the most stared repositories from GitHub.
+    *
+    * @param size How many repositories do we want, should be less than a 100 (GitHub page limit)
+    * @param oAuth2Info Oauth information of the current user
+    * @param filters filters the result by excluding the String list from the search results
+    * @return a Sequence of GitHub repositories
+    */
   def getMostStaredRepositories(size: Int,
-                                oAuth2Info: Option[OAuth2Info] = None,
+                                 oAuth2Info: Option[OAuth2Info]= None,
+
                                 filters: Seq[String] = Seq()
                                  ): Future[Seq[GitHubRepo]] = {
 
     val query = "stars:\"> 1000\" " + filters.map(filter => "NOT \"" + filter + "\"").mkString(" ")
 
-    buildGitHubReq(ws.url(gitHubApiUrl + "/search/repositories"), oAuth2Info)
-      .withQueryString(
-        ("q", query),
-        ("sort", "stars"))
-      .get()
-      .map(response => {
-      response.status match {
-        case HttpStatus.SC_OK => (response.json \ "items").as[Seq[GitHubRepo]].take(size)
-        case _ => Seq()
-      }
-    })
+    val req = buildGitHubReq(gitHubApiUrl + "/search/repositories", oAuth2Info)
+      .addQueryParameter("q", query)
+      .addQueryParameter("sort", "stars")
+
+    Http(req OK as.String)
+      .map(body => (Json.parse(body) \ "items").as[Seq[GitHubRepo]].take(size))
   }
 
   /**
@@ -183,29 +156,26 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
                                              filter: Seq[String] = Seq()
                                              ): Future[Seq[GitHubRepo]] = {
 
-    buildGitHubReq(ws.url(url), Some(oAuth2Info))
-      .get()
-      .flatMap(response =>
-      response.status match {
-        case HttpStatus.SC_OK =>
-          val linkHeader = parseGitHubLink(response.header("link").getOrElse(""))
-          val repoList = response.json.as[Seq[GitHubRepo]]
+
+    doGitHubRequest(url, Some(oAuth2Info))
+      .flatMap({
+        case Some(res) =>
+          val repoList = res.json.as[Seq[GitHubRepo]]
             .filter(repo => !filter.contains(repo.name))
             .take(size)
 
-          if (repoList.length < size && !linkHeader.isDefinedAt("next")) {
+          if (repoList.length < size && res.nextPage.isEmpty){
             getMostStaredRepositories(size - repoList.length, Some(oAuth2Info), filter)
               .map(publicRepos => publicRepos ++ repoList)
-          } else if (repoList.length < size && linkHeader.isDefinedAt("next")) {
-            doUserStaredRepositoriesQuery(linkHeader.get("next").get, size - repoList.length, user, oAuth2Info, filter)
+          } else if (repoList.length < size && res.nextPage.isDefined){
+            doUserStaredRepositoriesQuery(res.nextPage.get, size - repoList.length, user, oAuth2Info, filter)
               .map(innerRepoList => repoList ++ innerRepoList)
           } else {
             Future.successful(repoList)
           }
 
-        case _ => getMostStaredRepositories(size, Some(oAuth2Info))
-      }
-      )
+        case None => getMostStaredRepositories(size, Some(oAuth2Info))
+      })
   }
 
   /**
@@ -228,48 +198,43 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * @param oAuth2Info Authentication information of the user
    * @return Set of repository names
    */
-  private def doContributionRequest(url: String, user: User, oAuth2Info: OAuth2Info): Future[Set[String]] = {
-    buildGitHubReq(ws.url(url), Some(oAuth2Info))
-      .withHeaders("If-None-Match" -> user.publicEventsETag.getOrElse(""))
-      .get()
-      .flatMap(response => {
-      response.status match {
-        case HttpStatus.SC_NOT_MODIFIED => Future(Set())
-        case HttpStatus.SC_OK => {
-          val linkHeader = parseGitHubLink(response.header("Link").getOrElse(""))
-          if (linkHeader.isDefinedAt("next")) {
-            doContributionRequest(linkHeader.getOrElse("next", ""), user, oAuth2Info).map((repoList: Set[String]) =>
-              repoList.size match {
-                case 0 => parseRepoNames(response, user.lastPublicEventPull)
-                case _ => repoList ++ parseRepoNames(response, user.lastPublicEventPull)
-              })
-          } else {
-            Future(parseRepoNames(response, user.lastPublicEventPull))
-          }
+  private def doContributionRequest(url: String, user: User, oAuth2Info: OAuth2Info): Future[Set[String]] =
+    doGitHubRequest(url, Some(oAuth2Info))
+      .flatMap({
+        case None => Future.successful(Set())
+        case Some(res) => res.nextPage match {
+          case Some(page) => doContributionRequest(page, user, oAuth2Info).map((repoList: Set[String]) =>
+            repoList.size match {
+              case 0 => parseRepoNames(res.json, user.lastPublicEventPull)
+              case _ => repoList ++ parseRepoNames(res.json, user.lastPublicEventPull)
+            })
+          case None => Future(parseRepoNames(res.json, user.lastPublicEventPull))
         }
-      }
-    })
-  }
+      })
 
   /**
    * To be used to build a request to GitHub
    *
-   * @param req set request with the URL to go to
+   * @param URL set URL to got to
    * @return A Ws Request populated with auth info.
    */
-  private def buildGitHubReq(req: WSRequest, oauthInfo: Option[OAuth2Info] = None): WSRequest = {
-    req
-      .withHeaders(
-        "Accept" -> "application/json ; charset=UTF-8",
-        "Content-Type" -> "application/json")
-      .withRequestTimeout(10000)
+  private def buildGitHubReq(URL: String,
+                             oauthInfo: Option[OAuth2Info] = None,
+                             versionETag: String = ""): Req = {
+
+    val req = url(URL)
+      .addHeader(HttpHeaders.ACCEPT, "application/json ; charset=UTF-8")
+      .addHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+
+    if (versionETag != "") {
+      req.addHeader(HttpHeaders.IF_NONE_MATCH, versionETag)
+    }
 
     oauthInfo match {
-      case None => req.withQueryString(
-        ("client_id", githubClientId),
-        ("client_secret", githubClientSecret)
-      )
-      case Some(oAuth) => req.withHeaders("Authorization" -> ("token " + oAuth.accessToken))
+      case None => req
+        .addQueryParameter("client_id", githubClientId)
+        .addQueryParameter("client_secret", githubClientSecret)
+      case Some(oAuth) =>req.addHeader(HttpHeaders.AUTHORIZATION, "token " + oAuth.accessToken)
     }
   }
 
@@ -282,12 +247,13 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
   def parseGitHubLink(linkHeader: String): Map[String, String] = {
     linkHeader match {
       case "" => Map[String, String]()
-      case _ => (linkHeader.split(',') map { part: String =>
+      case str: String => (str.split(',') map { part: String =>
         val section = part.split(';')
         val url = section(0).replace("<", "").replace(">", "")
         val name = section(1).replace(" rel=\"", "").replace("\"", "")
         (name, url)
       }).toMap
+      case _ => Map[String, String]()
     }
   }
 
@@ -295,17 +261,48 @@ class GitHubAPI @Inject()(ws: WSClient, oauthDAO: OAuth2InfoDAO) {
    * Gets a set of all the repository names out of the response from the api. This set is filtered according to the
    * specified provided time. If no time is specified then it gets all the repository names.
    *
-   * @param wSResponse response to extract the repository names from
+   * @param json Json to extract the name from
    * @param timeLimit Long representing the time in milliseconds from which to filter selection
    * @return a set of the repository names
    */
-  private def parseRepoNames(wSResponse: WSResponse, timeLimit: Option[Long]): Set[String] = {
+  private def parseRepoNames(json: JsValue, timeLimit: Option[Long]): Set[String] = {
     timeLimit match {
-      case None => wSResponse.json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]).toSet
-      case Some(time) => wSResponse.json.as[JsArray].value
+      case None => json.as[JsArray].value.map(event => (event \ "repo" \ "name").as[String]).toSet
+      case Some(time) => json.as[JsArray].value
         .filter(event => gitHubDateFormatter.parse((event \ "created_at").as[String]).getTime > time)
         .map(event => (event \ "repo" \ "name").as[String])
         .toSet
     }
   }
+
+  /**
+    * Function that retries a github request if the result is that the request is correctly formated but the Github
+    * cache is not hot. Returns the body content as Json
+    *
+    * @param url url of the request to make
+    * @param oauth user Oauth, credentials to make the request
+    * @param retryCount number of times to make the request, default 2
+    * @return Json content of the response.
+    */
+  private def doGitHubRequest(url: String, oauth: Option[OAuth2Info], retryCount: Int = retryCount): Future[Option[GitHubResponse]] =
+    Http(buildGitHubReq(url, oauth))
+      .flatMap(response => {
+        response.getStatusCode match {
+          case HttpStatus.SC_OK =>
+            val linkHeader = parseGitHubLink(response.getHeader("Link"))
+            Future.successful(Some(GitHubResponse(
+              url,
+              linkHeader.get("next"),
+              Json.parse(response.getResponseBody)
+            )))
+          case HttpStatus.SC_ACCEPTED =>
+            if (retryCount > 0) {
+              Thread.sleep(backoutTime)
+              doGitHubRequest(url, oauth, retryCount - 1)
+            } else {
+              Future.successful(None)
+            }
+          case _ => Future.successful(None)
+        }
+      })
 }

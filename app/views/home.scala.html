@@ -17,7 +17,7 @@
                             <span class="right floated"><i class="octicon octicon-star"></i> @repository.stars</span>
                             <div class="header"><a href="@{
                                 val repoData = repository.name.split("/")
-                                routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None)
+                                routes.ApplicationController.gitHubRepository(repoData(0), repoData(1), None, None)
                             }"> @repository.name</a></div>
                             <div class="meta">
                                 <a href="https://github.com/@repository.name" class="octicon octicon-mark-github"></a> Last Updated on

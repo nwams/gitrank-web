@@ -49,6 +49,7 @@ class UsersSupervisor @Inject()(
       } yield userService.updateContributions(user.get, authInfo.get)
     case SchedulePulling(user) =>
       addCancellableWithReplacement(schedulePullingFromGithub(user))
+    case _ => log.error("Unknown Message received")
   }
 
   /**

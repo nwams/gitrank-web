@@ -23,16 +23,18 @@ libraryDependencies ++= Seq(
   "com.mohiva" %% "play-silhouette" % "3.0.4",
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",
   "org.scalaj" %% "scalaj-http" % "1.1.5", // Used for the test, to request neo without play
+  "net.databinder.dispatch" %% "dispatch-core" % "0.11.3", // Used to decorolate DAOs from WS and play, this should also
+                                                           // be used in tests
   "net.ceedubs" %% "ficus" % "1.1.2",
   "org.webjars" %% "webjars-play" % "2.4.0-1",
-  "org.webjars" % "Semantic-UI" % "2.1.4",
+  "org.webjars" % "Semantic-UI" % "2.1.6",
   "org.webjars.bower" % "lodash" % "3.10.1",
   "org.webjars.npm" % "emojify.js" % "1.1.0",
   "org.webjars" % "jquery" % "2.1.4",
   "org.webjars.bower" % "octicons" % "2.2.3",
   "org.webjars" % "d3js" % "3.5.5-1",
   "com.sendgrid" % "sendgrid-java" % "2.2.2",
-  "org.apache.lucene" % "lucene-queryparser" % "3.3.0",
+  "org.apache.lucene" % "lucene-queryparser" % "5.4.0",
     specs2 % Test,
   "org.specs2" %% "specs2-matcher-extra" % "3.6.4",
   cache,

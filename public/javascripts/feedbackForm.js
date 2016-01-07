@@ -4,6 +4,37 @@
 $(document)
     .ready(function () {
 
+        var docScoreInput = $('#scoreDocumentation');
+        $('#docScore').rating({
+            initialRating: docScoreInput.val(),
+            onRate: function(value){
+                docScoreInput.val(value)
+            }
+        });
+
+        var matScoreInput =  $('#scoreMaturity');
+        $('#matScore').rating({
+            initialRating: matScoreInput.val(),
+            onRate: function(value){
+                matScoreInput.val(value)
+            }
+        });
+
+        var designScoreInput = $('#scoreDesign');
+        $('#desScore').rating({
+            initialRating: designScoreInput.val(),
+            onRate: function(value){
+                designScoreInput.val(value)
+            }
+        });
+
+        var supScoreInput = $('#scoreSupport');
+        $('#supScore').rating({
+            initialRating: supScoreInput.val(),
+            onRate: function(value){
+                supScoreInput.val(value)
+            }
+        });
 
         $('.ui.form')
             .form({

@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import models.Quickstart
 import models.daos.drivers.{Neo4j, NeoParsers}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ class QuickstartDAO @Inject()(neo: Neo4j,
         MATCH (u:User),(r:Repository)
         WHERE u.username={username} AND r.name={repoName}
         CREATE UNIQUE (u)-[c:QUICKSTARTED {props}]->(r)
-        RETURN {id: id(c), properties: c}
+        RETURN {id: id(c), owner: id(u), properties: c}
       """,
       Json.obj(
         "username" -> username,
@@ -53,7 +53,7 @@ class QuickstartDAO @Inject()(neo: Neo4j,
       """
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
         WHERE r.name={repoName}
-        RETURN {id: id(c), properties: c} ORDER BY c.upvote DESC SKIP {scoreSkip} LIMIT {pageSize}
+        RETURN {id: id(c), owner: id(u), properties: c} ORDER BY c.upvote DESC SKIP {scoreSkip} LIMIT {pageSize}
       """, Json.obj(
         "repoName" -> repoName,
         "scoreSkip" -> (page - 1) * itemsPerPage,
@@ -61,6 +61,22 @@ class QuickstartDAO @Inject()(neo: Neo4j,
       )
     ).map(parser.parseNeoQuickstartList)
   }
+
+  /**
+    * Function to get the count of Quickstart for the given repository
+    *
+    * @param repoName name of the repository to get
+    * @return Count in a Future
+    */
+  def countRepositoryQuickstart(repoName: String): Future[Int] =
+    neo.cypher(
+      """
+        MATCH ()-[c:QUICKSTARTED]->(r:Repository)
+        WHERE r.name = {repoName}
+        RETURN COUNT(r) AS quickstartCount
+      """, Json.obj(
+      "repoName" -> repoName
+      )).map(json => (((json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
 
   /**
    * Update a quickstart guide
@@ -76,7 +92,7 @@ class QuickstartDAO @Inject()(neo: Neo4j,
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
         WHERE id(c)={id} AND r.name={repoName}
         SET c={props}
-        RETURN {id: id(c), properties: c}
+        RETURN {id: id(c), owner: id(u), properties: c}
       """,
       Json.obj(
         "id" -> id,
@@ -84,6 +100,46 @@ class QuickstartDAO @Inject()(neo: Neo4j,
         "props" -> Json.toJson(quickstart)
       )
     ).map(parser.parseNeoQuickstart)
+  }
+
+  /**
+    * Deletes the quickstart
+    *
+    * @param id id of the quickstart
+    *
+    * @return Empty JsValue
+    */
+  def delete(id: Int): Future[JsValue] = {
+    neo.cypher(
+      """
+        MATCH ()-[r:QUICKSTARTED]->()
+        WHERE id(r)={id}
+        DELETE r
+      """,
+      Json.obj(
+        "id" -> id
+      )
+    )
+  }
+
+  /**
+    * Tests if the quickstart can be deleted
+    *
+    * @param username name of the connected user
+    * @param quickId id of the quickstart to be tested
+    * @return Future of boolean
+    */
+  def canDelete(username: String, quickId: Int): Future[Boolean] = {
+    neo.cypher(
+      """
+         MATCH (u:User)-[r:QUICKSTARTED]->()
+         WHERE id(r)={quickId} AND u.username={username}
+         RETURN u IS NOT NULL
+      """, Json.obj(
+        "quickId" -> quickId,
+        "username" -> username
+      )
+    ).map(parser.parseNeoBoolean)
   }
 
   /**
@@ -99,7 +155,7 @@ class QuickstartDAO @Inject()(neo: Neo4j,
       """
         MATCH (u:User)-[c:QUICKSTARTED]->(r:Repository)
         WHERE r.name={repoName}  AND id(c) = {id}
-        RETURN {id:id(c), properties: c} ORDER BY c.timestamp DESC
+        RETURN {id:id(c), owner: id(u), properties: c} ORDER BY c.timestamp DESC
       """, Json.obj(
         "repoName" -> repoName,
         "id" -> id
