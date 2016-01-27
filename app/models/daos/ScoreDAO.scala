@@ -4,8 +4,7 @@ import javax.inject.Inject
 
 import models.daos.drivers.{Neo4j, NeoParsers}
 import models.{Feedback, Score}
-import play.api.libs.json.Json
-import play.api.libs.ws.WSResponse
+import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -66,9 +65,9 @@ class ScoreDAO @Inject()(neo: Neo4j,
    *
    * @param username username of the user who score the repo
    * @param repoName repository which was scored
-   * @return
+   * @return Empty JsValue
    */
-  def delete(username: String, repoName: String): Future[WSResponse] = {
+  def delete(username: String, repoName: String): Future[JsValue] = {
     neo.cypher(
       """
         MATCH (u:User)-[c:SCORED]->(r:Repository)
@@ -172,6 +171,6 @@ class ScoreDAO @Inject()(neo: Neo4j,
       RETURN count(c) AS feedbackCount
       """,
       Json.obj("repoName" -> repoName)
-    ).map(response => (((response.json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
+    ).map(json => (((json \ "results")(0) \ "data")(0) \ "row")(0).as[Int])
   }
 }

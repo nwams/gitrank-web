@@ -9,6 +9,7 @@ import models.daos.drivers.{NeoParsers, GitHubAPI}
 import models.daos._
 import models._
 
+import scala.collection.immutable.HashMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -147,6 +148,31 @@ class RepositoryService @Inject()(
     case None => scoreDAO.findRepositoryFeedback(repoName, 1, itemsPerPage)
   }
 
+  /**
+   * Get a score from a given user
+   * @param repoName repository of the feedbacl
+   * @param username username
+   * @return Score given from the user to the repo
+   */
+  def getScoreFromUser(repoName:String, username:String): Future[Option[Score]]={
+    scoreDAO.find(username, repoName)
+  }
+
+  /**
+   * Get a map with a user feedback
+   * @param repoName repository of the feedback
+   * @param user user of the request
+   * @return map with feedback values
+   */
+  def getMapScoreFromUser(repoName:String, user:Option[User] ): Future[Map[String,String]]={
+    user match {
+      case Some(u) => getScoreFromUser(repoName,u.username).map{
+        score => score.fold(HashMap[String,String]())(x => x.toMap())
+      }
+      case None => Future.successful(HashMap[String,String]())
+    }
+
+  }
   /**
    * Get all the scoring made for a repository for the given page and item per page.
    *

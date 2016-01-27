@@ -1,0 +1,53 @@
+@(
+        user: Option[models.User],
+        owner: String,
+        repositoryName: String,
+        quickstarts: Seq[Quickstart],
+        currentPage: Int,
+        totalPages: Int
+)
+
+<div class="ui comments feedback">
+    <h3 class="ui dividing header">
+        <i class="lab icon"></i>
+        <div class="content">
+            Quickstart Guides
+        </div>
+        @if(user.isDefined) {
+            <a href="@routes.ApplicationController.createGuidePage(owner, repositoryName)" class="ui primary button">
+                <i class="edit icon"></i>Add
+            </a>
+        }
+    </h3>
+    <div id="guides">
+        @for(quickstart <- quickstarts) {
+            <div class="comment">
+                <div class="content">
+                    <a class="author" href="@quickstart.url">@quickstart.title</a>
+                    <div class="text">@quickstart.description</div>
+                    <span>
+                        @quickstart.upvote
+                        @if(user.isDefined){
+                            <a href="@routes.ApplicationController.upVote(owner, repositoryName, quickstart.id.get, "upvote")">
+                                <i class="ui thumbs up icon"></i>
+                            </a>
+                        } else {
+                            <i class="ui thumbs up icon"></i>
+                        }
+
+                    </span>
+                    <span>
+                        @quickstart.downvote
+                        @if(user.isDefined) {
+                            <a href="@routes.ApplicationController.upVote(owner, repositoryName, quickstart.id.get, "downvote")">
+                                <i class="ui thumbs down icon"></i>
+                            </a>
+                        } else {
+                            <i class="ui thumbs down icon"></i>
+                        }
+                    </span>
+                </div>
+            </div>
+        }
+    </div>
+</div>

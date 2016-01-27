@@ -5,19 +5,18 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.SessionAuthenticator
 import forms.FeedbackForm
+import models.User
 import models.daos.drivers.GitHubAPI
 import models.forms.QuickstartForm
 import models.services.{QuickstartService, RepositoryService, UserService}
-import models.{Feedback, User}
 import modules.CustomGitHubProvider
+import org.apache.http.HttpStatus
 import play.api.Play
+import play.api.Play.current
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import play.api.Play.current
 
 
 /**
@@ -36,6 +35,7 @@ class ApplicationController @Inject()(
                                        gitHub: GitHubAPI,
                                        quickstartService: QuickstartService)
   extends Silhouette[User, SessionAuthenticator] {
+
 
   /**
    * Handles the main action.
@@ -67,33 +67,67 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system. (GitHub)
    * @return The html page of the repository
    */
-  def gitHubRepository(owner: String, repositoryName: String, page: Option[Int] = None) = UserAwareAction.async { implicit request =>
+  def gitHubRepository(owner: String,
+                       repositoryName: String,
+                       feedbackPage: Option[Int] = None,
+                       quickstartPage: Option[Int] = None
+                      ) = UserAwareAction.async { implicit request =>
 
-    if (page.getOrElse(1) <= 0){
-      Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
-        "We cannot find the feedback page, unfortunately negative pages have not been invented!"))
+    if (feedbackPage.getOrElse(1) <= 0 || quickstartPage.getOrElse(1) <= 0) {
+      Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
+        "We cannot find the page, unfortunately negative pages have not been invented!"))
       )
     } else {
       val repoName: String = owner + "/" + repositoryName
       repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
-        case Some(repository) => repoService.getFeedback(repoName, page).flatMap((feedback: Seq[Feedback]) =>
-          repoService.getFeedbackPageCount(repoName).flatMap(totalPage => {
+        case Some(repository) =>
 
-            if (totalPage == 0 || page.getOrElse(1) <= totalPage) {
-              repoService.canAddFeedback(repoName, request.identity).flatMap({
-                case true => repoService.canUpdateFeedback(repoName, request.identity).map(
-                  canUpdate => Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage, true, canUpdate)
-                  (owner, repositoryName, page.getOrElse(1))))
-                case false => Future.successful(Ok(views.html.repository(gitHubProvider, request.identity, repository, feedback, totalPage)
-                (owner, repositoryName, page.getOrElse(1))))
-              })
-            } else {
-              Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
-                "The requested page does not exist")))
-            }
-          })
-        )
-        case None => Future.successful(NotFound(views.html.error("notFound", 404, "Not Found",
+          val futureFeedback = repoService.getFeedback(repoName, feedbackPage)
+          val futureQuickstart = quickstartService.getQuickstartGuidesForRepo(repository, quickstartPage)
+          val futureFeedbackPageCount = repoService.getFeedbackPageCount(repoName)
+          val futureQuickstartPageCount = quickstartService.getQuickstartPageCount(repoName)
+
+          futureFeedback.flatMap(feedback =>
+            futureFeedbackPageCount.flatMap(totalFeedbackPages =>
+              futureQuickstart.flatMap(quickstart =>
+                futureQuickstartPageCount.flatMap(totalQuickstartPages =>
+
+                  if (totalFeedbackPages == 0 || feedbackPage.getOrElse(1) <= totalFeedbackPages ||
+                    totalQuickstartPages == 0 || quickstartPage.getOrElse(1) <= totalQuickstartPages
+                  ) {
+                    repoService.canAddFeedback(repoName, request.identity).flatMap({
+                      case true => repoService.canUpdateFeedback(repoName, request.identity).map(
+                        canUpdate => Ok(views.html.repository(
+                          gitHubProvider,
+                          request.identity,
+                          repository,
+                          feedback,
+                          quickstart,
+                          totalFeedbackPages,
+                          totalQuickstartPages,
+                          true,
+                          canUpdate
+                        )(owner, repositoryName, feedbackPage.getOrElse(1), quickstartPage.getOrElse(1))))
+                      case false => Future.successful(Ok(views.html.repository(
+                        gitHubProvider,
+                        request.identity,
+                        repository,
+                        feedback,
+                        quickstart,
+                        totalFeedbackPages,
+                        totalQuickstartPages
+                      )(owner, repositoryName, feedbackPage.getOrElse(1), quickstartPage.getOrElse(1))))
+                    })
+                  } else {
+                    Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
+                      "The requested page does not exist")))
+                  }
+                )
+              )
+            )
+          )
+
+        case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
           "We cannot find the repository page, it is likely that you misspelled it, try something else!")))
       })
     }
@@ -110,10 +144,29 @@ class ApplicationController @Inject()(
     val repoName: String = owner + "/" + repositoryName
     repoService.getFromNeoOrGitHub(request.identity, repoName).flatMap({
       case Some(repository) =>
-        repoService.canUpdateFeedback(repoName, request.identity).map(canUpdate =>
-          Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
-        )
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+        request.identity match {
+          case Some(id) => repoService.canAddFeedback(repoName, request.identity).flatMap{
+            case canAdd => canAdd match {
+              case false => Future.successful(Redirect(routes.ApplicationController.gitHubRepository(
+                owner,
+                repositoryName,
+                None,
+                None
+              ).url))
+              case true => repoService.canUpdateFeedback(repoName, request.identity).flatMap(canUpdate =>
+                repoService.getMapScoreFromUser(repoName,request.identity).map(map =>
+                  map.isEmpty match {
+                    case false => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form.bind(map), canUpdate))
+                    case true => Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, canUpdate))
+                  }
+                ))
+            }
+          }
+          case None => Future.successful(Ok(views.html.feedbackForm(gitHubProvider, request.identity)(owner, repositoryName, FeedbackForm.form, false)))
+        }
+
+
+      case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
@@ -125,7 +178,7 @@ class ApplicationController @Inject()(
    * @param repositoryName repository name on the repo system (GitHub)
    * @return Redirect to repo page
    */
-  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async {implicit request =>
+  def postScore(owner: String, repositoryName: String, update: Option[Boolean]) = SecuredAction.async { implicit request =>
     FeedbackForm.form.bindFromRequest.fold(
       formWithErrors => Future.successful(BadRequest(views.html.feedbackForm(gitHubProvider, Some(request.identity))
         (owner, repositoryName, formWithErrors, update.getOrElse(false)))),
@@ -137,7 +190,12 @@ class ApplicationController @Inject()(
         data.scoreDesign,
         data.scoreSupport,
         data.feedback
-      ).map(repo => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+      ).map(repo => Redirect(routes.ApplicationController.gitHubRepository(
+        owner,
+        repositoryName,
+        None,
+        None
+      ).url))
     )
   }
 
@@ -159,7 +217,12 @@ class ApplicationController @Inject()(
         data.title,
         data.description,
         QuickstartForm.validateUrl(data.url)
-      ).map(q => Redirect(routes.ApplicationController.gitHubRepository(owner, repositoryName, None).url))
+      ).map(q => Redirect(routes.ApplicationController.gitHubRepository(
+        owner,
+        repositoryName,
+        None,
+        None
+      ).url))
     )
   }
 
@@ -175,7 +238,7 @@ class ApplicationController @Inject()(
     repoService.getFromNeoOrGitHub(request.identity, repoName).map({
       case Some(repository) =>
         Ok(views.html.quickstartGuide(gitHubProvider, request.identity)(owner, repositoryName, QuickstartForm.form))
-      case None => NotFound(views.html.error("notFound", 404, "Not Found",
+      case None => NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!"))
     })
   }
@@ -196,18 +259,33 @@ class ApplicationController @Inject()(
         voteType match {
           case "upvote" => quickstartService.updateVote(repository, true, id, request.identity)
             .map({
-              case Some(guide) => Ok(Json.toJson(guide))
-              case None => NotFound(views.html.error("notFound", 404, "Not Found",
-                "We cannot find the guide, it is likely that you misspelled it, try something else!"))
-            })
-          case _ => quickstartService.updateVote(repository, false, id,request.identity)
+            case Some(guide) => Redirect(routes.ApplicationController.gitHubRepository(
+              owner,
+              repositoryName,
+              None,
+              None
+            ).url)
+            case None => NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
+              "We cannot find the guide."))
+          })
+          case "downvote" => quickstartService.updateVote(repository, false, id, request.identity)
             .map({
-              case Some(guide) => Ok(Json.toJson(guide))
-              case None => println("===>test2");NotFound(views.html.error("notFound", 404, "Not Found",
+            case Some(guide) => Redirect(routes.ApplicationController.gitHubRepository(
+              owner,
+              repositoryName,
+              None,
+              None
+            ).url)
+            case None =>
+              NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
                 "We cannot find the guide, it is likely that you misspelled it, try something else!"))
-            })
+          })
+          case _ => Future.successful(
+            MethodNotAllowed(views.html.error("methodNotAllowed", HttpStatus.SC_METHOD_NOT_ALLOWED, "Not Allowed",
+            "Trying some funny stuff, the incident will be reported"))
+          )
         }
-      case None => Future(NotFound(views.html.error("notFound", 404, "Not Found",
+      case None => Future.successful(NotFound(views.html.error("notFound", HttpStatus.SC_NOT_FOUND, "Not Found",
         "We cannot find the repository feedback page, it is likely that you misspelled it, try something else!")))
     })
   }
